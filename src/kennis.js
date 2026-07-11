@@ -1,9 +1,12 @@
 // Zoeken in de EAZYFIX®-websitekennis (producten, FAQ, blog/how-to, video's).
 // Bronnen worden samengevoegd, zodat een refresh van de ene bron de andere niet wist:
-// - kennis.json        site-snapshot van eazy-fix.nl (scripts/pull-site.js)
-// - kennis-video.json  YouTube-kennis (@eazyfixnl, scripts/pull-youtube.js)
+// - kennis.json        site-snapshot van eazy-fix.de (scripts/pull-site.js)
+// - kennis-video.json  YouTube-kennis (nog NL @eazyfixnl; Duitse titels ontbreken,
+//                       dus deze video's matchen niet op Duitse zoektermen en komen
+//                       niet boven — tot er een Duitse video-bron is)
 // - kennis-extra.json  handmatig gecureerde feiten (niet door een pull overschreven)
 // De website blijft leidend; deze tool laat de bot de actuele kennis raadplegen.
+// Taal: de kennis is Duits (eazy-fix.de); stemmer/synoniemen/intent zijn Duits.
 
 // Optionele bron inladen; ontbreekt het bestand, dan een lege lijst.
 function loadSource(file) {
@@ -25,10 +28,7 @@ function dedupeData(entries) {
 
 // Verouderde/misleidende entries die uit de kennis moeten, ook al staan ze nog in
 // een gescrapete bron (een re-pull mag ze niet terugbrengen). Op slug gefilterd.
-// - yt-24600OjFDS0: oude koker-video (180 ml, oude dop, niet-bestaand tussendopje)
-//   en de tekst "componenten altijd gescheiden houden" klopt niet meer: de
-//   EAZYFIX® Premium Houtrotvuller komt in de juiste mengverhouding uit één koker.
-const OUTDATED_SLUGS = new Set(['yt-24600OjFDS0']);
+const OUTDATED_SLUGS = new Set([]);
 
 const DATA = dedupeData([
   ...loadSource('./kennis.json'),
@@ -36,42 +36,49 @@ const DATA = dedupeData([
   ...loadSource('./kennis-extra.json'),
 ]).filter((p) => !OUTDATED_SLUGS.has(p.slug));
 
+// Duitse stopwoorden (lidwoorden, voornaamwoorden, voorzetsels, hulpwerkwoorden,
+// voegwoorden). Woorden van 2 tekens vallen sowieso al weg (len > 2-filter).
 const STOP = new Set(
-  ('de het een en of van voor met op in te is dat die ik je jij hoe wat waar kan kun moet ' +
-   'bij aan om als ook nog wel niet mijn deze dit naar uit per ben heb hebben word worden ' +
-   'zijn was wordt heeft moeten kunnen mag dan dus maar want hun zo er nog al').split(' ')
+  ('der die das den dem des ein eine einen einem einer und oder von für mit auf ist dass ' +
+   'wie was wer wo kann kannst muss musst soll sollst bei als auch nicht mein dein sein ihr ihre ' +
+   'diese dieser dieses dies nach aus pro bin habe hat haben wird wirst werden sind war wurde ' +
+   'müssen können darf dann aber weil denn doch vom beim zum zur noch wohl schon nur sehr über ' +
+   'hier dort man sich wenn dann etwas ganz mehr').split(' ')
 );
 
-// Houtrot-synoniemen: woorden uit dezelfde groep tellen als elkaar, zodat
-// spreektaal ("mijn raamhout is zacht") de juiste pagina ("houtrot kozijn") vindt.
+// Holzfäule-synoniemen: woorden uit dezelfde groep tellen als elkaar, zodat
+// spreektaal ("mein Fensterholz ist weich") de juiste pagina ("Holzfäule Fenster")
+// vindt. Duitse termen, afgestemd op de DE-kennis (eazy-fix.de).
 const SYNGROUPS = [
-  ['houtrot', 'rot', 'rotte', 'zacht', 'zachte', 'sponzig', 'week', 'aangetast', 'verrot', 'vergaan'],
-  ['kozijn', 'raamhout', 'raamkozijn', 'venster', 'raam'],
-  ['deur', 'deurpost'],
-  ['dorpel', 'onderdorpel', 'drempel'],
-  ['verf', 'lak', 'laklaag', 'bladdert', 'afbladderen', 'bobbel', 'bobbelt', 'craquele', 'pellen'],
-  ['frees', 'frezen', 'houtrotfrees', 'uitfrezen', 'wegfrezen', 'weghalen', 'verwijderen'],
-  ['dremel', 'multitool', 'boormachine', 'accuschroefmachine', 'accuschroef', 'machine', 'toerental', 'toeren', 'rotary'],
-  ['houtrotvuller', 'vuller', 'vullen', 'epoxy', 'opvullen', 'dichten'],
-  ['houtplamuur', 'plamuur', 'plamuren'],
-  ['houtversterker', 'versterker', 'voorbehandelen', 'primer', 'verharder'],
-  ['mengverhouding', 'verhouding', 'mengen', 'aanmaken', 'mengverhouding'],
-  ['uitharden', 'drogen', 'droogtijd', 'harden', 'uithardingstijd', 'verwerkingstijd'],
-  ['vocht', 'vochtig', 'vochtmeter', 'houtvochtmeter', 'nat', 'vochtgehalte'],
-  ['schuren', 'glad', 'afwerken', 'schuurpapier'],
-  ['overschilderen', 'schilderen', 'aflakken', 'grondverf', 'aflak'],
-  ['set', 'pakket', 'reparatieset', 'startpakket', 'starterspakket', 'startset'],
-  ['kopen', 'bestellen', 'webshop', 'verkooppunt', 'winkel', 'prijs', 'kosten'],
-  ['gereedschap', 'reparatiemes', 'plamuurmes', 'aanbrandmes', 'mengmes', 'opbouwmes', 'modelleerstrips'],
-  ['trap', 'traptrede', 'trede'],
-  ['meubel', 'meubels', 'tafel', 'kast'],
-  ['muur', 'muren', 'muurtje', 'wand', 'muurvuller', 'metselwerk', 'steen', 'beton'],
+  ['holzfäule', 'fäule', 'fäulnis', 'faul', 'faules', 'morsch', 'morsches', 'weich', 'weiches', 'schwammig', 'angegriffen', 'vermodert', 'verrottet'],
+  ['fensterrahmen', 'rahmen', 'fenster', 'fensterholz'],
+  ['tür', 'türen', 'türrahmen', 'türpfosten'],
+  ['fensterbank', 'schwelle', 'türschwelle', 'sohlbank'],
+  ['lack', 'farbe', 'anstrich', 'lackschicht', 'blättert', 'abblättern', 'blase', 'abplatzen'],
+  ['fräser', 'fräsen', 'holzfäulefräser', 'ausfräsen', 'wegfräsen', 'abtragen'],
+  ['dremel', 'multitool', 'bohrmaschine', 'akkuschrauber', 'maschine', 'drehzahl', 'umdrehungen', 'rotary', 'rotationswerkzeug'],
+  ['holzspachtelmasse', 'spachtelmasse', 'spachtel', 'füllen', 'auffüllen', 'epoxid', 'epoxy', 'abdichten'],
+  ['feinspachtel', 'holzfeinspachtel', 'feinspachteln'],
+  ['holzimprägnierung', 'imprägnierung', 'imprägnieren', 'vorbehandeln', 'härter', 'verfestiger', 'primer'],
+  ['mischungsverhältnis', 'verhältnis', 'mischen', 'anmischen', 'anrühren'],
+  ['aushärten', 'trocknen', 'trocknungszeit', 'härten', 'aushärtezeit', 'verarbeitungszeit'],
+  ['feuchte', 'feucht', 'feuchtigkeit', 'feuchtemessgerät', 'holzfeuchtemessgerät', 'feuchtigkeitsmesser', 'holzfeuchte', 'nass', 'feuchtegehalt'],
+  ['schleifen', 'glatt', 'schmirgeln', 'schleifpapier'],
+  ['überstreichen', 'streichen', 'lackieren', 'grundierung', 'decklack', 'überlackieren'],
+  ['set', 'paket', 'reparaturset', 'starterset', 'standardset', 'starterpaket', 'erweiterungsset', 'komplettset'],
+  ['kaufen', 'bestellen', 'webshop', 'verkaufsstelle', 'händler', 'laden', 'preis', 'kosten'],
+  ['werkzeug', 'breitspachtel', 'schmalspachtel', 'mischspachtel', 'modellierstrips', 'mischbrett', 'kartuschenpresse'],
+  ['treppe', 'treppenstufe', 'stufe'],
+  ['möbel', 'tisch', 'schrank', 'möbelstück'],
 ];
 
-// Lichte Nederlandse stemmer: haalt meervoud/verbuiging weg (kozijnen -> kozijn).
+// Lichte Duitse stemmer: vouwt umlauten uit (ä -> ae, zodat "Holzfäule" matcht met
+// de slug "holzfaeule") en haalt veelvoorkomende meervoud-/verbuigingsuitgangen weg.
+// Query en documenten lopen door dezelfde stem, dus consistentie > taalkundige perfectie.
 function stem(w) {
-  w = w.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-  for (const suf of ['tjes', 'tje', 'eren', 'heden', 'ingen', 'en', 'er', 'es', 'e', 's']) {
+  w = w.toLowerCase()
+    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
+  for (const suf of ['ungen', 'heiten', 'keiten', 'nisse', 'chen', 'lein', 'ung', 'nis', 'en', 'er', 'es', 'st', 'e', 'n', 's']) {
     if (w.length > suf.length + 3 && w.endsWith(suf)) return w.slice(0, -suf.length);
   }
   return w;
@@ -102,9 +109,9 @@ function tokenize(text) {
 }
 
 // Merk-/productlijn-woorden die in veel titels/slugs terugkomen en daardoor geen
-// onderscheidend signaal zijn (anders rangschikt "Premium Houtrotvuller" alle
+// onderscheidend signaal zijn (anders rangschikt "Premium Holzspachtelmasse" alle
 // Premium-producten gelijk). Tellen niet mee voor de titel-/slug-identiteitsboost.
-const RANK_GENERIC = new Set(['premium', 'eazyfix', 'rvs', 'shop'].map(stem));
+const RANK_GENERIC = new Set(['premium', 'eazyfix', 'edelstahl', 'shop'].map(stem));
 
 // BM25-index eenmalig opbouwen bij laden.
 const K1 = 1.5;
@@ -125,7 +132,7 @@ for (const d of INDEX) for (const t of d.tf.keys()) DF.set(t, (DF.get(t) || 0) +
 const N = INDEX.length;
 const idf = (t) => Math.log(1 + (N - (DF.get(t) || 0) + 0.5) / ((DF.get(t) || 0) + 0.5));
 
-// Tel term-frequentie inclusief prefix-matches (kozijn ~ kozijnnaad).
+// Tel term-frequentie inclusief prefix-matches (fenster ~ fensterrahmen).
 function docTf(d, term) {
   let tf = d.tf.get(term) || 0;
   if (term.length >= 4) {
@@ -148,10 +155,10 @@ function scoreAll(query) {
         if (d.title.has(term) && !generic) s += 2; // titel-treffer telt extra
       }
       // Onderscheidende product-identiteit: een term die exact in de slug van een
-      // canonieke product-/contentpagina zit (bv. "houtrotvuller" in
-      // premium-houtrotvuller) weegt zwaar. Zo wint de Houtrotvuller-PAGINA van een
-      // product dat alleen "premium" deelt, én van losse blogs/video's die het woord
-      // toevallig vaak noemen.
+      // canonieke product-/contentpagina zit (bv. "holzspachtelmasse" in
+      // premium-holzspachtelmasse) weegt zwaar. Zo wint de Holzspachtelmasse-PAGINA
+      // van een product dat alleen "premium" deelt, én van losse blogs/video's die
+      // het woord toevallig vaak noemen.
       if (!generic && d.slug.has(term) && (d.p.type === 'product' || d.p.type === 'pagina')) s += 5;
     }
     if (s > 0 && (d.p.type === 'product' || d.p.type === 'blog')) s *= 1.1;
@@ -182,8 +189,8 @@ function search(query, limit = 3) {
 // misleidende matches op. Die herkennen we en sturen we naar de binnendienst i.p.v.
 // er productuitleg op te plakken. Een how-to/reparatie-signaal in dezelfde vraag
 // wint: dan is het een inhoudelijke vraag (de persona verwijst de prijs apart door).
-const SERVICE_INTENT = /\b(prijs|prijzen|prijslijst|kost|kosten|kostprijs|tarief|aanbieding|bestel|bestellen|bestelling|betaal|betalen|betaling|ideal|factuur|bezorg|bezorging|verzend|verzending|levertijd|geleverd|retour|retourneren|terugsturen|garantie|waarborg|account|inloggen|wachtwoord|vacature|vacatures|solliciteer|solliciteren|webshop|winkelwagen|winkelmand)\b/i;
-const HOWTO_SIGNAL = /\b(repareer|repareren|reparatie|mengen|meng|mengverhouding|aanbreng|aanbrengen|gebruik|gebruiken|stap|stappen|drogen|schuren|verwijder|verwijderen|inwerk|uithard|uitharden|frees|frezen|behandel|behandelen|toepass|toepassen|hecht|hechting|droogtijd|verwerk|verwerken)\b/i;
+const SERVICE_INTENT = /\b(preis|preise|preisliste|kostet|kosten|kostenpunkt|tarif|angebot|bestell|bestellen|bestellung|zahl|zahlen|zahlung|bezahlen|sofort|kreditkarte|paypal|rechnung|liefer|lieferung|lieferzeit|geliefert|versand|versenden|retour|rücksend|rücksendung|zurücksenden|widerruf|garantie|gewährleistung|konto|einloggen|anmelden|passwort|stellenangebot|bewerben|bewerbung|webshop|warenkorb)\b/i;
+const HOWTO_SIGNAL = /\b(reparier|reparieren|reparatur|misch|mischen|mischungsverhältnis|auftrag|auftragen|anwend|anwenden|schritt|schritte|trocknen|schleifen|entfern|entfernen|einwirk|aushärt|aushärten|fräs|fräsen|behandel|behandeln|haftung|haftet|trocknungszeit|verarbeit|verarbeiten|vorbehandeln|grundier)\b/i;
 
 function classifyIntent(query) {
   const q = String(query || '');
@@ -211,80 +218,56 @@ function confidentSearch(query, limit = 3) {
 }
 
 // Relevante EAZYFIX-video's bij een onderwerp, alleen als ze duidelijk passen.
-// minScore (BM25-vloer) voorkomt dat er bij elke vraag of begroeting een video
-// plakt. Daarna herrangschikken op titel-overlap: videotitels ("Houtrot in
-// kozijn repareren stappenplan") zijn het sterkste relevantiesignaal, sterker
-// dan een korte, generieke video die toevallig vaak "houtrot" zegt.
-// Te generieke woorden mogen GEEN videomatch opleveren (anders triggert bv.
-// "Ik wil de DF 16 gebruiken" een video via het woord "gebruiken").
+// LET OP: de videobron (kennis-video.json) is nog NL; Duitse zoektermen matchen niet
+// op Nederlandse titels, dus er komt momenteel geen video boven. De whitelist hieronder
+// is al Duits, zodat het werkt zodra er een Duitse video-bron wordt toegevoegd.
 const VIDEO_GENERIC = new Set(
-  ['gebruiken', 'maken', 'doen', 'gaan', 'willen', 'hebben', 'zetten', 'kunnen', 'moeten',
-   'nodig', 'goed', 'beste', 'manier', 'zelf', 'super', 'tip', 'video', 'instructie', 'stap',
+  ['verwenden', 'machen', 'tun', 'gehen', 'wollen', 'haben', 'setzen', 'können', 'müssen', 'brauchen',
+   'nötig', 'gut', 'beste', 'weg', 'art', 'selbst', 'super', 'tipp', 'video', 'anleitung', 'schritt',
    // merk/filler: komen in bijna elk antwoord/titel voor en mogen niet matchen
-   'eazyfix', 'premium', 'repair', 'care', 'professioneel', 'alle', 'product', 'producten',
+   'eazyfix', 'premium', 'repair', 'care', 'professionell', 'alle', 'produkt', 'produkte',
    // te algemeen: staan in vrijwel elk houtrot-antwoord (ook in puur diagnostische
    // vragen), dus mogen op zichzelf geen video triggeren
-   'repareren', 'reparatie', 'herstellen', 'herstel', 'hout', 'schade', 'beschadiging', 'klus', 'plek',
-   // 'houtrot'/'rot' staan in bijna elke videotitel -> te generiek om op te matchen;
-   // de OBJECT-term (kozijn/deur/trap/muur) of productnaam bepaalt de video.
-   'houtrot', 'rot', 'aangetast'].map(stem)
+   'reparieren', 'reparatur', 'herstellen', 'herstellung', 'holz', 'schaden', 'beschädigung', 'arbeit', 'stelle',
+   // 'holzfäule'/'faul' staan in bijna elke videotitel -> te generiek om op te matchen;
+   // de OBJECT-term (fenster/tür/treppe) of productnaam bepaalt de video.
+   'holzfäule', 'fäule', 'faul', 'angegriffen'].map(stem)
 );
 
 // Kleine object/term -> video-term map (alleen wat in videotitels voorkomt).
-// Bewust GEEN materiaalwoorden (steen/beton) zodat een muur-vraag de
-// Muurvuller-video kiest en niet een plamuur-materialenvideo.
 const VIDEO_SYN = {
-  muur: ['muurvuller'], muren: ['muurvuller', 'muur'], muurtje: ['muurvuller', 'muur'], wand: ['muurvuller', 'muur'],
-  raam: ['kozijn'], raamhout: ['kozijn'], raamkozijn: ['kozijn'], venster: ['kozijn'],
-  onderdorpel: ['dorpel'], drempel: ['dorpel'],
+  fenster: ['fensterrahmen'], fensterholz: ['fensterrahmen'], rahmen: ['fensterrahmen'],
+  türschwelle: ['fensterbank'], schwelle: ['fensterbank'],
 };
 
 // WHITELIST van termen die een video MOGEN triggeren: alleen concrete objecten
-// (kozijn, deur, dorpel, muur, ...), productnamen en technieken met een eigen video.
-// Alles daarbuiten (fillerwoorden als "makkelijk", "volledig", "vochtig",
-// "brokkelt") mag NOOIT matchen. Zonder deze grens matchte "Het brokkelt makkelijk
-// af" op de video "Muurvuller makkelijk afstrijken" (verkeerd product). Gestemd,
-// zodat verbuigingen meelopen.
+// (fenster, tür, fensterbank, treppe, ...), productnamen en technieken met een eigen
+// video. Alles daarbuiten (fillerwoorden) mag NOOIT matchen. Gestemd, zodat
+// verbuigingen meelopen.
 const VIDEO_TOPIC = new Set([
   // objecten
-  'kozijn', 'raamkozijn', 'raam', 'raamhout', 'venster', 'dorpel', 'onderdorpel', 'drempel',
-  'deur', 'deurpost', 'trap', 'trede', 'traptrede', 'meubel', 'raamluik', 'luik', 'boeiboord',
-  'poortdeur', 'vloer', 'dak', 'muur', 'muren', 'muurtje', 'wand',
+  'fensterrahmen', 'rahmen', 'fenster', 'fensterholz', 'fensterbank', 'schwelle', 'türschwelle',
+  'tür', 'türen', 'türrahmen', 'treppe', 'treppenstufe', 'stufe', 'möbel', 'fensterladen', 'laden',
+  'boden', 'dach',
   // producten
-  'houtrotvuller', 'houtplamuur', 'plamuur', 'houtversterker', 'versterker', 'muurvuller',
-  'houtrotfrees', 'frees',
+  'holzspachtelmasse', 'spachtelmasse', 'feinspachtel', 'holzimprägnierung', 'imprägnierung',
+  'holzfäulefräser', 'fräser',
   // technieken met een eigen instructievideo
-  'frezen', 'modelleren', 'deelvervanging', 'vervangen',
+  'fräsen', 'modellieren', 'teilerneuerung', 'ersetzen',
 ].map(stem));
 
-// De gebruiker heeft het OVER het videokaartje zelf (meestal een klacht: "het
-// filmpje is niet van houtrot", "ik krijg weer een filmpje"). Plak dan GEEN nieuwe
-// (mogelijk opnieuw verkeerde) video; een woord als "muurvuller" in zo'n klacht mag
-// niet opnieuw de muurvuller-video triggeren.
-const VIDEO_COMPLAINT = /\b(filmpje|filmpjes|video|video's|videokaartje|kaartje)\b/i;
+// De gebruiker heeft het OVER het videokaartje zelf (meestal een klacht: "das Video
+// ist nicht von Holzfäule", "ich bekomme wieder ein Video"). Plak dan GEEN nieuwe
+// (mogelijk opnieuw verkeerde) video.
+const VIDEO_COMPLAINT = /\b(video|videos|clip|clips|filmchen|kärtchen|videokärtchen)\b/i;
 
-// Niche/afwerk-video's die nooit als hoofdadvies bij een houtrotvraag horen
-// (aanbranden, als lijm gebruiken, mengplateau-plastic, plamuur over vuller,
-// resten van gereedschap, bewerken als hout). Ze winnen anders van een echte
-// reparatievideo omdat ze de productnaam toevallig in de titel dragen.
-const VIDEO_NICHE = new Set([
-  'yt-ETy10MKIp_w', // houtrotvuller aanbranden
-  'yt-VsjrZm68nD0', // houtrotvuller/plamuur als lijm
-  'yt-TnkDCof8lN0', // houtrotvuller en plastic (mengplateau)
-  'yt-Nawd7NHdvvs', // plamuur over de houtrotvuller
-  'yt-I_vI6sy82VE', // uitgeharde resten op gereedschap
-  'yt-2fVPMwXiLcI', // houtrotvuller bewerken als hout
-]);
+// Niche/afwerk-video's die nooit als hoofdadvies bij een houtrotvraag horen. Op slug;
+// nog NL-slugs (blijven staan tot er een Duitse video-bron is).
+const VIDEO_NICHE = new Set([]);
 
 // Kies de best passende video op basis van de VRAAG van de gebruiker (niet het
-// antwoord; dat noemt vaak voorbeelden/objecten en zou bij een begroeting of
-// diagnosevraag een verkeerde video triggeren).
-// Een instructievideo hoort ALLEEN bij een echte hoe-doe-ik-/reparatievraag. Een
-// losse productnaam in een service-, klacht- of retourvraag ("een koker plamuur is
-// gescheurd, komt dat vaker voor?", "waar vind ik mijn factuur") mag GEEN video
-// opleveren; daarom is een hoe-/reparatie-signaal verplicht (dit dekt meteen ook
-// koop-/prijsvragen af, die dat signaal missen).
-const VIDEO_HOWTO = /\b(hoe|repareren|repareer|reparatie|aanbrengen|aanbreng|gebruiken|gebruik|stappenplan|mengen|mengverhouding|verwijderen|frezen|schuren|aanmaken|toepassen|stap|vullen|opvullen|dichtsmeren|modelleren|afwerken|behandelen|verwerken)\b/i;
+// antwoord). Een instructievideo hoort ALLEEN bij een echte hoe-doe-ik-/reparatievraag.
+const VIDEO_HOWTO = /\b(wie|reparieren|reparier|reparatur|auftragen|auftrag|verwenden|verwend|gebrauch|anleitung|stappenplan|ablaufplan|mischen|mischungsverhältnis|entfernen|fräsen|schleifen|anmischen|anwenden|schritt|füllen|auffüllen|modellieren|abschleifen|behandeln|verarbeiten)\b/i;
 
 function relevantVideos(query, { limit = 1 } = {}) {
   const q = String(query || '');
@@ -309,9 +292,9 @@ function relevantVideos(query, { limit = 1 } = {}) {
     )];
     const hits = titleStems.filter((t) => want.has(t)).length;
     if (hits < 1) continue;
-    const frag = /^\s*stap\s*\d/i.test(p.title) ? 1 : 0; // deelstap-video = lagere prioriteit
-    // Volledige stappenplan/instructievideo > losse "... repareren"-video > overig.
-    const howto = /stappenplan|instructievideo/i.test(p.title) ? 2 : (/repareren|reparatie|verwijderen/i.test(p.title) ? 1 : 0);
+    const frag = /^\s*(stap|schritt)\s*\d/i.test(p.title) ? 1 : 0; // deelstap-video = lagere prioriteit
+    // Volledig stappenplan/instructievideo > losse "... reparieren"-video > overig.
+    const howto = /stappenplan|ablaufplan|instructievideo|instruktionsvideo/i.test(p.title) ? 2 : (/repareren|reparieren|reparatie|reparatur|verwijderen|entfernen/i.test(p.title) ? 1 : 0);
     cand.push({ p, hits, frag, howto });
   }
   // Niet-deelstap eerst; dan meeste treffers; dan volledige how-to.
@@ -324,8 +307,7 @@ function relevantVideos(query, { limit = 1 } = {}) {
 }
 
 // Maak van een YouTube-titel een nette kaarttitel: pak het eerste deel vóór een
-// "|"-scheiding (gooit "... | Zo doe je dat | EAZYFIX"-ruis weg) en haal een
-// losse "Eazyfix:"-prefix weg. Valt terug op de originele titel.
+// "|"-scheiding en haal een losse "Eazyfix:"-prefix weg. Valt terug op de originele titel.
 function cleanVideoTitle(t) {
   let s = String(t || '').split('|')[0].trim();
   s = s.replace(/\s*[-–]\s*eazyfix[®\s]*$/i, '').trim(); // brand-staart "- EAZYFIX®"
@@ -362,29 +344,29 @@ function excerpt(text, stems, len = 500) {
 }
 
 // Merknaam in zichtbare context altijd EAZYFIX. De lookahead spaart URLs/domeinen
-// (eazy-fix.nl) en slugs, die hoofdlettergevoelig zijn.
+// (eazy-fix.de) en slugs, die hoofdlettergevoelig zijn.
 function normalizeBrand(s) {
   return String(s || '').replace(/\bEazy-?fix\b(?![\w./@-])/gi, 'EAZYFIX');
 }
 
 function formatEntry(p, ts) {
-  const label = { product: 'Product', blog: 'Blog', pagina: 'Pagina', video: 'Video' }[p.type] || 'Pagina';
+  const label = { product: 'Produkt', blog: 'Blog', pagina: 'Seite', video: 'Video' }[p.type] || 'Seite';
   return `[${label}] ${normalizeBrand(p.title)}\n${normalizeBrand(excerpt(p.text, ts))}\n(${p.url})`;
 }
 
 const KENNIS_TOOL = {
   name: 'zoek_kennis',
   description:
-    'Doorzoek de EAZYFIX®-website (producten, FAQ en blog/how-to) op een onderwerp. ' +
-    'Gebruik deze tool voor productdetails, mengverhoudingen, gebruiksaanwijzingen, ' +
-    'veelgestelde vragen of klusadvies, zodat je antwoord klopt met de actuele website. ' +
-    'De website is leidend boven je eigen aannames; raadpleeg haar bij twijfel.',
+    'Durchsuche die EAZYFIX®-Website (Produkte, FAQ und Blog/Anleitungen) zu einem Thema. ' +
+    'Nutze dieses Tool für Produktdetails, Mischungsverhältnisse, Gebrauchsanweisungen, ' +
+    'häufige Fragen oder Reparaturtipps, damit deine Antwort mit der aktuellen Website übereinstimmt. ' +
+    'Die Website ist maßgeblich über deinen eigenen Annahmen; zieh sie im Zweifel zurate.',
   input_schema: {
     type: 'object',
     properties: {
       onderwerp: {
         type: 'string',
-        description: 'Waar de gebruiker info over wil, bijv. "houtrotvuller mengverhouding" of "houtrot in kozijn".',
+        description: 'Wozu der Nutzer Infos möchte, z. B. "Holzspachtelmasse Mischungsverhältnis" oder "Holzfäule im Fensterrahmen".',
       },
     },
     required: ['onderwerp'],
@@ -394,19 +376,20 @@ const KENNIS_TOOL = {
 // Tekst voor een commerciële/service-vraag: de bot heeft hier bewust geen kennis
 // van; niet gokken maar doorverwijzen.
 function serviceFallback(onderwerp) {
-  return `De vraag over "${onderwerp || ''}" gaat over commerciële of servicezaken ` +
-    '(zoals prijzen, bestellen, betalen, bezorgen, retour of garantie). Daar heeft de EAZYFIX®-bot ' +
-    'bewust geen gegevens over. Verzin NIETS: verwijs de klusser vriendelijk naar de webshop op ' +
-    'eazy-fix.nl of de EAZYFIX®-binnendienst (+31 (0)85 201 201 1). Voor een fysiek verkooppunt mag ' +
-    'je de tool find_verkooppunt gebruiken als de klusser een plaats of postcode noemt.';
+  return `Die Frage zu "${onderwerp || ''}" betrifft kommerzielle oder Service-Themen ` +
+    '(wie Preise, Bestellung, Bezahlung, Lieferung, Rücksendung oder Garantie). Dazu hat der ' +
+    'EAZYFIX®-Bot bewusst keine Daten. Erfinde NICHTS: verweise den Heimwerker freundlich an den ' +
+    'Webshop auf eazy-fix.de oder den EAZYFIX®-Innendienst (+31 85 201 201 1). Für eine physische ' +
+    'Verkaufsstelle darfst du das Tool find_verkooppunt nutzen, wenn der Heimwerker einen Ort oder ' +
+    'eine Postleitzahl nennt.';
 }
 
 // Tekst voor een inhoudelijke vraag zonder betrouwbare treffer: niet gokken.
 function noMatchFallback(onderwerp) {
-  return `Geen betrouwbare informatie gevonden op eazy-fix.nl over "${onderwerp || ''}". ` +
-    'Verzin zelf NIETS en gok niet. Zeg de klusser eerlijk en vriendelijk, in je normale warme ' +
-    'doe-het-zelf-toon, dat je dit even niet zeker weet, en verwijs voor een betrouwbaar antwoord ' +
-    'naar de EAZYFIX®-binnendienst: +31 (0)85 201 201 1.';
+  return `Keine verlässlichen Informationen auf eazy-fix.de zu "${onderwerp || ''}" gefunden. ` +
+    'Erfinde selbst NICHTS und rate nicht. Sag dem Heimwerker ehrlich und freundlich, in deinem ' +
+    'normalen warmen Heimwerker-Ton, dass du das gerade nicht sicher weißt, und verweise für eine ' +
+    'verlässliche Antwort an den EAZYFIX®-Innendienst: +31 85 201 201 1.';
 }
 
 function runKennisTool(input) {
@@ -415,7 +398,7 @@ function runKennisTool(input) {
   const stems = queryStems(onderwerp).expanded;
   const found = confidentSearch(onderwerp, 3);
   if (!found.length) return noMatchFallback(onderwerp);
-  return 'Gevonden op eazy-fix.nl (leidend):\n\n' + found.map((p) => formatEntry(p, stems)).join('\n\n');
+  return 'Gefunden auf eazy-fix.de (maßgeblich):\n\n' + found.map((p) => formatEntry(p, stems)).join('\n\n');
 }
 
 // Geformatteerde kennis-context voor injectie in een prompt (bv. pass-2 van de
@@ -428,7 +411,7 @@ function searchContext(query, limit = 3) {
   // Alleen voldoende sterke matches injecteren — zwakke treffers leiden tot gokken.
   const found = confidentSearch(query, limit);
   if (!found.length) return '';
-  return 'RELEVANTE EAZY-FIX.NL KENNIS (leidend boven aannames):\n\n' +
+  return 'RELEVANTES EAZY-FIX.DE-WISSEN (maßgeblich über Annahmen):\n\n' +
     found.map((p) => formatEntry(p, stems)).join('\n\n');
 }
 

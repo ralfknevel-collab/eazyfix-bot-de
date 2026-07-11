@@ -1,29 +1,30 @@
-// Koppel productnamen die de bot noemt aan de echte productpagina op eazy-fix.nl,
+// Koppel productnamen die de bot noemt aan de echte productpagina op eazy-fix.de,
 // zodat de frontend klikbare "bekijk in webshop"-kaartjes kan tonen.
 // Urls komen uit src/kennis.json (via site:pull), dus ze blijven actueel.
+// Namen zijn de Duitse EAZYFIX-productnamen; slugs bestaan in de DE-kennis.json.
 
 const PRODUCTS = require('./kennis.json').filter((p) => p.type === 'product');
 const bySlug = new Map(PRODUCTS.map((p) => [p.slug, p]));
 
 // Naam-herkenning -> productslug. Specifieke namen vóór algemene.
 const RULES = [
-  [/premium\s*houtrotvuller|houtrotvuller/i, 'premium-houtrotvuller'],
-  [/premium\s*houtplamuur|houtplamuur|\bplamuur\b/i, 'premium-houtplamuur-oneshot'],
-  [/houtversterker/i, 'eazyfix-houtversterker-met-toebehoren'],
-  [/houtvochtmeter|vochtmeter/i, 'houtvochtmeter'],
-  [/houtrot.?frees|\bfrees\b/i, 'houtrot-frees'],
-  [/muurvuller/i, 'muurvuller'],
-  [/kleurpigment/i, 'eazyfix-kleurpigment'],
-  [/reinigingsdoekjes/i, 'eazyfix-reinigingsdoekjes'],
-  [/standaardset|startpakket|startset/i, 'eazyfix-houtrot-standaard'],
-  [/alles.?in.?(een|één)|reparatieset/i, 'alles-in-een-hout-reparatieset'],
+  [/premium\s*holzspachtelmasse|holzspachtelmasse/i, 'premium-holzspachtelmasse'],
+  [/premium\s*holz\s*feinspachtel|holz\s*feinspachtel|\bfeinspachtel\b/i, 'premium-holz-fein-spachtel'],
+  [/holzimpr(ä|ae)gnierung/i, 'eazyfix-holzimpraegnierung-mit-zubehoer'],
+  [/holzfeuchtemessger(ä|ae)t|feuchtemessger(ä|ae)t|feuchtigkeitsmesser/i, 'feuchtigkeitsmesser'],
+  [/holzf(ä|ae)ule.?fr(ä|ae)ser|\bfr(ä|ae)ser\b/i, 'holzfaeule-fraeser'],
+  [/abt(ö|oe)nkonzentrat/i, 'eazyfix-abtonkonzentrate'],
+  [/reinigungst(ü|ue)cher/i, 'reinigungstucher-60-stuck'],
+  [/erweiterungsset/i, 'eazyfix-holzfaeule-erweiterungsset'],
+  [/standardset|starterset|starterpaket/i, 'eazyfix-holzfaeule-standardset'],
+  [/all.?in.?one|komplettset|reparaturset/i, 'eazyfix-premium-all-in-one-spachtel'],
 ];
 
-// Houtversterker is geen los advies maar verplichte voorbehandeling: hij wordt
-// alleen als companion-tegel getoond bij een product dat voorbehandelen vereist
-// (Premium Houtrotvuller). Sets bevatten de versterker al, dus die niet.
-const COMPANION_SLUG = 'eazyfix-houtversterker-met-toebehoren';
-const NEEDS_VERSTERKER = new Set(['premium-houtrotvuller']);
+// De Holzimprägnierung is geen los advies maar verplichte voorbehandeling: hij
+// wordt alleen als companion-tegel getoond bij een product dat voorbehandelen
+// vereist (Premium Holzspachtelmasse). Sets bevatten de versterker al, dus die niet.
+const COMPANION_SLUG = 'eazyfix-holzimpraegnierung-mit-zubehoer';
+const NEEDS_VERSTERKER = new Set(['premium-holzspachtelmasse']);
 
 // Geef de producttegel(s) terug als [{ name, url }]. Toon ALLEEN een tegel als
 // er precies EEN product geadviseerd wordt: dan is duidelijk wat de klusser

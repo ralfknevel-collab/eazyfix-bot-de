@@ -1,2198 +1,379 @@
-[
-  {
-    "name": "Decoprof 's Gravendeel",
-    "street": "Griendweg 45",
-    "zip": "3295KV",
-    "city": "'S-GRAVENDEEL",
-    "province": null,
-    "phone": "+31782600003",
-    "url": "www.decoprof.nl/"
-  },
-  {
-    "name": "Kleurenwaaier.nl",
-    "street": "Oude Vlijmenseweg 84 E",
-    "zip": "5223GP",
-    "city": "'S-HERTOGENBOSCH",
-    "province": null,
-    "phone": "+31736233069",
-    "url": "www.kleurenwaaier.nl"
-  },
-  {
-    "name": "BouwPartner Den Bosch",
-    "street": "Rietveldenweg 2b",
-    "zip": "5222AR",
-    "city": "'S-HERTOGENBOSCH",
-    "province": null,
-    "phone": "+31736216031",
-    "url": "www.bouwpartner.com/denbosch"
-  },
-  {
-    "name": "Decorette Piet",
-    "street": "Oosteinderweg 67",
-    "zip": "1432AE",
-    "city": "AALSMEER",
-    "province": null,
-    "phone": "+31297324353",
-    "url": "www.decorettepiet.nl"
-  },
-  {
-    "name": "Graven Schilders B.V.",
-    "street": "'t Boske 1",
-    "zip": "7122TH",
-    "city": "AALTEN",
-    "province": null,
-    "phone": "+31543491230",
-    "url": "www.gravengroep.nl"
-  },
-  {
-    "name": "Fa. Liefhebber IJzerwaren-Gereedschappen",
-    "street": "Hoogstraat 2",
-    "zip": "1391BS",
-    "city": "ABCOUDE",
-    "province": null,
-    "phone": "+31294284570",
-    "url": null
-  },
-  {
-    "name": "Verf.nl",
-    "street": "Boekel 42",
-    "zip": "1921CE",
-    "city": "AKERSLOOT",
-    "province": null,
-    "phone": "+31725323331",
-    "url": "www.verf.nl"
-  },
-  {
-    "name": "Vivere De Jager",
-    "street": "Dam 52",
-    "zip": "2951GB",
-    "city": "ALBLASSERDAM",
-    "province": null,
-    "phone": "+31782000631",
-    "url": "www.viveredejager.nl"
-  },
-  {
-    "name": "Hornbach Alblasserdam",
-    "street": "Kelvinring 60",
-    "zip": "2952BG",
-    "city": "ALBLASSERDAM",
-    "province": null,
-    "phone": "+31786203000",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-alblasserdam/"
-  },
-  {
-    "name": "Tames voor Verf en Wonen",
-    "street": "Laat 5",
-    "zip": "1811EA",
-    "city": "ALKMAAR",
-    "province": null,
-    "phone": "+31725115354",
-    "url": "www.decohometames.nl"
-  },
-  {
-    "name": "Kleuro Groep BV",
-    "street": "Bedrijfsweg 13",
-    "zip": "2404CB",
-    "city": "ALPHEN AAN DEN RIJN",
-    "province": null,
-    "phone": "+31172423320",
-    "url": "www.kleuro.nl"
-  },
-  {
-    "name": "De Vaal voor Verf",
-    "street": "Nijverheidsweg Noord 64",
-    "zip": "3812PM",
-    "city": "AMERSFOORT",
-    "province": null,
-    "phone": "+31334720595",
-    "url": null
-  },
-  {
-    "name": "Thuisin Piet",
-    "street": "Dorpsstraat 102",
-    "zip": "1182JH",
-    "city": "AMSTELVEEN",
-    "province": null,
-    "phone": "+31206414176",
-    "url": "www.thuisin.nl/vestiging/thuisin-piet"
-  },
-  {
-    "name": "Ijzerhandel Fillet Amsterdam",
-    "street": "Kerkstraat 379A",
-    "zip": "1017HW",
-    "city": "AMSTERDAM",
-    "province": null,
-    "phone": "+31206234230",
-    "url": "www.ijzerhandels.nl"
-  },
-  {
-    "name": "Hubo Amsterdam Wittenburg",
-    "street": "Wittenburgergracht 103-113",
-    "zip": "1018MX",
-    "city": "AMSTERDAM",
-    "province": null,
-    "phone": "+31206224065",
-    "url": null
-  },
-  {
-    "name": "Hornbach Amsterdam Sloterdijk",
-    "street": "Berchvliet 14",
-    "zip": "1046CA",
-    "city": "AMSTERDAM",
-    "province": null,
-    "phone": "+31207545200",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-amsterdam-sloterdijk/"
-  },
-  {
-    "name": "Van der Plas Woonprofessionals",
-    "street": "Charlottaring 16",
-    "zip": "1761AX",
-    "city": "ANNA PAULOWNA",
-    "province": null,
-    "phone": "+31223521296",
-    "url": "www.homemadeby.nl/van-der-plas-breezand"
-  },
-  {
-    "name": "KW Wonen Apeldoorn",
-    "street": "Het Rietveld 6",
-    "zip": "7321CT",
-    "city": "APELDOORN",
-    "province": null,
-    "phone": "+31557507950",
-    "url": "www.kwwonen.nl/nl/"
-  },
-  {
-    "name": "Hornbach Apeldoorn",
-    "street": "De Voorwaarts 750",
-    "zip": "7321BT",
-    "city": "APELDOORN",
-    "province": null,
-    "phone": "+31557510000",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-apeldoorn/"
-  },
-  {
-    "name": "Decokay Brona",
-    "street": "Hoenderparkweg 5",
-    "zip": "7335GP",
-    "city": "APELDOORN",
-    "province": null,
-    "phone": "+31555332161",
-    "url": null
-  },
-  {
-    "name": "De Verfzaak Apeldoorn",
-    "street": "Europaweg 164",
-    "zip": "7336AR",
-    "city": "APELDOORN",
-    "province": null,
-    "phone": "+31552200007",
-    "url": "www.deverfzaak.nl"
-  },
-  {
-    "name": "Klok bouwmaterialen",
-    "street": "Rolderstraat 108",
-    "zip": "9401AW",
-    "city": "ASSEN",
-    "province": null,
-    "phone": "+31592313104",
-    "url": "www.klok-bouwmaterialen.nl/"
-  },
-  {
-    "name": "Verfspeciaalzaak Bekx",
-    "street": "Emmastraat 70",
-    "zip": "5721HD",
-    "city": "ASTEN",
-    "province": null,
-    "phone": "+31493691736",
-    "url": "www.bekxverf.nl/"
-  },
-  {
-    "name": "De Verfzaak Baarle Nassau BV",
-    "street": "Weverstraat 4b",
-    "zip": "5111PW",
-    "city": "BAARLE NASSAU",
-    "province": null,
-    "phone": "+31135079417",
-    "url": "www.deverfzaak.nl/de-verfzaak-winkels/baarle-nassau/"
-  },
-  {
-    "name": "Thuisin Schmidt-Koelewijn",
-    "street": "Dalweg 16",
-    "zip": "3741AV",
-    "city": "BAARN",
-    "province": null,
-    "phone": "+31355413082",
-    "url": "www.schmidt-koelewijn.nl/"
-  },
-  {
-    "name": "Klijnsma voor Verf",
-    "street": "Van Swinderenstraat 44",
-    "zip": "8561AR",
-    "city": "BALK",
-    "province": null,
-    "phone": "+31514602644",
-    "url": "www.klijnsmavoorverf.nl"
-  },
-  {
-    "name": "Colorstore.nl Barneveld",
-    "street": "Antonie Fokkerstraat 31",
-    "zip": "3772MP",
-    "city": "BARNEVELD",
-    "province": null,
-    "phone": "+31342420355",
-    "url": "www.colorstore.nl"
-  },
-  {
-    "name": "Van Dijken V.O.F",
-    "street": "De Vlasakker 54",
-    "zip": "9781LH",
-    "city": "BEDUM",
-    "province": null,
-    "phone": "+31612345678",
-    "url": null
-  },
-  {
-    "name": "de Verfzaak Beesd",
-    "street": "Homburg 25",
-    "zip": "4153BS",
-    "city": "BEESD",
-    "province": null,
-    "phone": "+31345782788",
-    "url": "www.deverfzaak.nl/de-verfzaak-winkels/beesd"
-  },
-  {
-    "name": "Schildersbedrijf Seijdell",
-    "street": "Kruijsstraat 13-15",
-    "zip": "9411PD",
-    "city": "BEILEN",
-    "province": null,
-    "phone": "+31593541747",
-    "url": "www.seijdell.nl"
-  },
-  {
-    "name": "De Huismeesters",
-    "street": "De Houtakker 12a",
-    "zip": "6681CW",
-    "city": "BEMMEL",
-    "province": null,
-    "phone": "+31481726330",
-    "url": "www.huismeesters.com"
-  },
-  {
-    "name": "Hoefakker Verf en Glas",
-    "street": "Lindelaan 3",
-    "zip": "6721VB",
-    "city": "BENNEKOM",
-    "province": null,
-    "phone": "+31318416175",
-    "url": "www.hoefakkerschilder.nl"
-  },
-  {
-    "name": "TMC Bergen op Zoom",
-    "street": "v. Konijnenburgweg 13",
-    "zip": "4611HK",
-    "city": "BERGEN OP ZOOM",
-    "province": null,
-    "phone": "+31164274477",
-    "url": "www.tmcwonen.nl/contact/tmc-bergen-op-zoom/"
-  },
-  {
-    "name": "Dietvorst Verf & Behang",
-    "street": "Antwerpsestraatweg 371",
-    "zip": "4625AA",
-    "city": "BERGEN OP ZOOM",
-    "province": null,
-    "phone": "+31164237033",
-    "url": "www.verfenbehangdietvorst.nl"
-  },
-  {
-    "name": "Hubo Bergeijk",
-    "street": "Bucht 75",
-    "zip": "5571CV",
-    "city": "BERGEYK",
-    "province": null,
-    "phone": "+31497767022",
-    "url": "www.hubo.nl/bergeijk"
-  },
-  {
-    "name": "Hornbach Best",
-    "street": "Zandstraat 15",
-    "zip": "5683PL",
-    "city": "BEST",
-    "province": null,
-    "phone": "+31499334000",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-best/"
-  },
-  {
-    "name": "Wim van Hulst Beuningen B.V.",
-    "street": "Wilhelminalaan 10",
-    "zip": "6641DG",
-    "city": "BEUNINGEN",
-    "province": "Gelderland",
-    "phone": "+31246751056",
-    "url": null
-  },
-  {
-    "name": "Decokay Portegies van Vliet",
-    "street": "Baanstraat 55-c",
-    "zip": "1941CG",
-    "city": "BEVERWIJK",
-    "province": null,
-    "phone": "+31251227785",
-    "url": null
-  },
-  {
-    "name": "De Verfzaak",
-    "street": "Magalhaesweg 8",
-    "zip": "5928LN",
-    "city": "BLERICK",
-    "province": null,
-    "phone": "+31850406034",
-    "url": "www.deverfzaak.nl"
-  },
-  {
-    "name": "Verfhuis Bodegraven",
-    "street": "Van Tolstraat 5",
-    "zip": "2411BP",
-    "city": "BODEGRAVEN",
-    "province": null,
-    "phone": "+31646326875",
-    "url": "www.verfhuisbodegraven.nl"
-  },
-  {
-    "name": "Home Made By Huls Kleur en Interieur",
-    "street": "Aanslagsweg 20",
-    "zip": "7622LD",
-    "city": "BORNE",
-    "province": null,
-    "phone": "+31742502005",
-    "url": "www.hulskleureninterieur.nl"
-  },
-  {
-    "name": "De Luifel De Woonspecialist",
-    "street": "De Tuin 9",
-    "zip": "1611KR",
-    "city": "BOVENKARSPEL",
-    "province": null,
-    "phone": "+31228511484",
-    "url": "www.deluifelverfenwand.nl"
-  },
-  {
-    "name": "De Verfzaak Het Comfort Boxtel",
-    "street": "Van Hornstraat 16",
-    "zip": "5282NC",
-    "city": "BOXTEL",
-    "province": null,
-    "phone": "+31411683613",
-    "url": "www.deverfzaak.nl/de-verfzaak-winkels/boxtel/"
-  },
-  {
-    "name": "Verfplaza Online",
-    "street": "Hekven 2C",
-    "zip": "4824AE",
-    "city": "BREDA",
-    "province": null,
-    "phone": null,
-    "url": "www.verf-plaza.nl"
-  },
-  {
-    "name": "Verfplaza Breda",
-    "street": "Asselbergsstraat 8",
-    "zip": "4815AB",
-    "city": "BREDA",
-    "province": null,
-    "phone": "+31765875217",
-    "url": "www.verfhuysbreda.nl"
-  },
-  {
-    "name": "Verf-plaza",
-    "street": "Nikkelstraat 33",
-    "zip": "4823AE",
-    "city": "BREDA",
-    "province": null,
-    "phone": "+31851124328",
-    "url": "www.verf-plaza.nl/"
-  },
-  {
-    "name": "Schilderscentrum Zuid Breda",
-    "street": "Hekven 7a",
-    "zip": "4824AD",
-    "city": "BREDA",
-    "province": null,
-    "phone": "+31762063102",
-    "url": "www.sczuid.nl"
-  },
-  {
-    "name": "Hornbach Breda",
-    "street": "Konijnenberg 33",
-    "zip": "4825BC",
-    "city": "BREDA",
-    "province": null,
-    "phone": "+31765789000",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-breda/"
-  },
-  {
-    "name": "LAB Shops B.V.",
-    "street": "Huizerweg 29",
-    "zip": "1401GG",
-    "city": "BUSSUM",
-    "province": null,
-    "phone": "+31356923314",
-    "url": "www.devestingh.nl"
-  },
-  {
-    "name": "Behangwereld",
-    "street": "Nijverheidstraat 60",
-    "zip": "2901AR",
-    "city": "CAPELLE AAN DEN IJSSEL",
-    "province": null,
-    "phone": "+31104508429",
-    "url": "www.behangwereld.nl"
-  },
-  {
-    "name": "Decokay van Vliet",
-    "street": "Burgemeester Mooystraat 12",
-    "zip": "1901EP",
-    "city": "CASTRICUM",
-    "province": null,
-    "phone": "+31251652080",
-    "url": "www.decokayvanvliet.nl"
-  },
-  {
-    "name": "De Verfzaak Cuijk",
-    "street": "Spinding 2a",
-    "zip": "5431SN",
-    "city": "CUIJK",
-    "province": null,
-    "phone": "+31485321787",
-    "url": "www.deverfzaak.nl"
-  },
-  {
-    "name": "Provak Schutte",
-    "street": "Emmastraat 9",
-    "zip": "7721DG",
-    "city": "DALFSEN",
-    "province": null,
-    "phone": "+31529431392",
-    "url": "www.provakdalfsen.nl"
-  },
-  {
-    "name": "Romijn IJzerwaren & Gereedschappen B.V.",
-    "street": "Papsouwselaan 121",
-    "zip": "2624AK",
-    "city": "DELFT",
-    "province": null,
-    "phone": "+31152616323",
-    "url": "www.romijn.nl/"
-  },
-  {
-    "name": "Van Laar Verfhandel Den Haag",
-    "street": "Bankastraat 83",
-    "zip": "2585EH",
-    "city": "DEN HAAG",
-    "province": null,
-    "phone": "+31703503486",
-    "url": "www.verfhandelvanlaar.nl/"
-  },
-  {
-    "name": "Natex Bouwgroothandel",
-    "street": "Radarstraat 1",
-    "zip": "2525KC",
-    "city": "DEN HAAG",
-    "province": null,
-    "phone": "+31704061106",
-    "url": "www.natex.nl"
-  },
-  {
-    "name": "Hornbach Den Haag",
-    "street": "Singel 115",
-    "zip": "2497NX",
-    "city": "DEN HAAG",
-    "province": null,
-    "phone": "+31707590000",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-den-haag/"
-  },
-  {
-    "name": "Grottendieck Bezuidenhout",
-    "street": "Laan van Nieuw Oost-Indi\\u00eb 78-82",
-    "zip": "2593BW",
-    "city": "DEN HAAG",
-    "province": null,
-    "phone": "+31703850512",
-    "url": "www.grottendieckbezuidenhout.nl/"
-  },
-  {
-    "name": "Thuisin van Brederode",
-    "street": "Ravelijncenter 1",
-    "zip": "1785LX",
-    "city": "DEN HELDER",
-    "province": null,
-    "phone": "+31223660013",
-    "url": "www.thuisin.nl/vestiging/thuisin-van-brederode/"
-  },
-  {
-    "name": "Het Centrum",
-    "street": "Industrieweg 10",
-    "zip": "1785AG",
-    "city": "DEN HELDER",
-    "province": null,
-    "phone": "+31223612483",
-    "url": "www.glascentrum.nl"
-  },
-  {
-    "name": "De Verfzaak Deurne B.V.",
-    "street": "Milhezerweg 31",
-    "zip": "5752BB",
-    "city": "DEURNE",
-    "province": null,
-    "phone": "+31493235510",
-    "url": null
-  },
-  {
-    "name": "Geelen Schilder Spuitbedrijf",
-    "street": "Hoofdstraat 23",
-    "zip": "7561AB",
-    "city": "DEURNINGEN",
-    "province": null,
-    "phone": "+31742772411",
-    "url": "www.geelenschilders.nl"
-  },
-  {
-    "name": "De Verfzaak Deventer",
-    "street": "Hanzeweg 26",
-    "zip": "7418AT",
-    "city": "DEVENTER",
-    "province": null,
-    "phone": "+31570719000",
-    "url": null
-  },
-  {
-    "name": "De Bruijn voor Verf & Wonen",
-    "street": "Westvoorstraat 36",
-    "zip": "4671CE",
-    "city": "DINTELOORD",
-    "province": null,
-    "phone": "+31167522315",
-    "url": null
-  },
-  {
-    "name": "Thuisin Van der Woude Doetinchem",
-    "street": "Havenstraat 136",
-    "zip": "7005AG",
-    "city": "DOETINCHEM",
-    "province": null,
-    "phone": "+31314393616",
-    "url": "www.thuisin.nl/vestiging/thuisin-vanderwoude/"
-  },
-  {
-    "name": "Onlineverf.nl Doetinchem",
-    "street": "Havenstraat 126A",
-    "zip": "7005AG",
-    "city": "DOETINCHEM",
-    "province": null,
-    "phone": "+31314212058",
-    "url": "www.https://www.onlineverf.nl/vestigingen/onlineverf-doetinchem/"
-  },
-  {
-    "name": "Akkermans Verf&Advies",
-    "street": "Hendoweg 3c",
-    "zip": "9101PC",
-    "city": "DOKKUM",
-    "province": null,
-    "phone": "+31519297409",
-    "url": "www.moldipaints-dokkum.nl"
-  },
-  {
-    "name": "Joker Design",
-    "street": "Vriesestraat 164",
-    "zip": "3311NS",
-    "city": "DORDRECHT",
-    "province": null,
-    "phone": "+31786215560",
-    "url": "www.jokerdesign.nl"
-  },
-  {
-    "name": "DECOPROF",
-    "street": "Oudenhovenstraat 30",
-    "zip": "3311GK",
-    "city": "DORDRECHT",
-    "province": null,
-    "phone": "+31853037813",
-    "url": "www.vanreesverf.nl"
-  },
-  {
-    "name": "Color Spectrum",
-    "street": "Noorderdwarsvaart 31 c",
-    "zip": "9203CA",
-    "city": "DRACHTEN",
-    "province": null,
-    "phone": "+31512540816",
-    "url": "www.colorspectrum.nl"
-  },
-  {
-    "name": "GBI Dick Smits",
-    "street": "Peutekamp 11",
-    "zip": "6621BZ",
-    "city": "DREUMEL",
-    "province": null,
-    "phone": "+31487573392",
-    "url": "www.dicksmits.nl"
-  },
-  {
-    "name": "Van Dijk Interieur & Verfspecialist Driebergen",
-    "street": "Traay 183",
-    "zip": "3971GG",
-    "city": "DRIEBERGEN-RIJSENBURG",
-    "province": null,
-    "phone": "+31343451580",
-    "url": "www.vandijkverfzaken.nl/winkel/driebergen"
-  },
-  {
-    "name": "Hornbach Duiven",
-    "street": "Nieuwgraaf 18",
-    "zip": "6921RJ",
-    "city": "DUIVEN",
-    "province": null,
-    "phone": "+31267022000",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-duiven/"
-  },
-  {
-    "name": "Hubo Dussen",
-    "street": "De Sluis 1a",
-    "zip": "4271CZ",
-    "city": "DUSSEN",
-    "province": null,
-    "phone": "+31416690060",
-    "url": "www.hubo.nl/dussen"
-  },
-  {
-    "name": "V.O.F DHZ E. Jansen",
-    "street": "Kolkakkerweg 65-67",
-    "zip": "6713DB",
-    "city": "EDE",
-    "province": "Gelderland",
-    "phone": "+31318611680",
-    "url": "www.elbertjansen.nl/"
-  },
-  {
-    "name": "Colorstore.nl Ede",
-    "street": "Lorenzstraat 2 - 5",
-    "zip": "6716AD",
-    "city": "EDE",
-    "province": "Gelderland",
-    "phone": "+31342420357",
-    "url": "www.colorstore.nl/contact"
-  },
-  {
-    "name": "Hubo Eersel",
-    "street": "Postakkers 59A",
-    "zip": "5521AS",
-    "city": "EERSEL",
-    "province": null,
-    "phone": "+31497517144",
-    "url": "www.hubo.nl/eersel"
-  },
-  {
-    "name": "Bouwmarkt Egmond BV",
-    "street": "Ambachtsweg 5",
-    "zip": "1934CR",
-    "city": "EGMOND AAN DEN HOEF",
-    "province": null,
-    "phone": "+31725067467",
-    "url": "www.bouwmarkt-egmond.business.site"
-  },
-  {
-    "name": "De Verfzaak Eindhoven",
-    "street": "Kanaaldijk Noord 3a",
-    "zip": "5613DH",
-    "city": "EINDHOVEN",
-    "province": null,
-    "phone": "+31402444404",
-    "url": "www.deverfzaak.nl/service/eindhoven/"
-  },
-  {
-    "name": "Westerbroek Exclusive Paint & Wallpapers",
-    "street": "Nachtegaalweg 7",
-    "zip": "8075AW",
-    "city": "ELSPEET",
-    "province": null,
-    "phone": "+31577491986",
-    "url": null
-  },
-  {
-    "name": "Het Klushuis",
-    "street": "Landbouwkade 17",
-    "zip": "8304AE",
-    "city": "EMMELOORD",
-    "province": null,
-    "phone": "+31527621434",
-    "url": "www.klushuis.shop/"
-  },
-  {
-    "name": "Hornbach Enschede",
-    "street": "Zuiderval 175",
-    "zip": "7543EZ",
-    "city": "ENSCHEDE",
-    "province": null,
-    "phone": "+31537020000",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-enschede/"
-  },
-  {
-    "name": "Home Made By Draaijer De Woonprofessionals",
-    "street": "Hardenbrink 46",
-    "zip": "8161CP",
-    "city": "EPE",
-    "province": null,
-    "phone": "+31578691543",
-    "url": "www.draaijerbv.nl/"
-  },
-  {
-    "name": "Rozema Coatings",
-    "street": "Seendweg 16",
-    "zip": "9936GA",
-    "city": "FARMSUM",
-    "province": null,
-    "phone": "+31596613549",
-    "url": "www.rozemacoatings.nl"
-  },
-  {
-    "name": "Haarhuis IJzerwaren en Gereedschappen",
-    "street": "Dorpsstraat 67",
-    "zip": "7678AV",
-    "city": "GEESTEREN",
-    "province": "Overijssel",
-    "phone": "+31546631478",
-    "url": "www.haarhuis.shop/"
-  },
-  {
-    "name": "Verfspeciaalzaak Van Gerven",
-    "street": "Hoog Geldrop 49",
-    "zip": "5663BB",
-    "city": "GELDROP",
-    "province": null,
-    "phone": "+31402862577",
-    "url": "www.verfspeciaalzaak-vangerven.nl/"
-  },
-  {
-    "name": "Hornbach Geleen",
-    "street": "Einighauserweg 101",
-    "zip": "6163AK",
-    "city": "GELEEN",
-    "province": null,
-    "phone": "+31464743470",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-geleen/"
-  },
-  {
-    "name": "Ebbers Doe Het Zelf Markt",
-    "street": "Meentsestraat 93",
-    "zip": "6987CL",
-    "city": "GIESBEEK",
-    "province": null,
-    "phone": "+31313631502",
-    "url": "www.ebbersdoehetzelf.nl"
-  },
-  {
-    "name": "TMC Wonen",
-    "street": "Marconistraat 13",
-    "zip": "4461HH",
-    "city": "GOES",
-    "province": null,
-    "phone": "+31113224102",
-    "url": "www.tmcwonen.nl/contact/tmc-goes/"
-  },
-  {
-    "name": "Hubo Goor",
-    "street": "Wheeweg 12",
-    "zip": "7471EW",
-    "city": "GOOR",
-    "province": null,
-    "phone": "+31547261269",
-    "url": "www.hubo.nl/goor"
-  },
-  {
-    "name": "Schildersbedrijf Wesseldijk",
-    "street": "Hoofdstraat 44",
-    "zip": "7213CX",
-    "city": "GORSSEL",
-    "province": null,
-    "phone": "+31575492788",
-    "url": "www.schildersbedrijfwesseldijk.nl/"
-  },
-  {
-    "name": "Verfhandel & Schildersbedrijf Natte",
-    "street": "Kleiwegstraat 22",
-    "zip": "2801GM",
-    "city": "GOUDA",
-    "province": null,
-    "phone": "+31182516252",
-    "url": "www.verfhandelnatte.nl"
-  },
-  {
-    "name": "Van Dijken Verf & Vloeren",
-    "street": "Nieuwe Ebbinggestraat 91",
-    "zip": "9712NH",
-    "city": "GRONINGEN",
-    "province": null,
-    "phone": "+31508700055",
-    "url": null
-  },
-  {
-    "name": "Hornbach Groningen",
-    "street": "Groningerweg 45/2",
-    "zip": "9738AB",
-    "city": "GRONINGEN",
-    "province": null,
-    "phone": "+31505742600",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-groningen/"
-  },
-  {
-    "name": "Decorette van Diepen Design",
-    "street": "Nijverheidsweg 3",
-    "zip": "1613DZ",
-    "city": "GROOTEBROEK",
-    "province": null,
-    "phone": "+31228511725",
-    "url": "www.decorette.nl/winkels-decorette/grootebroek/"
-  },
-  {
-    "name": "Maartens Verf",
-    "street": "Kleverlaan 176",
-    "zip": "2023JM",
-    "city": "HAARLEM",
-    "province": null,
-    "phone": "+31235261732",
-    "url": "www.maartensverf.nl/"
-  },
-  {
-    "name": "Kluswijs Haarlem",
-    "street": "Zijlweg 35",
-    "zip": "2013DC",
-    "city": "HAARLEM",
-    "province": null,
-    "phone": "+31235326673",
-    "url": "www.kluswijs.nl/nl/vind-een-winkel/details/kluswijs-haarlem-compact/"
-  },
-  {
-    "name": "dehoutrotspecialisten.nl",
-    "street": "van Leeuwenhoekstraat 5  0073",
-    "zip": "2014GC",
-    "city": "HAARLEM",
-    "province": null,
-    "phone": "+31614764496",
-    "url": null
-  },
-  {
-    "name": "Karsten Wonen",
-    "street": "Zuiderhaven 17",
-    "zip": "8861CK",
-    "city": "HARLINGEN",
-    "province": null,
-    "phone": "+31517412224",
-    "url": "www.karstenwonen.com/"
-  },
-  {
-    "name": "Verf- en Behangspeciaalzaak Van Voorst",
-    "street": "Dorpsstraat 13-15",
-    "zip": "6732AA",
-    "city": "HARSKAMP",
-    "province": null,
-    "phone": "+31318456558",
-    "url": "www.blikopkleur.nl/"
-  },
-  {
-    "name": "Verfpoint B.V.",
-    "street": "De Trompet 2920",
-    "zip": "1967DD",
-    "city": "HEEMSKERK",
-    "province": null,
-    "phone": "+31251251376",
-    "url": "www.verfpoint.nl"
-  },
-  {
-    "name": "Home Made By_Ree",
-    "street": "Binnenweg 89-91",
-    "zip": "2101JE",
-    "city": "HEEMSTEDE",
-    "province": null,
-    "phone": "+31235286479",
-    "url": "www.homemadeby.nl/ree-heemstede"
-  },
-  {
-    "name": "De Houtloods",
-    "street": "Emmerikstraat 11",
-    "zip": "5591HW",
-    "city": "HEEZE",
-    "province": null,
-    "phone": "+31402262127",
-    "url": "www.dehoutloodsheeze.nl/"
-  },
-  {
-    "name": "Bolten de Woonversierder",
-    "street": "Westerweg 259",
-    "zip": "1852AG",
-    "city": "HEILOO",
-    "province": null,
-    "phone": "+31725321990",
-    "url": "www.boltendewoonversierder.nl"
-  },
-  {
-    "name": "Hubo Heino",
-    "street": "L.J. Costerstraat 49",
-    "zip": "8141GN",
-    "city": "HEINO",
-    "province": null,
-    "phone": "+31572393444",
-    "url": "www.hubo.nl/heino"
-  },
-  {
-    "name": "Home Made By Van Rossum de Woonprofessionals",
-    "street": "Moriaanseweg West 48 50",
-    "zip": "3222AD",
-    "city": "HELLEVOETSLUIS",
-    "province": null,
-    "phone": "+31181763520",
-    "url": "www.homemadeby.nl/vanrossum-hellevoetsluis"
-  },
-  {
-    "name": "Onlineverf.nl",
-    "street": "Dreefken 2",
-    "zip": "7255TA",
-    "city": "HENGELO",
-    "province": null,
-    "phone": "+31851120202",
-    "url": "www.onlineverf.nl"
-  },
-  {
-    "name": "Moldovan Verf en Wonen",
-    "street": "Steijnstraat 22A",
-    "zip": "7551GL",
-    "city": "HENGELO",
-    "province": "Overijssel",
-    "phone": "+31742423139",
-    "url": "www.moldovan.nl"
-  },
-  {
-    "name": "Enorm Arendsen",
-    "street": "Kerkstraat 2",
-    "zip": "7255CB",
-    "city": "HENGELO",
-    "province": null,
-    "phone": "+31575464190",
-    "url": "www.arendsen.enorm.nl"
-  },
-  {
-    "name": "Decokay Lentelink",
-    "street": "Bentelosestraat 11",
-    "zip": "7496PE",
-    "city": "HENGEVELDE",
-    "province": null,
-    "phone": "+31547333331",
-    "url": "www.decokaylentelink.nl"
-  },
-  {
-    "name": "Kluswijs Hillegom",
-    "street": "Jonkheer Mockkade 23",
-    "zip": "2181AL",
-    "city": "HILLEGOM",
-    "province": null,
-    "phone": "+31252519681",
-    "url": "www.kluswijs.nl/nl/vind-een-winkel/details/kluswijs-hillegom"
-  },
-  {
-    "name": "Carlo Loos voor Verf & Wonen",
-    "street": "Hoofdstraat 154",
-    "zip": "2181EH",
-    "city": "HILLEGOM",
-    "province": null,
-    "phone": "+31252530520",
-    "url": "www.carloloos-voorverfenwonen.nl"
-  },
-  {
-    "name": "J.W. van Loenen IJzerhandel B.V.",
-    "street": "Jan van der Heijdenstraat 55-57",
-    "zip": "1223BG",
-    "city": "HILVERSUM",
-    "province": null,
-    "phone": "+31356858670",
-    "url": "www.vanloenenbv.nl/doe-het-zelf"
-  },
-  {
-    "name": "HGV Kleur en Interieur",
-    "street": "Larenseweg 137",
-    "zip": "1221CL",
-    "city": "HILVERSUM",
-    "province": null,
-    "phone": "+31356855556",
-    "url": "www.hgvkleur.nl"
-  },
-  {
-    "name": "GAMMA Hilversum 0824",
-    "street": "Verlengde Zuiderloswal 30",
-    "zip": "1216BX",
-    "city": "HILVERSUM",
-    "province": null,
-    "phone": "+31356210997",
-    "url": null
-  },
-  {
-    "name": "Dols Storms De Verfzaak Hoensbroek",
-    "street": "St. Josephstraat 37",
-    "zip": "6431XJ",
-    "city": "HOENSBROEK",
-    "province": null,
-    "phone": "+31455215454",
-    "url": "www.deverfzaak.nl/service/hoensbroek/"
-  },
-  {
-    "name": "Colorstore.nl Hoevelaken",
-    "street": "Kantemarsweg 8",
-    "zip": "3871AP",
-    "city": "HOEVELAKEN",
-    "province": null,
-    "phone": "+31332540004",
-    "url": null
-  },
-  {
-    "name": "Gervedink Nijhuis Voor Verf en Wonen",
-    "street": "Dorpsstraat 45",
-    "zip": "7451BS",
-    "city": "HOLTEN",
-    "province": null,
-    "phone": "+31548361480",
-    "url": "www.gervedinknijhuis.nl"
-  },
-  {
-    "name": "Verkaik Verf & Interieur",
-    "street": "Wijkermeerstraat 23",
-    "zip": "2131HB",
-    "city": "HOOFDDORP",
-    "province": null,
-    "phone": "+31235617385",
-    "url": "www.verkaikhoofddorp.nl/"
-  },
-  {
-    "name": "HSH Bouwmaterialen",
-    "street": "Buitendreef 2",
-    "zip": "4631SV",
-    "city": "HOOGERHEIDE",
-    "province": null,
-    "phone": "+31164667212",
-    "url": "www.hshbouwmaterialen.nl/"
-  },
-  {
-    "name": "Keizer Kijk op Kleur",
-    "street": "Kerklaan 12",
-    "zip": "3828EB",
-    "city": "HOOGLAND",
-    "province": null,
-    "phone": "+31334801489",
-    "url": "www.kijkopkleur.com"
-  },
-  {
-    "name": "Hubo Hoogwoud",
-    "street": "Oosterboekelweg 2a",
-    "zip": "1718LN",
-    "city": "HOOGWOUD",
-    "province": null,
-    "phone": "+31226352197",
-    "url": "www.hubo.nl/hoogwoud"
-  },
-  {
-    "name": "De Verf Expert Huissen",
-    "street": "Tempelierstraat 5",
-    "zip": "6851BL",
-    "city": "HUISSEN",
-    "province": null,
-    "phone": "+31263255070",
-    "url": "www.deverfexpert.nl"
-  },
-  {
-    "name": "Home Made By De Verfmolen Woonprofessionals",
-    "street": "Frans van Waesberghestraat 58-60",
-    "zip": "4561AE",
-    "city": "HULST",
-    "province": null,
-    "phone": "+31114312059",
-    "url": "www.homemadeby.nl/verfmolen-hulst"
-  },
-  {
-    "name": "RIGO verfcentrum",
-    "street": "IJmuiderstraatweg 6-9",
-    "zip": "1971LA",
-    "city": "IJMUIDEN",
-    "province": null,
-    "phone": "+31255515153",
-    "url": "www.rigoverfcentrum.nl"
-  },
-  {
-    "name": "Bijvoet Verf en Behang",
-    "street": "Linnaeusweg 10",
-    "zip": "3401MS",
-    "city": "IJSSELSTEIN",
-    "province": "Utrecht",
-    "phone": "+31306881491",
-    "url": "www.bijvoetverf.nl"
-  },
-  {
-    "name": "Brattinga's Kleurencentrum",
-    "street": "Kon. Wilhelminalaan 5",
-    "zip": "8501KV",
-    "city": "JOURE",
-    "province": null,
-    "phone": "+31513414195",
-    "url": "www.brattingakleurencentrum.nl/"
-  },
-  {
-    "name": "Home Made By_Kraal De Woonprofessionals",
-    "street": "Marktstraat 18",
-    "zip": "5171GP",
-    "city": "KAATSHEUVEL",
-    "province": null,
-    "phone": "+31416540116",
-    "url": "www.kraalwoonprofessionals.nl"
-  },
-  {
-    "name": "Hornbach Kerkrade",
-    "street": "Roda J.C. Ring 4",
-    "zip": "6466NH",
-    "city": "KERKRADE",
-    "province": null,
-    "phone": "+310454004200",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-kerkrade/"
-  },
-  {
-    "name": "Bouwshop Kloosterhaar",
-    "street": "Dorpsstraat 21",
-    "zip": "7694AA",
-    "city": "KLOOSTERHAAR",
-    "province": null,
-    "phone": "+31523241116",
-    "url": null
-  },
-  {
-    "name": "B.B. Hal Doe Het Zelf",
-    "street": "Zuideinde 44",
-    "zip": "1541CD",
-    "city": "KOOG AAN DE ZAAN",
-    "province": null,
-    "phone": "+31756176945",
-    "url": null
-  },
-  {
-    "name": "Verfoutlet Secuur",
-    "street": "Slikslootstraat 7C",
-    "zip": "2921LH",
-    "city": "KRIMPEN AAN DEN IJSSEL",
-    "province": null,
-    "phone": "+31657957329",
-    "url": "www.verfoutletsecuur.nl"
-  },
-  {
-    "name": "Fa. D.J. van Dijk DHZ",
-    "street": "Langbroekerdijk A 52",
-    "zip": "3947BJ",
-    "city": "LANGBROEK",
-    "province": null,
-    "phone": "+31343561702",
-    "url": "www.vandijkbouwmaterialen.nl/"
-  },
-  {
-    "name": "Thuisin van den Berg",
-    "street": "Tiendweg 41",
-    "zip": "4142EH",
-    "city": "LEERDAM",
-    "province": null,
-    "phone": "+31345632266",
-    "url": "www.thuisin.nl/vestiging/thuisin-van-den-berg-2/"
-  },
-  {
-    "name": "Van Dijk Interieur & Verfspecialist Leersum",
-    "street": "Rijksstraatweg 259",
-    "zip": "3956CN",
-    "city": "LEERSUM",
-    "province": null,
-    "phone": "+31343451580",
-    "url": "www.vandijkverfzaken.nl/winkel/leersum/"
-  },
-  {
-    "name": "Luijten",
-    "street": "Rooseveltstraat 60",
-    "zip": "2321BM",
-    "city": "LEIDEN",
-    "province": null,
-    "phone": "+31715768967",
-    "url": "www.nicolaasverf.nl"
-  },
-  {
-    "name": "Van Laar Verfhandel Leidschendam",
-    "street": "Damlaan 56",
-    "zip": "2265AP",
-    "city": "LEIDSCHENDAM",
-    "province": null,
-    "phone": "+31703270171",
-    "url": "www.verfhandelvanlaar.nl/"
-  },
-  {
-    "name": "Techhandel Mudde",
-    "street": "Burgemeester Roosstraat 20",
-    "zip": "2941AC",
-    "city": "LEKKERKERK",
-    "province": null,
-    "phone": "+31180661643",
-    "url": "www.techhandel.nl"
-  },
-  {
-    "name": "Sluyk Doe-Het-Zelf",
-    "street": "Van Markenstraat 16",
-    "zip": "2941BX",
-    "city": "LEKKERKERK",
-    "province": null,
-    "phone": "+31180661672",
-    "url": "www.sluyk.nl"
-  },
-  {
-    "name": "Decokay Van Slooten",
-    "street": "Hamersveldseweg 22c",
-    "zip": "3833GP",
-    "city": "LEUSDEN",
-    "province": null,
-    "phone": "+31334321602",
-    "url": "www.decokayvanslooten.nl"
-  },
-  {
-    "name": "Kleur & Interieur Lisse",
-    "street": "Kanaalstraat 86",
-    "zip": "2161JP",
-    "city": "LISSE",
-    "province": null,
-    "phone": "+31252414528",
-    "url": "www.woonspecialist.nl/winkels/kleur-en-interieur-lisse"
-  },
-  {
-    "name": "De Rie IJzerwaren-Gereedschappen BV",
-    "street": "Lopikerweg-Oost 89A",
-    "zip": "3411JD",
-    "city": "LOPIK",
-    "province": null,
-    "phone": "+31348551244",
-    "url": "www.derie-lopik.nl"
-  },
-  {
-    "name": "De Kleurenwaaier",
-    "street": "Woudenbergseweg 60",
-    "zip": "3953MH",
-    "city": "MAARSBERGEN",
-    "province": null,
-    "phone": "+31343431896",
-    "url": "www.dekleurenwaaier.nl/"
-  },
-  {
-    "name": "Dols Storms de Verfzaak Maastricht 2 BV",
-    "street": "Volksplein 42",
-    "zip": "6214AN",
-    "city": "MAASTRICHT",
-    "province": null,
-    "phone": "+31433211555",
-    "url": "www.deverfzaak.nl"
-  },
-  {
-    "name": "Dols Storms De Verfzaak Maastricht",
-    "street": "Bergerstraat 70A",
-    "zip": "6226BD",
-    "city": "MAASTRICHT",
-    "province": null,
-    "phone": "+31433030625",
-    "url": "www.deverfzaak.nl/de-verfzaak-winkels/maastricht/"
-  },
-  {
-    "name": "Kluswijs Medemblik",
-    "street": "Nijverheidsweg 6",
-    "zip": "1671GC",
-    "city": "MEDEMBLIK",
-    "province": null,
-    "phone": "+31227541891",
-    "url": "www.kluswijs.nl/nl/vind-een-winkel/details/kluswijs-medemblik"
-  },
-  {
-    "name": "Hubo Meerkerk",
-    "street": "Nijverheidsstraat 2",
-    "zip": "4231AX",
-    "city": "MEERKERK",
-    "province": null,
-    "phone": "+31183351405",
-    "url": "www.hubo.nl"
-  },
-  {
-    "name": "Houthandel Jan Sok",
-    "street": "Celsius 10",
-    "zip": "7942DB",
-    "city": "MEPPEL",
-    "province": null,
-    "phone": "+31522851551",
-    "url": "www.houthandeljansok.nl"
-  },
-  {
-    "name": "Bouwmarkt van der Made",
-    "street": "Langeweg 24",
-    "zip": "3241KA",
-    "city": "MIDDELHARNIS",
-    "province": null,
-    "phone": "+31187487181",
-    "url": null
-  },
-  {
-    "name": "GBI van Arnhem",
-    "street": "Vlasakker 16",
-    "zip": "3417XT",
-    "city": "MONTFOORT",
-    "province": null,
-    "phone": "+31348471374",
-    "url": "www.gbivanarnhem.nl"
-  },
-  {
-    "name": "IJzerhandel Grottendieck",
-    "street": "Industriestraat 7",
-    "zip": "2671CT",
-    "city": "NAALDWIJK",
-    "province": null,
-    "phone": "+31174624665",
-    "url": "www.grottendiecknaaldwijk.nl/"
-  },
-  {
-    "name": "Wormgoor voor Verf en Wonen",
-    "street": "Bosstraat 16",
-    "zip": "7161XZ",
-    "city": "NEEDE",
-    "province": null,
-    "phone": "+31545291458",
-    "url": "www.wormgoor.voorverfenwonen.nl"
-  },
-  {
-    "name": "Hondelink",
-    "street": "Borculoseweg 29",
-    "zip": "7161GP",
-    "city": "NEEDE",
-    "province": null,
-    "phone": "+31545291314",
-    "url": "www.hondelinkschilders.nl"
-  },
-  {
-    "name": "Verzijl",
-    "street": "Standerdmolen 2",
-    "zip": "2957XL",
-    "city": "NIEUW LEKKERLAND",
-    "province": null,
-    "phone": "+31184681212",
-    "url": "www.homemadeby.nl/verzijl-nieuw-lekkerland"
-  },
-  {
-    "name": "Hubo Duwel",
-    "street": "Hoofdweg 1322",
-    "zip": "2153LT",
-    "city": "NIEUW VENNEP",
-    "province": null,
-    "phone": "+31252672286",
-    "url": null
-  },
-  {
-    "name": "Hornbach Nieuwegein",
-    "street": "Veldwade 3",
-    "zip": "3439LE",
-    "city": "NIEUWEGEIN",
-    "province": null,
-    "phone": "+31302669898",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-nieuwegein/"
-  },
-  {
-    "name": "Hubo XL Nieuwerkerk",
-    "street": "Rijksweg 26-B",
-    "zip": "4306AW",
-    "city": "NIEUWERKERK",
-    "province": null,
-    "phone": "+31111647010",
-    "url": null
-  },
-  {
-    "name": "Hornbach Nieuwerkerk",
-    "street": "Laan van Avant-Garde 1",
-    "zip": "2913LA",
-    "city": "NIEUWERKERK A/D IJSSEL",
-    "province": null,
-    "phone": "+31180333000",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-nieuwerkerk/"
-  },
-  {
-    "name": "Kluswijs Nieuwkoop",
-    "street": "Industrieweg 29",
-    "zip": "2421LK",
-    "city": "NIEUWKOOP",
-    "province": null,
-    "phone": "+31172572365",
-    "url": "www.kluswijs.nl/nl/vind-een-winkel/details/kluswijs-nieuwkoop/"
-  },
-  {
-    "name": "Kitcentrum.nl BV",
-    "street": "De Grift 23",
-    "zip": "7711EP",
-    "city": "NIEUWLEUSEN",
-    "province": null,
-    "phone": "+31578697900",
-    "url": null
-  },
-  {
-    "name": "Nijmeegse Verffabriek",
-    "street": "Groenestraat 131-133",
-    "zip": "6531HD",
-    "city": "NIJMEGEN",
-    "province": null,
-    "phone": "+31243222223",
-    "url": "www.denijmeegseverffabriek.nl"
-  },
-  {
-    "name": "Hornbach Nijmegen",
-    "street": "Wendelring 3",
-    "zip": "6515AN",
-    "city": "NIJMEGEN",
-    "province": null,
-    "phone": "+31247990000",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-nijmegen/"
-  },
-  {
-    "name": "De Verfzaak Nijmegen",
-    "street": "Engergieweg 5",
-    "zip": "6541CW",
-    "city": "NIJMEGEN",
-    "province": null,
-    "phone": null,
-    "url": "www.deverfzaak.nl/de-verfzaak-winkels/nijmegen/"
-  },
-  {
-    "name": "Snijders Woonprofessionals",
-    "street": "Burgemeester de Zeeuwstraat 179",
-    "zip": "3281AH",
-    "city": "NUMANSDORP",
-    "province": null,
-    "phone": "+31186657115",
-    "url": null
-  },
-  {
-    "name": "Verf- en Behangspeciaalzaak Marco van den Berg",
-    "street": "Boxtelsebaan 28",
-    "zip": "5061VD",
-    "city": "OISTERWIJK",
-    "province": null,
-    "phone": "+31135282162",
-    "url": null
-  },
-  {
-    "name": "Thuisin Fransen",
-    "street": "Zandbreeweg 4",
-    "zip": "7577BZ",
-    "city": "OLDENZAAL",
-    "province": null,
-    "phone": "+31541358979",
-    "url": "www.thuisin.nl/vestiging/thuisin-fransen/"
-  },
-  {
-    "name": "Belderok B.V.",
-    "street": "Industrieweg 8",
-    "zip": "4501PM",
-    "city": "OOSTBURG",
-    "province": null,
-    "phone": "+31117452261",
-    "url": "www.belderok.nl"
-  },
-  {
-    "name": "De Verfzaak Oss",
-    "street": "Frankenweg 57",
-    "zip": "5349AP",
-    "city": "OSS",
-    "province": null,
-    "phone": "+31412748015",
-    "url": "www.deverfzaak.nl/de-verfzaak-winkels/oss/"
-  },
-  {
-    "name": "Decokay Donkersloot",
-    "street": "Molendijk 38",
-    "zip": "3262AK",
-    "city": "OUD BEIJERLAND",
-    "province": null,
-    "phone": "+31186612031",
-    "url": null
-  },
-  {
-    "name": "Gijs de Haan",
-    "street": "Kerkstraat 34",
-    "zip": "1191JD",
-    "city": "OUDERKERK AAN DE AMSTEL",
-    "province": null,
-    "phone": "+31204961977",
-    "url": "www.gijsdehaan.nl"
-  },
-  {
-    "name": "Kranen De Verfzaak",
-    "street": "Wietelweg 13",
-    "zip": "5981TG",
-    "city": "PANNINGEN",
-    "province": null,
-    "phone": "+31773077272",
-    "url": "www.deverfzaak.nl/service/panningen/"
-  },
-  {
-    "name": "Verfhandel Prinsenbeek",
-    "street": "Kapelstraat 27",
-    "zip": "4841GE",
-    "city": "PRINSENBEEK",
-    "province": null,
-    "phone": "+31768876646",
-    "url": "www.verfhandelprinsenbeek.nl"
-  },
-  {
-    "name": "Van Veen Verf en Behang",
-    "street": "Schapendijk 35",
-    "zip": "7715PV",
-    "city": "PUNTHORST",
-    "province": null,
-    "phone": "+31529480547",
-    "url": "www.vanveenverf.nl"
-  },
-  {
-    "name": "Fraay Coatings BV",
-    "street": "van IJsendijkstraat 373",
-    "zip": "1442LB",
-    "city": "PURMEREND",
-    "province": null,
-    "phone": "+31299606402",
-    "url": "www.fraay.nl"
-  },
-  {
-    "name": "De Wolf Verf en Behang",
-    "street": "Peperstraat 17 - 19",
-    "zip": "1441BH",
-    "city": "PURMEREND",
-    "province": null,
-    "phone": "+31299421391",
-    "url": "www.wolf.voorverfenwonen.nl"
-  },
-  {
-    "name": "Decoprof",
-    "street": "Noordenweg 69",
-    "zip": "2984AG",
-    "city": "RIDDERKERK",
-    "province": null,
-    "phone": "+31180496767",
-    "url": "www.decoprof.nl"
-  },
-  {
-    "name": "Verfland Nederland BV",
-    "street": "Stedenbaan 11",
-    "zip": "5121DP",
-    "city": "RIJEN",
-    "province": null,
-    "phone": "+31402448796",
-    "url": "www.verfland.nl"
-  },
-  {
-    "name": "Welkoop Rockanje",
-    "street": "Achterstrypseweg 15",
-    "zip": "3235NB",
-    "city": "ROCKANJE",
-    "province": null,
-    "phone": "+31181401811",
-    "url": "www.welkoop.nl/winkels/Rockanje"
-  },
-  {
-    "name": "De Verfzaak Roermond",
-    "street": "Doctor Philipslaan 31",
-    "zip": "6042CT",
-    "city": "ROERMOND",
-    "province": null,
-    "phone": "+31475745196",
-    "url": "www.deverfzaak.nl/service/roermond/"
-  },
-  {
-    "name": "Verfplaza Roosendaal B.V.",
-    "street": "Spoorstraat 19",
-    "zip": "4702VV",
-    "city": "ROOSENDAAL",
-    "province": null,
-    "phone": "+31165440214",
-    "url": "www.verfplazaroosendaal.nl"
-  },
-  {
-    "name": "Schildersbedrijf W.A. van Lith",
-    "street": "R.M. van Gellicumstraat 1",
-    "zip": "4156AJ",
-    "city": "RUMPT",
-    "province": null,
-    "phone": "+31345681434",
-    "url": null
-  },
-  {
-    "name": "Partners at Home Jac Vink & Noord West Interieurs",
-    "street": "Witte Paal 300",
-    "zip": "1742LD",
-    "city": "SCHAGEN",
-    "province": null,
-    "phone": "+31224213554",
-    "url": "www.partnersathome.nl"
-  },
-  {
-    "name": "Color Experience voor Verf en Wonen",
-    "street": "Nieuwe Laagzijde 45",
-    "zip": "1741GE",
-    "city": "SCHAGEN",
-    "province": null,
-    "phone": "+31224296681",
-    "url": "www.voorverfenwonen-colorexperience.nl"
-  },
-  {
-    "name": "Kluswijs / KW Wonen Scherpenzeel",
-    "street": "Holleweg 12",
-    "zip": "3925LW",
-    "city": "SCHERPENZEEL",
-    "province": "Gelderland",
-    "phone": "+31332771255",
-    "url": "www.kluswijs.nl/nl/vind-een-winkel/details/kluswijs-scherpenzeel/"
-  },
-  {
-    "name": "De Verfhoek",
-    "street": "Dorpsstraat 247",
-    "zip": "3925KC",
-    "city": "SCHERPENZEEL",
-    "province": "Gelderland",
-    "phone": "+31619947695",
-    "url": "www.verfhoekscherpenzeel.nl"
-  },
-  {
-    "name": "Vissers De Verfzaak Schijndel",
-    "street": "De Pegstukken 2",
-    "zip": "5482GC",
-    "city": "SCHIJNDEL",
-    "province": null,
-    "phone": "+31735498734",
-    "url": "www.deverfzaak.nl/de-verfzaak-winkels/schijndel/"
-  },
-  {
-    "name": "Haan Verf en Wonen",
-    "street": "Hoofdweg 138",
-    "zip": "9626AJ",
-    "city": "SCHILDWOLDE",
-    "province": null,
-    "phone": "+31598421981",
-    "url": "www.haanverfenwonen.nl"
-  },
-  {
-    "name": "Home Made By Louter Woonprofessionals",
-    "street": "Heereweg 135",
-    "zip": "1871EE",
-    "city": "SCHOORL",
-    "province": null,
-    "phone": "+31725091230",
-    "url": "www.homemadeby.nl/louter-schoorl/"
-  },
-  {
-    "name": "Dols Storms de Verfzaak Sittard",
-    "street": "Doctor Nolenslaan 149B",
-    "zip": "6136GM",
-    "city": "SITTARD",
-    "province": null,
-    "phone": "+31464527932",
-    "url": "www.deverfzaak.nl/service/sittard/"
-  },
-  {
-    "name": "Signatuur Wonen",
-    "street": "De Hoogjens 59-3",
-    "zip": "4254XV",
-    "city": "SLEEUWIJK",
-    "province": null,
-    "phone": "+31183510404",
-    "url": "www.signatuurwonen.nl"
-  },
-  {
-    "name": "Bouwmarkt Sleeuwijk",
-    "street": "'t Zand 28",
-    "zip": "4254XP",
-    "city": "SLEEUWIJK",
-    "province": null,
-    "phone": "+31183301254",
-    "url": "www.hubosleeuwijk.nl"
-  },
-  {
-    "name": "'t Kleurhuys",
-    "street": "Prisma 81",
-    "zip": "3364DJ",
-    "city": "SLIEDRECHT",
-    "province": null,
-    "phone": "+31184701595",
-    "url": "www.kleurhuys.nl/"
-  },
-  {
-    "name": "Thuisin Brandsma",
-    "street": "Soesterbergsestraat 52",
-    "zip": "3768EJ",
-    "city": "SOEST",
-    "province": null,
-    "phone": "+31356037246",
-    "url": "www.thuisin.nl/vestiging/thuisin-brandsma/"
-  },
-  {
-    "name": "Davo",
-    "street": "Weteringpad 1",
-    "zip": "3762EN",
-    "city": "SOEST",
-    "province": null,
-    "phone": "+31356016228",
-    "url": "www.doehetzelfsoest.nl"
-  },
-  {
-    "name": "Home Made By_Van Rossum de Woonprofessionals",
-    "street": "Herman De Manstraat 2",
-    "zip": "3245MB",
-    "city": "SOMMELSDIJK",
-    "province": null,
-    "phone": null,
-    "url": null
-  },
-  {
-    "name": "Snijders voor Verf & Wonen Sprundel",
-    "street": "Sint Janstraat 35",
-    "zip": "4714EA",
-    "city": "SPRUNDEL",
-    "province": null,
-    "phone": "+31165382286",
-    "url": "www.voorverfenwonen-sprundel.nl/"
-  },
-  {
-    "name": "SHD (Stolwijkse Hout en Doe-Het-Zelfhandel)",
-    "street": "Koolwijkseweg 2B",
-    "zip": "2821NV",
-    "city": "STOLWIJK",
-    "province": null,
-    "phone": "+31182347022",
-    "url": "www.shd-bouwmarkt.nl"
-  },
-  {
-    "name": "Vgh Middenholland b.v. - Donald verf en behang vloeren",
-    "street": "Stobbeweg 22",
-    "zip": "2461EX",
-    "city": "TER AAR",
-    "province": null,
-    "phone": "+31172578459",
-    "url": "www.verfenbehang.nl"
-  },
-  {
-    "name": "Henk van Wijk Woon- en Verfspecialist",
-    "street": "Nieuwe Tielseweg 69B",
-    "zip": "4001JT",
-    "city": "TIEL",
-    "province": null,
-    "phone": "+31344617585",
-    "url": "www.henkvanwijk.nl"
-  },
-  {
-    "name": "Schilderscentrum Zuid Tilburg",
-    "street": "Goirkekanaaldijk 26",
-    "zip": "5046AT",
-    "city": "TILBURG",
-    "province": null,
-    "phone": "+31135425900",
-    "url": null
-  },
-  {
-    "name": "Pijnenborg Verf",
-    "street": "Goirkesttraat 40",
-    "zip": "5046GK",
-    "city": "TILBURG",
-    "province": null,
-    "phone": "+31135420537",
-    "url": "www.pijnenborgverf.nl"
-  },
-  {
-    "name": "De Verfzaak Tilburg",
-    "street": "Hestiastraat 4",
-    "zip": "5047VA",
-    "city": "TILBURG",
-    "province": null,
-    "phone": "+31132400083",
-    "url": null
-  },
-  {
-    "name": "De Vos Verf",
-    "street": "Kaasweg 1",
-    "zip": "8334NT",
-    "city": "TUK",
-    "province": null,
-    "phone": "+31521513056",
-    "url": "www.verfwinkeldevos.nl"
-  },
-  {
-    "name": "Colora Uden",
-    "street": "Liessentstraat 2d",
-    "zip": "5405AG",
-    "city": "UDEN",
-    "province": null,
-    "phone": "+31413271587",
-    "url": "www.colora.nl"
-  },
-  {
-    "name": "Colora Nederland B.V.",
-    "street": "Liessentstraat 2D",
-    "zip": "5405AG",
-    "city": "UDEN",
-    "province": null,
-    "phone": "+31413271587",
-    "url": null
-  },
-  {
-    "name": "Verfloods Uithoorn",
-    "street": "Ondernemingsweg 50F",
-    "zip": "1422DZ",
-    "city": "UITHOORN",
-    "province": null,
-    "phone": "+31683641417",
-    "url": "www.verfloodsuithoorn.nl/"
-  },
-  {
-    "name": "Robben Schilder Stoffeerder Stylist",
-    "street": "Frank Daamenstraat 35",
-    "zip": "7071AT",
-    "city": "ULFT",
-    "province": null,
-    "phone": "+31315681481",
-    "url": "www.robben-ulft.nl"
-  },
-  {
-    "name": "Online-Verf de Vakman B.V.",
-    "street": "Burgemeester Reigerstraat 60",
-    "zip": "3581KV",
-    "city": "UTRECHT",
-    "province": null,
-    "phone": "+31302516965",
-    "url": "www.onlineverf.nl/vestigingen/onlineverf-utrecht/"
-  },
-  {
-    "name": "Kesler Utrecht",
-    "street": "Burgemeester Reigerstraat 2",
-    "zip": "3581KR",
-    "city": "UTRECHT",
-    "province": null,
-    "phone": "+31307920159",
-    "url": "www.kesleronline.nl/"
-  },
-  {
-    "name": "De Verfkampioen Utrecht",
-    "street": "Rijnlaan 15",
-    "zip": "3522BA",
-    "city": "UTRECHT",
-    "province": null,
-    "phone": "+31302667728",
-    "url": "www.deverfkampioen.nl"
-  },
-  {
-    "name": "Home Made By_Van Triest",
-    "street": "Dorpsstraat 47",
-    "zip": "8171BL",
-    "city": "VAASSEN",
-    "province": null,
-    "phone": "+31578574080",
-    "url": null
-  },
-  {
-    "name": "Verbakel De Verfzaak B.V.",
-    "street": "Van Linschotenstraat 18B",
-    "zip": "5554PM",
-    "city": "VALKENSWAARD",
-    "province": null,
-    "phone": "+31402049411",
-    "url": "www.deverfzaak.nl/service/valkenswaard/"
-  },
-  {
-    "name": "Thuisin van Dijk",
-    "street": "Groeneveldselaan 43",
-    "zip": "3903AX",
-    "city": "VEENENDAAL",
-    "province": null,
-    "phone": "+31318512777",
-    "url": "www.thuisinvandijk.nl/"
-  },
-  {
-    "name": "De Verfshop",
-    "street": "De Savornin Lohmanstraat 2 a-d",
-    "zip": "3904AS",
-    "city": "VEENENDAAL",
-    "province": null,
-    "phone": "+31318519282",
-    "url": "www.verfshop.nl"
-  },
-  {
-    "name": "De Verfzaak Venlo Trefcenter",
-    "street": "Nijmeegseweg 28C",
-    "zip": "5916PT",
-    "city": "VENLO",
-    "province": null,
-    "phone": "+31772300014",
-    "url": "www.deverfzaak.nl/de-verfzaak-winkels/venlo-trefcenter/"
-  },
-  {
-    "name": "Backes & Boels De Verfzaak - Magazijn",
-    "street": "Magalhaesweg 8",
-    "zip": "5928LN",
-    "city": "VENLO",
-    "province": null,
-    "phone": null,
-    "url": null
-  },
-  {
-    "name": "Backes & Boels De Verfzaak",
-    "street": "Stalbergweg 131",
-    "zip": "5913BL",
-    "city": "VENLO",
-    "province": null,
-    "phone": "+31773517071",
-    "url": "www.deverfzaak.nl/service/venlo/"
-  },
-  {
-    "name": "Van Asselen Verf & Wand",
-    "street": "Herenweg 132",
-    "zip": "3645DT",
-    "city": "VINKEVEEN",
-    "province": null,
-    "phone": "+31297261218",
-    "url": "www.vanasselen.nl"
-  },
-  {
-    "name": "Wolf Winkel",
-    "street": "Ruiten-A Kanaal West 3",
-    "zip": "9541XA",
-    "city": "VLAGTWEDDE",
-    "province": null,
-    "phone": "+31646700638",
-    "url": "www.wolfwinkel.nl"
-  },
-  {
-    "name": "Thuisin Kees Tol",
-    "street": "Julianaweg 210",
-    "zip": "1131DL",
-    "city": "VOLENDAM",
-    "province": null,
-    "phone": "+31299364904",
-    "url": "www.thuisinkeestol"
-  },
-  {
-    "name": "Veluws Verfhuis",
-    "street": "Bakkersweg 14",
-    "zip": "3781GP",
-    "city": "VOORTHUIZEN",
-    "province": null,
-    "phone": "+31342224074",
-    "url": "www.veluwsverfhuis.nl/"
-  },
-  {
-    "name": "Colora Waalwijk",
-    "street": "Professor Kamerlingh Onnesweg 6a",
-    "zip": "5144NR",
-    "city": "WAALWIJK",
-    "province": null,
-    "phone": "+31416745333",
-    "url": null
-  },
-  {
-    "name": "Visser Waddinxveen B.V.",
-    "street": "Dorpstraat 80",
-    "zip": "2742AK",
-    "city": "WADDINXVEEN",
-    "province": null,
-    "phone": "+31182617596",
-    "url": "www.visserenzn.nl"
-  },
-  {
-    "name": "Colorstore.nl Wageningen",
-    "street": "Van Eckstraat 3",
-    "zip": "6707DK",
-    "city": "WAGENINGEN",
-    "province": null,
-    "phone": "+31620592522",
-    "url": "www.colorstore.nl/filiaal_wageningen"
-  },
-  {
-    "name": "Home Made By Van Baar",
-    "street": "Pastoor Willemsestraat 98",
-    "zip": "1749AR",
-    "city": "WARMENHUIZEN",
-    "province": null,
-    "phone": "+31226391242",
-    "url": "www.vanbaarwonen.nl"
-  },
-  {
-    "name": "Voorham Verf & Woonprofessional",
-    "street": "Johan de Wittstraat 88",
-    "zip": "2242LC",
-    "city": "WASSENAAR",
-    "province": null,
-    "phone": "+31705113281",
-    "url": "www.voorhamverf.nl"
-  },
-  {
-    "name": "Hornbach Wateringen",
-    "street": "S-Gravenzandseweg 71/72",
-    "zip": "2291PE",
-    "city": "WATERINGEN",
-    "province": null,
-    "phone": "+31174272100",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-wateringen/"
-  },
-  {
-    "name": "Poell De Verfzaak Weert",
-    "street": "Roermondseweg 100",
-    "zip": "6004AV",
-    "city": "WEERT",
-    "province": null,
-    "phone": "+31495745916",
-    "url": "www.deverfzaak.nl/service/weert/"
-  },
-  {
-    "name": "Hoza Apeldoorn",
-    "street": "Zwolseweg 323",
-    "zip": "7345AA",
-    "city": "WENUM WIESEL",
-    "province": null,
-    "phone": "+31555219875",
-    "url": null
-  },
-  {
-    "name": "De Voordeelmarkt Apeldoorn",
-    "street": "Stadhoudersmolenweg 190",
-    "zip": "7345DE",
-    "city": "WENUM-WIESEL",
-    "province": null,
-    "phone": "+31555413463",
-    "url": "www.devoordeelmarkt.nl/vestigingen/de-voordeelmarkt-apeldoorn-bv"
-  },
-  {
-    "name": "Thuisin Pelgrim Westervoort",
-    "street": "Het Ambacht 1",
-    "zip": "6931EZ",
-    "city": "WESTERVOORT",
-    "province": null,
-    "phone": "+31263118348",
-    "url": "www.thuisin.nl/vestiging/thuisin-pelgrim"
-  },
-  {
-    "name": "Weishaupt Verfspeciaalzaak",
-    "street": "Renselkade 1",
-    "zip": "9672BD",
-    "city": "WINSCHOTEN",
-    "province": null,
-    "phone": "+31597412315",
-    "url": "www.weishauptverf.nl"
-  },
-  {
-    "name": "By Alberts",
-    "street": "Noard 59 - 61",
-    "zip": "8711AC",
-    "city": "WORKUM",
-    "province": null,
-    "phone": "+31515541427",
-    "url": "www.byalberts.nl"
-  },
-  {
-    "name": "Hornbach Zaandam",
-    "street": "Symon Spiersweg 6",
-    "zip": "1506RZ",
-    "city": "ZAANDAM",
-    "province": null,
-    "phone": "+31756127070",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-zaandam/"
-  },
-  {
-    "name": "Van Dijk Verfzaken",
-    "street": "Dijnselburgerlaan 1",
-    "zip": "3705LP",
-    "city": "ZEIST",
-    "province": null,
-    "phone": "+31343451580",
-    "url": "www.vandijkverfzaken.nl"
-  },
-  {
-    "name": "Praxis Zeist",
-    "street": "Huis ter Heideweg 50",
-    "zip": "3705LZ",
-    "city": "ZEIST",
-    "province": null,
-    "phone": "+31306910090",
-    "url": "www.praxis.nl"
-  },
-  {
-    "name": "Kesler Zeist",
-    "street": "Voorheuvel 81-83",
-    "zip": "3701JD",
-    "city": "ZEIST",
-    "province": null,
-    "phone": "+31306924314",
-    "url": "www.keslerzeist.nl"
-  },
-  {
-    "name": "Van Heukelom Wonen",
-    "street": "Grevelingenstraat 11",
-    "zip": "4301XZ",
-    "city": "ZIERIKZEE",
-    "province": null,
-    "phone": "+31111451120",
-    "url": "www.vanheukelom.group/winkel/"
-  },
-  {
-    "name": "Thuisin de Bouwhof",
-    "street": "Edisonstraat 115",
-    "zip": "2723RT",
-    "city": "ZOETERMEER",
-    "province": null,
-    "phone": "+31793310700",
-    "url": "www.bouwhof.com"
-  },
-  {
-    "name": "De Voordeelmarkt Zutphen",
-    "street": "Gerritsenweg 2",
-    "zip": "7202BP",
-    "city": "ZUTPHEN",
-    "province": null,
-    "phone": "+31575540880",
-    "url": null
-  },
-  {
-    "name": "De Verfzaak Zutphen",
-    "street": "Jutlandsestraat 1",
-    "zip": "7202CB",
-    "city": "ZUTPHEN",
-    "province": null,
-    "phone": "+31575784000",
-    "url": null
-  },
-  {
-    "name": "Van der Wiel Design",
-    "street": "Burgemeester Jansenlaan 149",
-    "zip": "3331HG",
-    "city": "ZWIJNDRECHT",
-    "province": null,
-    "phone": "+31786127979",
-    "url": "www.vanderwielzwijndrecht.nl/"
-  },
-  {
-    "name": "Hornbach Zwolle",
-    "street": "Katwolderweg 6",
-    "zip": "8041AD",
-    "city": "ZWOLLE",
-    "province": null,
-    "phone": "+31387508400",
-    "url": "www.hornbach.nl/vestigingsinfo/bouwmarkt-hornbach-zwolle/"
-  },
-  {
-    "name": "De Fabriekswinkel Zwolle B.V",
-    "street": "Amperestraat 30",
-    "zip": "8013PV",
-    "city": "ZWOLLE",
-    "province": null,
-    "phone": "+31384581133",
-    "url": "www.fabriekswinkel-zwolle.nl"
-  }
-]
+{
+  "map_url": "https://www.eazy-fix.de/verkaufsstellen/",
+  "verkooppunten": [
+    {
+      "name": "HORNBACH Webshop DE",
+      "street": null,
+      "zip": null,
+      "city": null,
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-webshop-de-311568/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-webshop-de-311568/",
+      "full": "HORNBACH Webshop DE"
+    },
+    {
+      "name": "BZN Bauzentrum Esens GmbH & Co",
+      "street": null,
+      "zip": null,
+      "city": null,
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/bzn-bauzentrum-esens-gmbh-co-309794/",
+      "page": "https://www.eazy-fix.de/verkooppunten/bzn-bauzentrum-esens-gmbh-co-309794/",
+      "full": "BZN Bauzentrum Esens GmbH & Co"
+    },
+    {
+      "name": "BZN Baustoff Zentrale Nord GmbH & Co. KG",
+      "street": null,
+      "zip": null,
+      "city": null,
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/bzn-baustoff-zentrale-nord-gmbh-co-kg-314898/",
+      "page": "https://www.eazy-fix.de/verkooppunten/bzn-baustoff-zentrale-nord-gmbh-co-kg-314898/",
+      "full": "BZN Baustoff Zentrale Nord GmbH & Co. KG"
+    },
+    {
+      "name": "HolzLand Holz-Center & Baustoff GmbH Neckarmühlbach",
+      "street": null,
+      "zip": null,
+      "city": null,
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/holzland-holz-center-baustoff-gmbh-neckarmuehlbach-array/",
+      "page": "https://www.eazy-fix.de/verkooppunten/holzland-holz-center-baustoff-gmbh-neckarmuehlbach-array/",
+      "full": "HolzLand Holz-Center & Baustoff GmbH Neckarmühlbach"
+    },
+    {
+      "name": "HORNBACH Baumarkt AG",
+      "street": null,
+      "zip": null,
+      "city": null,
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-baumarkt-ag-309660/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-baumarkt-ag-309660/",
+      "full": "HORNBACH Baumarkt AG"
+    },
+    {
+      "name": "488 Logistikzentrum Speyer Hornbach Baumarkt AG",
+      "street": null,
+      "zip": null,
+      "city": null,
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/488-logistikzentrum-speyer-hornbach-baumarkt-ag-319120/",
+      "page": "https://www.eazy-fix.de/verkooppunten/488-logistikzentrum-speyer-hornbach-baumarkt-ag-319120/",
+      "full": "488 Logistikzentrum Speyer Hornbach Baumarkt AG"
+    },
+    {
+      "name": "HolzLand MAHL",
+      "street": null,
+      "zip": null,
+      "city": null,
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/holzland-mahl-321769/",
+      "page": "https://www.eazy-fix.de/verkooppunten/holzland-mahl-321769/",
+      "full": "HolzLand MAHL"
+    },
+    {
+      "name": "Schyns GmbH",
+      "street": null,
+      "zip": null,
+      "city": null,
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/schyns-gmbh-322292/",
+      "page": "https://www.eazy-fix.de/verkooppunten/schyns-gmbh-322292/",
+      "full": "Schyns GmbH"
+    },
+    {
+      "name": "August Jungbluth GmbH & Co. KG",
+      "street": null,
+      "zip": null,
+      "city": null,
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/august-jungbluth-gmbh-co-kg-309790/",
+      "page": "https://www.eazy-fix.de/verkooppunten/august-jungbluth-gmbh-co-kg-309790/",
+      "full": "August Jungbluth GmbH & Co. KG"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Berlin-Neukölln",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-berlin-neukoelln-310836/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-berlin-neukoelln-310836/",
+      "full": "Hornbach Berlin-Neukölln"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Bornheim",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-bornheim-208-310967/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-bornheim-208-310967/",
+      "full": "Hornbach Bornheim 208"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Datteln",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-datteln-607-309766/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-datteln-607-309766/",
+      "full": "Hornbach Datteln 607"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Erlangen",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-erlangen-309758/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-erlangen-309758/",
+      "full": "Hornbach Erlangen"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Essen",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-essen-309785/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-essen-309785/",
+      "full": "Hornbach Essen"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Fürth",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-fuerth-309757/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-fuerth-309757/",
+      "full": "Hornbach Fürth"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Gelsenkirchen",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-gelsenkirchen-578-309786/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-gelsenkirchen-578-309786/",
+      "full": "Hornbach Gelsenkirchen 578"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Göppingen",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-goeppingen-310814/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-goeppingen-310814/",
+      "full": "Hornbach Göppingen"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Halle",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-halle-309769/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-halle-309769/",
+      "full": "Hornbach Halle"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Ingolstadt",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-ingolstadt-309756/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-ingolstadt-309756/",
+      "full": "Hornbach Ingolstadt"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Isernhagen",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-isernhagen-309760/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-isernhagen-309760/",
+      "full": "Hornbach Isernhagen"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Kamen",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-kamen-633-309788/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-kamen-633-309788/",
+      "full": "Hornbach Kamen 633"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Karlsruhe2",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-karlsruhe2-565-309780/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-karlsruhe2-565-309780/",
+      "full": "Hornbach Karlsruhe2 565"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Leipzig",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-leipzig-309771/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-leipzig-309771/",
+      "full": "Hornbach Leipzig"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Leipzig-Alte Messe",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-leipzig-alte-messe-309770/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-leipzig-alte-messe-309770/",
+      "full": "Hornbach Leipzig-Alte Messe"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Ludwigshafen",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-ludwigshafen-576-309777/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-ludwigshafen-576-309777/",
+      "full": "Hornbach Ludwigshafen 576"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Mainz-Bretzenheim",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-mainz-bretzenheim-309775/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-mainz-bretzenheim-309775/",
+      "full": "Hornbach Mainz-Bretzenheim"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "München-Fröttmaning",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-muenchen-froettmaning-309753/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-muenchen-froettmaning-309753/",
+      "full": "Hornbach München-Fröttmaning"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Münster",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-muenster-558-309765/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-muenster-558-309765/",
+      "full": "Hornbach Münster 558"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Neu-Ulm",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-neu-ulm-309751/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-neu-ulm-309751/",
+      "full": "Hornbach Neu-Ulm"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Niederzier",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-niederzier-309789/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-niederzier-309789/",
+      "full": "Hornbach Niederzier"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Pirmasens",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-pirmasens-310813/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-pirmasens-310813/",
+      "full": "Hornbach Pirmasens"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Potsdam-Marquardt",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-potsdam-marquardt-566-309767/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-potsdam-marquardt-566-309767/",
+      "full": "Hornbach Potsdam-Marquardt 566"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Straubing",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-straubing-309755/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-straubing-309755/",
+      "full": "Hornbach Straubing"
+    },
+    {
+      "name": "Hornbach",
+      "street": null,
+      "zip": null,
+      "city": "Trier",
+      "province": null,
+      "phone": null,
+      "url": "https://www.eazy-fix.de/verkooppunten/hornbach-trier-629-309750/",
+      "page": "https://www.eazy-fix.de/verkooppunten/hornbach-trier-629-309750/",
+      "full": "Hornbach Trier 629"
+    }
+  ]
+}

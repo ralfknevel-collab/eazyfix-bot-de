@@ -1,4 +1,4 @@
-// Trek de inhoud van eazy-fix.nl (producten, FAQ, blog) naar src/kennis.json.
+// Trek de inhoud van eazy-fix.de (producten, FAQ, blog) naar src/kennis.json.
 // De website is leidend voor de botkennis; dit script ververst de snapshot.
 // Gebruik: node scripts/pull-site.js
 // Bewust GEEN prijzen: bedragen worden verwijderd (prijzen wijzigen te vaak).
@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { scrubText, normalizeBrand, isListingJunk, dedupeByUrl, EXCLUDE_PAGE } = require('./scrub');
 
-const BASE = 'https://www.eazy-fix.nl';
+const BASE = 'https://www.eazy-fix.de';
 const TARGET = path.join(__dirname, '..', 'src', 'kennis.json');
 const CONCURRENCY = 6;
 
@@ -42,7 +42,7 @@ function cleanText(html) {
   // Witruimte normaliseren.
   h = h.replace(/[ \t]+/g, ' ').replace(/ ?\n ?/g, '\n').replace(/\n{2,}/g, '\n').trim();
   // Boilerplate-regels (menu, cookie, footer-resten) wegfilteren.
-  const drop = /^(home|webshop|over eazyfix|klantenservice|verkooppunten|contact|inloggen|winkelmand|zoeken|menu|cookie|account|mijn account|0|€)/i;
+  const drop = /^(startseite|home|webshop|shop|über eazyfix|über uns|kundenservice|kundendienst|verkaufsstellen|verkooppunten|kontakt|anmelden|einloggen|warenkorb|suchen|suche|menü|menu|cookie|konto|mein konto|0|€)/i;
   const lines = h.split('\n').map((s) => s.trim())
     .filter((s) => s.length > 2 && !drop.test(s));
   // Dubbele opeenvolgende regels samenvouwen.

@@ -1,15 +1,15 @@
 <!doctype html>
-<html lang="nl">
+<html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>EAZYFIX Houtrot-assistent</title>
-  <meta name="description" content="De EAZYFIX-app: herken houtrot, krijg direct advies en de juiste aanpak. Maak een foto of stel je vraag." />
+  <title>EAZYFIX Holzfäule-Assistent</title>
+  <meta name="description" content="Die EAZYFIX-App: Holzfäule erkennen, direkt Rat und die richtige Vorgehensweise erhalten. Mach ein Foto oder stell deine Frage." />
   <link rel="icon" href="eazyfix-logo.png" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="EAZYFIX" />
-  <meta property="og:title" content="EAZYFIX Houtrot-assistent" />
-  <meta property="og:description" content="De EAZYFIX-app: herken houtrot, krijg direct advies en de juiste aanpak. Maak een foto of stel je vraag." />
+  <meta property="og:title" content="EAZYFIX Holzfäule-Assistent" />
+  <meta property="og:description" content="Die EAZYFIX-App: Holzfäule erkennen, direkt Rat und die richtige Vorgehensweise erhalten. Mach ein Foto oder stell deine Frage." />
   <meta property="og:url" content="https://eazyfix-bot.onrender.com" />
   <meta property="og:image" content="https://eazyfix-bot.onrender.com/og-image.png" />
   <meta property="og:image:secure_url" content="https://eazyfix-bot.onrender.com/og-image.png" />
@@ -17,10 +17,10 @@
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="EAZYFIX logo" />
-  <meta property="og:locale" content="nl_NL" />
+  <meta property="og:locale" content="de_DE" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="EAZYFIX Houtrot-assistent" />
-  <meta name="twitter:description" content="De EAZYFIX-app: herken houtrot, krijg direct advies en de juiste aanpak." />
+  <meta name="twitter:title" content="EAZYFIX Holzfäule-Assistent" />
+  <meta name="twitter:description" content="Die EAZYFIX-App: Holzfäule erkennen, direkt Rat und die richtige Vorgehensweise erhalten." />
   <meta name="twitter:image" content="https://eazyfix-bot.onrender.com/og-image.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,7 +43,7 @@
       display: flex; align-items: center; justify-content: center;
       padding: 16px;
     }
-    /* Achtergrond: eazy-fix.nl hero, wazig + donkerblauwe waas */
+    /* Achtergrond: eazy-fix.de hero, wazig + donkerblauwe waas */
     body::before {
       content: ''; position: fixed; inset: 0; z-index: -2;
       background: url('bg.png') center/cover no-repeat;
@@ -182,11 +182,11 @@
       <img class="logo" src="eazyfix-logo.png" alt="EAZYFIX" />
       <span class="beta">Beta</span>
       <span class="status"><span class="dot"></span> Online</span>
-      <button class="gear" id="gear" title="Instellingen">⚙</button>
+      <button class="gear" id="gear" title="Einstellungen">⚙</button>
     </div>
 
     <div class="settings" id="settings">
-      <label for="key">App-sleutel (alleen nodig als de server er één eist)</label>
+      <label for="key">App-Schlüssel (nur nötig, wenn der Server einen verlangt)</label>
       <input id="key" type="password" placeholder="x-app-key" autocomplete="off" />
     </div>
 
@@ -194,22 +194,22 @@
 
     <div class="composer">
       <div class="preview" id="preview">
-        <img id="pimg" alt="voorbeeld van de gekozen foto" />
+        <img id="pimg" alt="Vorschau des gewählten Fotos" />
         <span class="pname" id="pname"></span>
-        <button type="button" class="premove" id="premove" title="Foto verwijderen">✕</button>
+        <button type="button" class="premove" id="premove" title="Foto entfernen">✕</button>
       </div>
       <form id="f">
-        <button type="button" class="attach" id="attach" title="Foto toevoegen" aria-label="Foto toevoegen"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+        <button type="button" class="attach" id="attach" title="Foto hinzufügen" aria-label="Foto hinzufügen"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
         <input id="photo" type="file" accept="image/*" />
         <input id="photoCam" type="file" accept="image/*" capture="environment" />
-        <textarea id="in" rows="1" placeholder="Typ je bericht…"></textarea>
-        <button id="send" type="submit" title="Verstuur">➤</button>
+        <textarea id="in" rows="1" placeholder="Schreib deine Nachricht…"></textarea>
+        <button id="send" type="submit" title="Senden">➤</button>
       </form>
       <div class="photo-menu" id="photoMenu" hidden>
-        <button type="button" id="optCam"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Maak foto</button>
-        <button type="button" id="optLib"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Kies uit bibliotheek</button>
+        <button type="button" id="optCam"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Foto aufnehmen</button>
+        <button type="button" id="optLib"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Aus Galerie wählen</button>
       </div>
-      <div class="credit">Ontwikkeld door <b>Ralf Knevel</b></div>
+      <div class="credit">Entwickelt von <b>Ralf Knevel</b></div>
     </div>
   </div>
 
@@ -379,16 +379,16 @@
     // zodat de gecombineerde regex de juiste variant pakt. Spiegelt de RULES
     // uit src/producten.js.
     const PRODUCTS = [
-      { re: /premium\s*houtrotvuller|houtrotvuller/i,        url: 'https://www.eazy-fix.nl/product/premium-houtrotvuller/' },
-      { re: /premium\s*houtplamuur|houtplamuur|\bplamuur\b/i, url: 'https://www.eazy-fix.nl/product/premium-houtplamuur-oneshot/' },
-      { re: /houtversterker/i,                                url: 'https://www.eazy-fix.nl/product/eazyfix-houtversterker-met-toebehoren/' },
-      { re: /houtvochtmeter|vochtmeter/i,                     url: 'https://www.eazy-fix.nl/product/houtvochtmeter/' },
-      { re: /houtrot.?frees/i,                                url: 'https://www.eazy-fix.nl/product/houtrot-frees/' },
-      { re: /muurvuller/i,                                    url: 'https://www.eazy-fix.nl/product/muurvuller/' },
-      { re: /kleurpigment/i,                                  url: 'https://www.eazy-fix.nl/product/eazyfix-kleurpigment/' },
-      { re: /reinigingsdoekjes/i,                             url: 'https://www.eazy-fix.nl/product/eazyfix-reinigingsdoekjes/' },
-      { re: /standaardset|startpakket|startset/i,             url: 'https://www.eazy-fix.nl/product/eazyfix-houtrot-standaard/' },
-      { re: /alles.?in.?(een|één)|reparatieset/i,             url: 'https://www.eazy-fix.nl/product/alles-in-een-hout-reparatieset/' },
+      { re: /premium\s*holzspachtelmasse|holzspachtelmasse/i,                    url: 'https://www.eazy-fix.de/product/premium-holzspachtelmasse/' },
+      { re: /premium\s*holz\s*feinspachtel|holz\s*feinspachtel|\bfeinspachtel\b/i, url: 'https://www.eazy-fix.de/product/premium-holz-fein-spachtel/' },
+      { re: /holzimpr(ä|ae)gnierung/i,                                           url: 'https://www.eazy-fix.de/product/eazyfix-holzimpraegnierung-mit-zubehoer/' },
+      { re: /holzfeuchtemessger(ä|ae)t|feuchtemessger(ä|ae)t|feuchtigkeitsmesser/i, url: 'https://www.eazy-fix.de/product/feuchtigkeitsmesser/' },
+      { re: /holzf(ä|ae)ule.?fr(ä|ae)ser|\bfr(ä|ae)ser\b/i,                       url: 'https://www.eazy-fix.de/product/holzfaeule-fraeser/' },
+      { re: /abt(ö|oe)nkonzentrat/i,                                             url: 'https://www.eazy-fix.de/product/eazyfix-abtonkonzentrate/' },
+      { re: /reinigungst(ü|ue)cher/i,                                            url: 'https://www.eazy-fix.de/product/reinigungstucher-60-stuck/' },
+      { re: /erweiterungsset/i,                                                  url: 'https://www.eazy-fix.de/product/eazyfix-holzfaeule-erweiterungsset/' },
+      { re: /standardset|starterset|starterpaket/i,                             url: 'https://www.eazy-fix.de/product/eazyfix-holzfaeule-standardset/' },
+      { re: /all.?in.?one|komplettset|reparaturset/i,                            url: 'https://www.eazy-fix.de/product/eazyfix-premium-all-in-one-spachtel/' },
     ];
 
     // Maak elke genoemde productnaam in het antwoord klikbaar als groene chip.
@@ -429,11 +429,11 @@
       answerEl.removeChild(textNode);
     }
 
-    // Maak vermeldingen van onze eigen site (eazy-fix.nl) klikbaar. UITSLUITEND
+    // Maak vermeldingen van onze eigen site (eazy-fix.de) klikbaar. UITSLUITEND
     // ons eigen domein; verkooppunt- of andere externe domeinen laten we met rust.
     // Draait NA linkifyProducts en loopt alle tekst-nodes af, behalve wat al in
     // een <a> zit. Trailing leestekens (punt/komma) blijven buiten de link.
-    const SITE_RE = /\b((?:https?:\/\/)?(?:www\.)?eazy-fix\.nl(?:\/[^\s<)]*)?)/gi;
+    const SITE_RE = /\b((?:https?:\/\/)?(?:www\.)?eazy-fix\.de(?:\/[^\s<)]*)?)/gi;
     function linkifySite(answerEl) {
       const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const walker = document.createTreeWalker(answerEl, NodeFilter.SHOW_TEXT, null);
@@ -546,7 +546,7 @@
         a.href = v.url; a.target = '_blank'; a.rel = 'noopener';
         a.innerHTML = '<span class="vthumb"><img class="vthumbimg" alt="" />'
           + '<span class="vplay">▶</span></span>'
-          + '<span class="vbody"><span class="vtxt"></span><span class="vcta">Bekijk video →</span></span>';
+          + '<span class="vbody"><span class="vtxt"></span><span class="vcta">Video ansehen →</span></span>';
         a.querySelector('.vtxt').textContent = v.title;
         const img = a.querySelector('.vthumbimg');
         const thumbEl = a.querySelector('.vthumb');
@@ -567,10 +567,10 @@
       const row = document.createElement('div');
       row.className = 'fb';
       row.innerHTML =
-        '<button class="fbup" title="Goed">👍</button>' +
-        '<button class="fbdown" title="Kon beter">👎</button>' +
-        '<input class="fbc" placeholder="Wat kon beter? (optioneel)" />' +
-        '<button class="fbsend">Verstuur</button>' +
+        '<button class="fbup" title="Gut">👍</button>' +
+        '<button class="fbdown" title="Könnte besser sein">👎</button>' +
+        '<input class="fbc" placeholder="Was war nicht gut? (optional)" />' +
+        '<button class="fbsend">Senden</button>' +
         '<span class="fbmsg"></span>';
       const anchor = answerEl.closest('.row') || answerEl;
       anchor.after(row);
@@ -582,16 +582,16 @@
       down.onclick = () => { rating = 'down'; down.classList.add('sel'); up.classList.remove('sel'); };
       row.querySelector('.fbsend').onclick = async () => {
         const msg = row.querySelector('.fbmsg');
-        if (!rating) { msg.textContent = 'Kies eerst 👍 of 👎'; return; }
+        if (!rating) { msg.textContent = 'Wähl erst 👍 oder 👎'; return; }
         try {
           const resp = await apiFetch('/api/feedback', {
             method: 'POST',
             body: JSON.stringify({ conversationId, question, answer, rating, comment: row.querySelector('.fbc').value }),
           });
           if (!resp.ok) throw new Error('status ' + resp.status);
-          row.innerHTML = '<span class="fbmsg">Bedankt voor je feedback!</span>';
+          row.innerHTML = '<span class="fbmsg">Danke für dein Feedback!</span>';
         } catch (e) {
-          msg.textContent = 'Kon feedback niet opslaan';
+          msg.textContent = 'Feedback konnte nicht gespeichert werden';
         }
       };
     }
@@ -606,7 +606,7 @@
           body: JSON.stringify({ messages: history, conversationId, geo }),
         });
         if (!resp.ok) {
-          let m = 'Er ging iets mis. Probeer het zo nog eens.';
+          let m = 'Etwas ist schiefgelaufen. Bitte versuch es gleich noch einmal.';
           try { const j = await resp.json(); if (j && j.error) m = j.error; } catch {}
           out.closest('.row').className = 'row row-bot err'; out.textContent = m;
           history.pop(); // mislukte user-beurt niet in de geschiedenis houden
@@ -628,7 +628,7 @@
             try {
               const obj = JSON.parse(payload);
               if (obj.reset) { acc = ''; out.textContent = ''; }
-              if (obj.status === 'tool' && !acc) { out.textContent = 'Momentje…'; }
+              if (obj.status === 'tool' && !acc) { out.textContent = 'Einen Moment…'; }
               if (obj.text) { acc += obj.text; out.textContent = acc; }
               if (obj.videos) { videos = obj.videos; }
               if (obj.error) { out.closest('.row').className = 'row row-bot err'; out.textContent = obj.error; }
@@ -639,7 +639,7 @@
         if (acc) { history.push({ role: 'assistant', content: acc }); addFeedbackRow(text, out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); renderVideos(out, videos); }
       } catch (e) {
         out.closest('.row').className = 'row row-bot err';
-        out.textContent = 'Geen verbinding. Controleer je internet en probeer het opnieuw.';
+        out.textContent = 'Keine Verbindung. Prüfe dein Internet und versuch es erneut.';
         history.pop(); // mislukte user-beurt niet in de geschiedenis houden
       }
     }
@@ -663,7 +663,7 @@
     async function sendPhoto(file) {
       userPhotoBubble(file);
       const out = bubble('bot', '…');
-      out.innerHTML = '<span class="analyzing">De EAZYFIX Houtrot-assistent analyseert je foto, een moment geduld</span> <span class="typing"><span></span><span></span><span></span></span>';
+      out.innerHTML = '<span class="analyzing">Der EAZYFIX Holzfäule-Assistent analysiert dein Foto, einen Moment Geduld</span> <span class="typing"><span></span><span></span><span></span></span>';
       try {
         const reduced = await downscaleImage(file);
         const base64 = reduced ? reduced.base64 : await fileToBase64(file);
@@ -673,17 +673,17 @@
           body: JSON.stringify({ base64, mimeType, messages: history, conversationId }),
         });
         const data = await resp.json();
-        if (!resp.ok) { out.closest('.row').className = 'row row-bot err'; out.textContent = data.error || ('Fout ' + resp.status); return; }
+        if (!resp.ok) { out.closest('.row').className = 'row row-bot err'; out.textContent = data.error || ('Fehler ' + resp.status); return; }
         // Server levert al schone tekst; flow/productIds zijn techniek, NIET tonen.
         out.textContent = data.content;
         // Foto-beurt in de geschiedenis bewaren zodat een vervolgfoto of -vraag
         // doorgaat op deze schade i.p.v. los te beginnen.
-        history.push({ role: 'user', content: '[foto van de schade verstuurd]' });
+        history.push({ role: 'user', content: '[Foto vom Schaden gesendet]' });
         history.push({ role: 'assistant', content: data.content });
         addFeedbackRow('[foto: ' + file.name + ']', out);
         linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out);
       } catch (e) {
-        out.closest('.row').className = 'row row-bot err'; out.textContent = 'Fout: ' + e.message;
+        out.closest('.row').className = 'row row-bot err'; out.textContent = 'Fehler: ' + e.message;
       }
     }
 
@@ -704,7 +704,7 @@
     inEl.addEventListener('input', () => { inEl.style.height = 'auto'; inEl.style.height = Math.min(inEl.scrollHeight, 120) + 'px'; });
 
     // Welkomstbericht (alleen visueel, niet naar de bot gestuurd)
-    bubble('bot', 'Hoi! Ik ben de EAZYFIX Houtrot-assistent. Stel je vraag over houtrot repareren, of stuur een foto van de schade 👇');
+    bubble('bot', 'Hallo! Ich bin der EAZYFIX Holzfäule-Assistent. Stell deine Frage zur Holzfäule-Reparatur oder schick ein Foto vom Schaden 👇');
   </script>
 </body>
 </html>

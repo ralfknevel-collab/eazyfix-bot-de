@@ -8,7 +8,8 @@
 // Beide vormen halen we hier weg en lezen we uit, zodat er nooit techniek
 // onder het antwoord blijft staan (zie feedback rij 7 en 11).
 
-const FLOW_VALUES = ['houtrot', 'klein', 'muur'];
+// 'muur' vervallen: de DE-productlijn heeft geen muurvuller (bot is hout-only).
+const FLOW_VALUES = ['houtrot', 'klein'];
 
 function parseProductIds(val) {
   return val

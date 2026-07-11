@@ -1,7 +1,11 @@
 // Lookup van EAZYFIX®-verkooppunten op plaats of postcode.
 // Data: src/verkooppunten.json (geparsed van eazy-fix.nl/overzicht-verkooppunten).
 
-const STORES = require('./verkooppunten.json');
+// De DE-dataset is een object { map_url, verkooppunten:[...] }; de oude NL-vorm was
+// een kale array. Beide vormen ondersteunen zodat de lookup nooit crasht.
+const DATA = require('./verkooppunten.json');
+const STORES = Array.isArray(DATA) ? DATA : (DATA.verkooppunten || []);
+const MAP_URL = Array.isArray(DATA) ? null : (DATA.map_url || null);
 
 function norm(s) {
   return (s == null ? '' : String(s)).trim().toLowerCase();
@@ -91,4 +95,4 @@ function runTool(name, input) {
   return `Onbekende tool: ${name}`;
 }
 
-module.exports = { findVerkooppunten, findWithMatch, formatStore, STORES, VERKOOPPUNT_TOOL, runVerkooppuntTool, runTool };
+module.exports = { findVerkooppunten, findWithMatch, formatStore, STORES, MAP_URL, VERKOOPPUNT_TOOL, runVerkooppuntTool, runTool };
