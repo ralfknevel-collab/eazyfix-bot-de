@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>EAZYFIX Houtrot-assistent</title>
+  <meta name="description" content="De EAZYFIX-app: herken houtrot, krijg direct advies en de juiste aanpak. Maak een foto of stel je vraag." />
+  <link rel="icon" href="eazyfix-logo.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="EAZYFIX" />
+  <meta property="og:title" content="EAZYFIX Houtrot-assistent" />
+  <meta property="og:description" content="De EAZYFIX-app: herken houtrot, krijg direct advies en de juiste aanpak. Maak een foto of stel je vraag." />
+  <meta property="og:url" content="https://eazyfix-bot.onrender.com" />
+  <meta property="og:image" content="https://eazyfix-bot.onrender.com/og-image.png" />
+  <meta property="og:image:secure_url" content="https://eazyfix-bot.onrender.com/og-image.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="EAZYFIX logo" />
+  <meta property="og:locale" content="nl_NL" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="EAZYFIX Houtrot-assistent" />
+  <meta name="twitter:description" content="De EAZYFIX-app: herken houtrot, krijg direct advies en de juiste aanpak." />
+  <meta name="twitter:image" content="https://eazyfix-bot.onrender.com/og-image.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #000a31;
+      --green: #79c143;
+      --green-dark: #08210a;
+      --ink: #1b2030;
+      --muted: #8a90a0;
+      --line: #eceef2;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: 'Manrope', system-ui, sans-serif;
+      color: var(--ink);
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    /* Achtergrond: eazy-fix.nl hero, wazig + donkerblauwe waas */
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: -2;
+      background: url('bg.png') center/cover no-repeat;
+      filter: blur(7px) brightness(.6) saturate(1.05);
+      transform: scale(1.1);
+    }
+    body::after {
+      content: ''; position: fixed; inset: 0; z-index: -1;
+      background: linear-gradient(155deg, rgba(0,10,49,.86), rgba(0,10,49,.5) 45%, rgba(8,33,10,.66));
+    }
+
+    .chat {
+      width: 100%; max-width: 540px; height: min(90vh, 800px);
+      background: #fff; border-radius: 24px; overflow: hidden;
+      display: flex; flex-direction: column;
+      box-shadow: 0 30px 90px rgba(0,0,0,.5);
+    }
+
+    /* Kop */
+    .top { background: var(--navy); color: #fff; padding: 16px 18px; display: flex; align-items: center; gap: 12px; }
+    .top .logo { height: 30px; display: block; }
+    .top .beta { background: var(--green); color: var(--green-dark); font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .06em; }
+    .top .status { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #c7ccda; }
+    .top .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(121,193,67,.6); animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(121,193,67,.6);} 70%{ box-shadow: 0 0 0 7px rgba(121,193,67,0);} 100%{ box-shadow:0 0 0 0 rgba(121,193,67,0);} }
+    .gear { background: transparent; border: 0; color: #c7ccda; cursor: pointer; font-size: 16px; padding: 2px 4px; line-height: 1; }
+
+    /* Instellingen (app-sleutel) — inklapbaar */
+    .settings { background: #f6f7f9; border-bottom: 1px solid var(--line); padding: 10px 16px; font-size: 12px; color: var(--muted); display: none; }
+    .settings.open { display: block; }
+    .settings label { display: block; margin-bottom: 4px; }
+    .settings input { width: 100%; padding: 8px 10px; border: 1px solid #d6d9e0; border-radius: 9px; font: inherit; }
+
+    /* Berichten */
+    .msgs { flex: 1; overflow-y: auto; padding: 18px 16px; background: #f6f7f9; display: flex; flex-direction: column; gap: 14px; }
+    .row { display: flex; gap: 9px; align-items: flex-end; }
+    .row-user { justify-content: flex-end; }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--green); display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+    .avatar img { width: 19px; height: 19px; display: block; }
+    .msg { max-width: 78%; padding: 11px 14px; font-size: 14.5px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+    .bot .msg { background: #fff; border: 1px solid var(--line); border-radius: 16px 16px 16px 5px; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+    .user .msg { background: var(--green); color: var(--green-dark); border-radius: 16px 16px 5px 16px; font-weight: 500; }
+    .err .msg { background: #ffe3e3; color: #7a1010; border: 1px solid #ffc9c9; border-radius: 14px; }
+
+    /* Typende puntjes */
+    .analyzing { color: #6b7280; font-style: italic; }
+    .typing { display: inline-flex; gap: 4px; padding: 2px 0; }
+    .typing span { width: 7px; height: 7px; border-radius: 50%; background: #b8bdc9; animation: blink 1.3s infinite both; }
+    .typing span:nth-child(2){ animation-delay:.2s;} .typing span:nth-child(3){ animation-delay:.4s;}
+    @keyframes blink { 0%,80%,100%{ opacity:.25; transform: translateY(0);} 40%{ opacity:1; transform: translateY(-3px);} }
+
+    /* Feedback */
+    .fb { display: flex; gap: 6px; align-items: center; margin: -4px 0 0 39px; flex-wrap: wrap; }
+    .fb button { padding: 4px 9px; border: 1px solid #d6d9e0; border-radius: 9px; background: #fff; color: var(--navy); cursor: pointer; font-size: 13px; }
+    .fb .sel { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .fb .fbsend { background: var(--navy); color: #fff; border: 0; font-weight: 600; }
+    .fb .fbc { flex: 1; min-width: 130px; padding: 6px 9px; border: 1px solid #d6d9e0; border-radius: 9px; font: inherit; font-size: 13px; }
+    .fb .fbmsg { font-size: 12px; color: var(--muted); }
+
+    /* Invoer */
+    .composer { padding: 12px; border-top: 1px solid var(--line); background: #fff; position: relative; }
+    form#f { display: flex; align-items: flex-end; gap: 8px; background: #f1f3f6; border: 1px solid #e6e9ef; border-radius: 18px; padding: 6px 6px 6px 8px; }
+    .attach { display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 12px; cursor: pointer; color: var(--muted); flex: 0 0 auto; background: none; border: 0; padding: 0; -webkit-appearance: none; appearance: none; transition: background .15s, color .15s; }
+    .attach:hover { background: #e6e9ef; color: var(--navy); }
+    .attach.has-file { color: var(--green); }
+    #photo, #photoCam { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; overflow: hidden; pointer-events: none; }
+    .photo-menu { position: absolute; left: 12px; bottom: 64px; z-index: 30; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.14); padding: 6px; min-width: 180px; }
+    .photo-menu[hidden] { display: none; }
+    .photo-menu button { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: 0; padding: 11px 12px; border-radius: 8px; font: inherit; font-size: 15px; color: var(--ink); cursor: pointer; text-align: left; }
+    .photo-menu button:hover { background: #eef1f6; }
+    .photo-menu svg { flex: 0 0 auto; color: var(--green); }
+    textarea#in { flex: 1; border: 0; background: transparent; resize: none; font: inherit; font-size: 15px; line-height: 1.4; max-height: 120px; padding: 9px 4px; outline: none; color: var(--ink); }
+    #send { width: 40px; height: 40px; flex: 0 0 auto; border: 0; border-radius: 13px; background: var(--green); color: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+    #send:disabled { opacity: .5; cursor: default; }
+    .credit { text-align: center; font-size: 11px; color: #aab; padding: 8px 0 2px; }
+    .credit b { color: var(--muted); font-weight: 600; }
+
+    /* Inline productlink (groene chip) in de antwoordtekst */
+    .product-link {
+      color: var(--green-dark); font-weight: 700; text-decoration: none;
+      background: #eef7e6; border: 1px solid #cde9b3;
+      border-radius: 6px; padding: 1px 6px; white-space: nowrap;
+      transition: background .12s, border-color .12s;
+    }
+    .product-link:hover { background: #e2f1d3; border-color: var(--green); }
+    .site-link { color: var(--green-dark); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+    .site-link:hover { color: var(--green); }
+
+    /* Videokaartje onder een antwoord (link naar YouTube-uitleg) */
+    .videos { display: flex; flex-direction: column; gap: 6px; margin: 2px 0 0 39px; }
+    .video { display: flex; align-items: stretch; gap: 0; padding: 0; overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 12px; text-decoration: none; color: var(--ink); font-size: 13.5px; box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: border-color .15s, box-shadow .15s; }
+    .video:hover { border-color: var(--green); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .video .vthumb { position: relative; flex: none; width: 104px; align-self: stretch; background-color: #eef0f2; overflow: hidden; }
+    .video .vthumbimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+    .video .vthumb-fallback { background: linear-gradient(135deg, #2b2b2b, #4a4a4a); }
+    .video .vplay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,0,0,.92); color: #fff; font-size: 12px; padding-left: 2px; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+    .video .vbody { display: flex; flex-direction: column; justify-content: center; gap: 4px; flex: 1; min-width: 0; padding: 10px 12px; }
+    .video .vtxt { font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .video .vcta { color: var(--green); font-weight: 700; font-size: 12.5px; }
+
+    /* Foto in een berichtbubbel */
+    .msg img.photo { max-width: 220px; max-height: 240px; border-radius: 12px; display: block; }
+    .user .msg.has-photo { padding: 5px; }
+
+    /* Preview van de gekozen foto, vóór verzenden */
+    .preview { display: none; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 8px; background: #f1f3f6; border: 1px solid #e6e9ef; border-radius: 14px; }
+    .preview.show { display: flex; }
+    .preview img { width: 46px; height: 46px; object-fit: cover; border-radius: 9px; flex: 0 0 auto; }
+    .preview .pname { font-size: 13px; color: var(--ink); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .preview .premove { border: 0; background: #e6e9ef; color: var(--navy); width: 26px; height: 26px; border-radius: 8px; cursor: pointer; font-size: 13px; flex: 0 0 auto; }
+    .preview .premove:hover { background: #dfe3ea; }
+
+    /* Mobiel: schermvullend, geen kaartranden, toetsenbord-/adresbalk-proof */
+    @media (max-width: 600px) {
+      body { padding: 0; align-items: stretch; height: 100vh; height: 100dvh; }
+      .chat {
+        max-width: 100%; width: 100%;
+        height: 100vh; height: 100dvh; max-height: 100dvh;
+        border-radius: 0; box-shadow: none;
+      }
+      .top { padding: 12px 14px; gap: 8px; }
+      .top .logo { height: 26px; }
+      .top .status { display: none; } /* bespaart ruimte op smalle schermen */
+      .msgs { padding: 14px 12px; gap: 12px; }
+      .msg { max-width: 88%; font-size: 15px; }
+      .composer { padding: 10px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+      textarea#in { font-size: 16px; } /* voorkomt automatisch inzoomen op iOS */
+      .fb { margin-left: 8px; }
+      .credit { padding-bottom: calc(2px + env(safe-area-inset-bottom)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="chat">
+    <div class="top">
+      <img class="logo" src="eazyfix-logo.png" alt="EAZYFIX" />
+      <span class="beta">Beta</span>
+      <span class="status"><span class="dot"></span> Online</span>
+      <button class="gear" id="gear" title="Instellingen">⚙</button>
+    </div>
+
+    <div class="settings" id="settings">
+      <label for="key">App-sleutel (alleen nodig als de server er één eist)</label>
+      <input id="key" type="password" placeholder="x-app-key" autocomplete="off" />
+    </div>
+
+    <div class="msgs" id="log"></div>
+
+    <div class="composer">
+      <div class="preview" id="preview">
+        <img id="pimg" alt="voorbeeld van de gekozen foto" />
+        <span class="pname" id="pname"></span>
+        <button type="button" class="premove" id="premove" title="Foto verwijderen">✕</button>
+      </div>
+      <form id="f">
+        <button type="button" class="attach" id="attach" title="Foto toevoegen" aria-label="Foto toevoegen"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+        <input id="photo" type="file" accept="image/*" />
+        <input id="photoCam" type="file" accept="image/*" capture="environment" />
+        <textarea id="in" rows="1" placeholder="Typ je bericht…"></textarea>
+        <button id="send" type="submit" title="Verstuur">➤</button>
+      </form>
+      <div class="photo-menu" id="photoMenu" hidden>
+        <button type="button" id="optCam"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Maak foto</button>
+        <button type="button" id="optLib"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Kies uit bibliotheek</button>
+      </div>
+      <div class="credit">Ontwikkeld door <b>Ralf Knevel</b></div>
+    </div>
+  </div>
+
+  <script>
+    const log = document.getElementById('log');
+    const keyEl = document.getElementById('key');
+    const photoEl = document.getElementById('photo');
+    const photoCamEl = document.getElementById('photoCam');
+    const photoMenu = document.getElementById('photoMenu');
+    const inEl = document.getElementById('in');
+    const sendBtn = document.getElementById('send');
+    const attachEl = document.getElementById('attach');
+    const previewEl = document.getElementById('preview');
+    const pimg = document.getElementById('pimg');
+    const pname = document.getElementById('pname');
+
+    // Ingebakken testsleutel: testers hoeven niets in te voeren tijdens de
+    // testfase. Moet gelijk zijn aan APP_SECRET op de server. Leeg maken om de
+    // handmatige invoer weer te verplichten.
+    const BAKED_APP_KEY = 'ef-test-7e69de2bea23';
+
+    keyEl.value = localStorage.getItem('appKey') || '';
+    keyEl.addEventListener('change', () => localStorage.setItem('appKey', keyEl.value));
+    document.getElementById('gear').addEventListener('click', () => document.getElementById('settings').classList.toggle('open'));
+
+    // Preview van de gekozen foto tonen/verbergen (rij 8: foto zichtbaar vóór verzenden).
+    let previewUrl = null;
+    function showPreview(file) {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(file);
+      pimg.src = previewUrl;
+      pname.textContent = file.name;
+      previewEl.classList.add('show');
+      attachEl.classList.add('has-file');
+    }
+    let pendingPhoto = null;
+    function clearPreview() {
+      if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = null; }
+      pendingPhoto = null;
+      photoCamEl.value = '';
+      photoEl.value = '';
+      pimg.removeAttribute('src');
+      previewEl.classList.remove('show');
+      attachEl.classList.remove('has-file');
+    }
+    function onPhotoPicked(input) { if (input.files[0]) { pendingPhoto = input.files[0]; showPreview(pendingPhoto); } }
+    photoEl.addEventListener('change', () => onPhotoPicked(photoEl));
+    photoCamEl.addEventListener('change', () => onPhotoPicked(photoCamEl));
+    document.getElementById('premove').addEventListener('click', clearPreview);
+
+    // Foto-knop: op mobiel keuze (camera of bibliotheek), op desktop direct kiezen.
+    const isMobile = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    function hidePhotoMenu() { photoMenu.hidden = true; }
+    attachEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (isMobile) photoMenu.hidden = !photoMenu.hidden;
+      else photoEl.click();
+    });
+    document.getElementById('optCam').addEventListener('click', () => { hidePhotoMenu(); photoCamEl.click(); });
+    document.getElementById('optLib').addEventListener('click', () => { hidePhotoMenu(); photoEl.click(); });
+    document.addEventListener('click', (e) => {
+      if (!photoMenu.hidden && !photoMenu.contains(e.target) && e.target !== attachEl) hidePhotoMenu();
+    });
+
+    const history = []; // { role, content }
+    const conversationId = 'c-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+
+    // Browser-locatie (voor weather_lookup). Best-effort: vraag eenmalig, sla op
+    // als toegestaan. Bij weigeren/niet-beschikbaar wordt 'm niet meegestuurd;
+    // de bot vraagt dan zelf om plaats of postcode.
+    let geo = null;
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => { geo = { lat: pos.coords.latitude, lon: pos.coords.longitude }; },
+        () => { geo = null; },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
+      );
+    }
+
+    function scrollLog() { log.scrollTop = log.scrollHeight; }
+
+    // Maak een berichtbubbel. Bot krijgt een avatar. Geeft het bubbel-element terug.
+    function bubble(cls, text) {
+      const row = document.createElement('div');
+      row.className = 'row row-' + cls + ' ' + cls;
+      if (cls === 'bot' || cls === 'err') {
+        const av = document.createElement('div');
+        av.className = 'avatar';
+        av.innerHTML = '<img src="bot-avatar.png" alt="bot" />';
+        row.appendChild(av);
+      }
+      const d = document.createElement('div');
+      d.className = 'msg';
+      if (text === '…') {
+        d.innerHTML = '<span class="typing"><span></span><span></span><span></span></span>';
+      } else {
+        d.textContent = text;
+      }
+      row.appendChild(d);
+      log.appendChild(row);
+      scrollLog();
+      return d;
+    }
+
+    function headers() {
+      const h = { 'Content-Type': 'application/json' };
+      const key = keyEl.value || BAKED_APP_KEY;
+      if (key) h['x-app-key'] = key;
+      return h;
+    }
+
+    // API-fetch met self-heal. Een oude of verkeerde handmatig ingevoerde sleutel
+    // blijft in localStorage staan en overschrijft de werkende ingebakken
+    // testsleutel, wat een harde 401 geeft. Krijgen we een 401 terwijl er een
+    // afwijkende handmatige sleutel meeging, dan gooien we die eenmalig weg en
+    // proberen we opnieuw met de ingebakken sleutel.
+    async function apiFetch(url, opts) {
+      let resp = await fetch(url, { ...opts, headers: headers() });
+      if (resp.status === 401 && BAKED_APP_KEY && keyEl.value && keyEl.value !== BAKED_APP_KEY) {
+        localStorage.removeItem('appKey');
+        keyEl.value = '';
+        resp = await fetch(url, { ...opts, headers: headers() });
+      }
+      return resp;
+    }
+    function fileToBase64(file) {
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result).split(',')[1]);
+        r.onerror = rej;
+        r.readAsDataURL(file);
+      });
+    }
+    // Verklein een foto client-side vóór upload: scheelt uploadtijd op mobiel,
+    // blijft ruim onder de server-bodylimiet en zet meteen om naar JPEG (lost
+    // ook HEIC op waar de browser die kan decoderen, o.a. iOS Safari). Lukt de
+    // omzetting niet, dan valt de aanroeper terug op het originele bestand.
+    function downscaleImage(file, maxDim = 1600, quality = 0.85) {
+      return new Promise((resolve) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          let w = img.naturalWidth, h = img.naturalHeight;
+          if (!w || !h) return resolve(null);
+          if (Math.max(w, h) > maxDim) {
+            const s = maxDim / Math.max(w, h);
+            w = Math.round(w * s); h = Math.round(h * s);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          canvas.toBlob((blob) => {
+            if (!blob) return resolve(null);
+            const r = new FileReader();
+            r.onload = () => resolve({ base64: String(r.result).split(',')[1], mimeType: 'image/jpeg' });
+            r.onerror = () => resolve(null);
+            r.readAsDataURL(blob);
+          }, 'image/jpeg', quality);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+        img.src = url;
+      });
+    }
+
+    // Productnaam-herkenning -> webshop-URL. Specifieke namen vóór algemene,
+    // zodat de gecombineerde regex de juiste variant pakt. Spiegelt de RULES
+    // uit src/producten.js.
+    const PRODUCTS = [
+      { re: /premium\s*houtrotvuller|houtrotvuller/i,        url: 'https://www.eazy-fix.nl/product/premium-houtrotvuller/' },
+      { re: /premium\s*houtplamuur|houtplamuur|\bplamuur\b/i, url: 'https://www.eazy-fix.nl/product/premium-houtplamuur-oneshot/' },
+      { re: /houtversterker/i,                                url: 'https://www.eazy-fix.nl/product/eazyfix-houtversterker-met-toebehoren/' },
+      { re: /houtvochtmeter|vochtmeter/i,                     url: 'https://www.eazy-fix.nl/product/houtvochtmeter/' },
+      { re: /houtrot.?frees/i,                                url: 'https://www.eazy-fix.nl/product/houtrot-frees/' },
+      { re: /muurvuller/i,                                    url: 'https://www.eazy-fix.nl/product/muurvuller/' },
+      { re: /kleurpigment/i,                                  url: 'https://www.eazy-fix.nl/product/eazyfix-kleurpigment/' },
+      { re: /reinigingsdoekjes/i,                             url: 'https://www.eazy-fix.nl/product/eazyfix-reinigingsdoekjes/' },
+      { re: /standaardset|startpakket|startset/i,             url: 'https://www.eazy-fix.nl/product/eazyfix-houtrot-standaard/' },
+      { re: /alles.?in.?(een|één)|reparatieset/i,             url: 'https://www.eazy-fix.nl/product/alles-in-een-hout-reparatieset/' },
+    ];
+
+    // Maak elke genoemde productnaam in het antwoord klikbaar als groene chip.
+    // Alleen de EERSTE vermelding per product wordt een link (rustiger). Werkt
+    // op het tekst-node van de bot-bubbel; HTML wordt veilig ge-escaped.
+    function linkifyProducts(answerEl) {
+      let textNode = null;
+      answerEl.childNodes.forEach(n => { if (n.nodeType === 3 && !textNode) textNode = n; });
+      if (!textNode) return;
+      const text = textNode.nodeValue;
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      // VERPLICHTE merk/kwalificatie-prefix: alleen een echte productvermelding
+      // ("EAZYFIX® Premium Houtrotvuller", "EAZYFIX® Houtversterker", "Premium
+      // Houtplamuur") wordt een link, en de hele naam inclusief EAZYFIX is de chip.
+      // Zo wordt een los woord als "frees" of "houtvochtmeter" geen rare chip.
+      const prefix = '(?:EAZYFIX[\\s®]*(?:Premium\\s*)?|Premium\\s+)';
+      const alternation = PRODUCTS.map(p => '(?:' + p.re.source + ')').join('|');
+      const combined = new RegExp(prefix + '(?:' + alternation + ')', 'gi');
+      const linked = new Set();
+      let html = '', last = 0, m;
+      while ((m = combined.exec(text)) !== null) {
+        if (m.index === combined.lastIndex) { combined.lastIndex++; continue; }
+        const hit = m[0];
+        html += esc(text.slice(last, m.index));
+        const prod = PRODUCTS.find(p => p.re.test(hit));
+        if (prod && !linked.has(prod.url)) {
+          linked.add(prod.url);
+          html += '<a class="product-link" href="' + prod.url + '" target="_blank" rel="noopener">' + esc(hit) + '</a>';
+        } else {
+          html += esc(hit);
+        }
+        last = m.index + hit.length;
+      }
+      html += esc(text.slice(last));
+      const holder = document.createElement('span');
+      holder.innerHTML = html;
+      while (holder.firstChild) answerEl.insertBefore(holder.firstChild, textNode);
+      answerEl.removeChild(textNode);
+    }
+
+    // Maak vermeldingen van onze eigen site (eazy-fix.nl) klikbaar. UITSLUITEND
+    // ons eigen domein; verkooppunt- of andere externe domeinen laten we met rust.
+    // Draait NA linkifyProducts en loopt alle tekst-nodes af, behalve wat al in
+    // een <a> zit. Trailing leestekens (punt/komma) blijven buiten de link.
+    const SITE_RE = /\b((?:https?:\/\/)?(?:www\.)?eazy-fix\.nl(?:\/[^\s<)]*)?)/gi;
+    function linkifySite(answerEl) {
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const walker = document.createTreeWalker(answerEl, NodeFilter.SHOW_TEXT, null);
+      const targets = [];
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node.parentNode && node.parentNode.closest && node.parentNode.closest('a')) continue;
+        SITE_RE.lastIndex = 0;
+        if (SITE_RE.test(node.nodeValue)) targets.push(node);
+      }
+      targets.forEach(tn => {
+        const text = tn.nodeValue;
+        let html = '', last = 0, m;
+        SITE_RE.lastIndex = 0;
+        while ((m = SITE_RE.exec(text)) !== null) {
+          let hit = m[1], trail = '';
+          const tm = hit.match(/[.,;:!?)]+$/);
+          if (tm) { trail = tm[0]; hit = hit.slice(0, -trail.length); }
+          const href = /^https?:\/\//i.test(hit) ? hit : 'https://' + hit;
+          html += esc(text.slice(last, m.index));
+          html += '<a class="site-link" href="' + href + '" target="_blank" rel="noopener">' + esc(hit) + '</a>' + esc(trail);
+          last = m.index + m[1].length;
+        }
+        html += esc(text.slice(last));
+        const holder = document.createElement('span');
+        holder.innerHTML = html;
+        const parent = tn.parentNode;
+        while (holder.firstChild) parent.insertBefore(holder.firstChild, tn);
+        parent.removeChild(tn);
+      });
+    }
+
+    // Maak telefoonnummers klikbaar (tel:). Ondersteunt +31 (0)... en nationale
+    // 0-nummers met spaties/streepjes. Maatvoering (2:1, 18%, 30.000, postcodes)
+    // matcht bewust NIET. Draait op tekst-nodes buiten bestaande links.
+    const PHONE_RE = /(\+31[\d\s()-]{8,16}\d)|(\b0\d{1,3}[\s-]?\d{2,4}[\s-]?\d{2,4}(?:[\s-]?\d{1,4})?)/g;
+    function telHref(s) { return 'tel:' + s.replace(/[()\s-]/g, '').replace(/^\+310/, '+31'); }
+    function linkifyPhones(answerEl) {
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const walker = document.createTreeWalker(answerEl, NodeFilter.SHOW_TEXT, null);
+      const targets = [];
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node.parentNode && node.parentNode.closest && node.parentNode.closest('a')) continue;
+        PHONE_RE.lastIndex = 0;
+        if (PHONE_RE.test(node.nodeValue)) targets.push(node);
+      }
+      targets.forEach(tn => {
+        const text = tn.nodeValue;
+        let html = '', last = 0, m;
+        PHONE_RE.lastIndex = 0;
+        while ((m = PHONE_RE.exec(text)) !== null) {
+          let hit = m[0], trail = '';
+          const tm = hit.match(/[.,;:!?)]+$/);
+          if (tm) { trail = tm[0]; hit = hit.slice(0, -trail.length); }
+          html += esc(text.slice(last, m.index));
+          html += '<a class="site-link" href="' + telHref(hit) + '">' + esc(hit) + '</a>' + esc(trail);
+          last = m.index + m[0].length;
+        }
+        html += esc(text.slice(last));
+        const holder = document.createElement('span');
+        holder.innerHTML = html;
+        const parent = tn.parentNode;
+        while (holder.firstChild) parent.insertBefore(holder.firstChild, tn);
+        parent.removeChild(tn);
+      });
+    }
+
+    const EMAIL_RE = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g;
+    // Maakt e-mailadressen klikbaar als mailto-link.
+    function linkifyEmails(answerEl) {
+      const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      const walker = document.createTreeWalker(answerEl, NodeFilter.SHOW_TEXT, null);
+      const targets = [];
+      let node;
+      while ((node = walker.nextNode())) {
+        if (node.parentNode && node.parentNode.closest && node.parentNode.closest('a')) continue;
+        EMAIL_RE.lastIndex = 0;
+        if (EMAIL_RE.test(node.nodeValue)) targets.push(node);
+      }
+      targets.forEach(tn => {
+        const text = tn.nodeValue;
+        let html = '', last = 0, m;
+        EMAIL_RE.lastIndex = 0;
+        while ((m = EMAIL_RE.exec(text)) !== null) {
+          let hit = m[0], trail = '';
+          const tm = hit.match(/[.,;:!?)]+$/);
+          if (tm) { trail = tm[0]; hit = hit.slice(0, -trail.length); }
+          html += esc(text.slice(last, m.index));
+          html += '<a class="site-link" href="mailto:' + esc(hit) + '">' + esc(hit) + '</a>' + esc(trail);
+          last = m.index + m[0].length;
+        }
+        html += esc(text.slice(last));
+        const holder = document.createElement('span');
+        holder.innerHTML = html;
+        const parent = tn.parentNode;
+        while (holder.firstChild) parent.insertBefore(holder.firstChild, tn);
+        parent.removeChild(tn);
+      });
+    }
+
+    // Toon klikbare videokaartje(s) met thumbnail onder een antwoord (YouTube).
+    function renderVideos(answerEl, videos) {
+      if (!videos || !videos.length) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'videos';
+      for (const v of videos) {
+        const a = document.createElement('a');
+        a.className = 'video';
+        a.href = v.url; a.target = '_blank'; a.rel = 'noopener';
+        a.innerHTML = '<span class="vthumb"><img class="vthumbimg" alt="" />'
+          + '<span class="vplay">▶</span></span>'
+          + '<span class="vbody"><span class="vtxt"></span><span class="vcta">Bekijk video →</span></span>';
+        a.querySelector('.vtxt').textContent = v.title;
+        const img = a.querySelector('.vthumbimg');
+        const thumbEl = a.querySelector('.vthumb');
+        if (v.thumb) {
+          img.onerror = () => { img.remove(); thumbEl.classList.add('vthumb-fallback'); };
+          img.src = v.thumb;
+        } else {
+          img.remove(); thumbEl.classList.add('vthumb-fallback');
+        }
+        wrap.appendChild(a);
+      }
+      (answerEl.closest('.row') || answerEl).after(wrap);
+      scrollLog();
+    }
+
+    function addFeedbackRow(question, answerEl) {
+      const answer = answerEl.textContent;
+      const row = document.createElement('div');
+      row.className = 'fb';
+      row.innerHTML =
+        '<button class="fbup" title="Goed">👍</button>' +
+        '<button class="fbdown" title="Kon beter">👎</button>' +
+        '<input class="fbc" placeholder="Wat kon beter? (optioneel)" />' +
+        '<button class="fbsend">Verstuur</button>' +
+        '<span class="fbmsg"></span>';
+      const anchor = answerEl.closest('.row') || answerEl;
+      anchor.after(row);
+      scrollLog();
+      let rating = null;
+      const up = row.querySelector('.fbup');
+      const down = row.querySelector('.fbdown');
+      up.onclick = () => { rating = 'up'; up.classList.add('sel'); down.classList.remove('sel'); };
+      down.onclick = () => { rating = 'down'; down.classList.add('sel'); up.classList.remove('sel'); };
+      row.querySelector('.fbsend').onclick = async () => {
+        const msg = row.querySelector('.fbmsg');
+        if (!rating) { msg.textContent = 'Kies eerst 👍 of 👎'; return; }
+        try {
+          const resp = await apiFetch('/api/feedback', {
+            method: 'POST',
+            body: JSON.stringify({ conversationId, question, answer, rating, comment: row.querySelector('.fbc').value }),
+          });
+          if (!resp.ok) throw new Error('status ' + resp.status);
+          row.innerHTML = '<span class="fbmsg">Bedankt voor je feedback!</span>';
+        } catch (e) {
+          msg.textContent = 'Kon feedback niet opslaan';
+        }
+      };
+    }
+
+    async function sendText(text) {
+      history.push({ role: 'user', content: text });
+      bubble('user', text);
+      const out = bubble('bot', '…');
+      try {
+        const resp = await apiFetch('/api/chat/stream', {
+          method: 'POST',
+          body: JSON.stringify({ messages: history, conversationId, geo }),
+        });
+        if (!resp.ok) {
+          let m = 'Er ging iets mis. Probeer het zo nog eens.';
+          try { const j = await resp.json(); if (j && j.error) m = j.error; } catch {}
+          out.closest('.row').className = 'row row-bot err'; out.textContent = m;
+          history.pop(); // mislukte user-beurt niet in de geschiedenis houden
+          return;
+        }
+        const reader = resp.body.getReader();
+        const dec = new TextDecoder();
+        let acc = '', buf = '', videos = null;
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop();
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const payload = line.slice(6);
+            if (payload === '[DONE]') continue;
+            try {
+              const obj = JSON.parse(payload);
+              if (obj.reset) { acc = ''; out.textContent = ''; }
+              if (obj.status === 'tool' && !acc) { out.textContent = 'Momentje…'; }
+              if (obj.text) { acc += obj.text; out.textContent = acc; }
+              if (obj.videos) { videos = obj.videos; }
+              if (obj.error) { out.closest('.row').className = 'row row-bot err'; out.textContent = obj.error; }
+            } catch {}
+          }
+          scrollLog();
+        }
+        if (acc) { history.push({ role: 'assistant', content: acc }); addFeedbackRow(text, out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); renderVideos(out, videos); }
+      } catch (e) {
+        out.closest('.row').className = 'row row-bot err';
+        out.textContent = 'Geen verbinding. Controleer je internet en probeer het opnieuw.';
+        history.pop(); // mislukte user-beurt niet in de geschiedenis houden
+      }
+    }
+
+    // Toon de verzonden foto zelf in een user-bubbel (rij 8: afbeelding zichtbaar).
+    function userPhotoBubble(file) {
+      const row = document.createElement('div');
+      row.className = 'row row-user user';
+      const d = document.createElement('div');
+      d.className = 'msg has-photo';
+      const img = document.createElement('img');
+      img.className = 'photo';
+      img.src = URL.createObjectURL(file);
+      img.onload = () => URL.revokeObjectURL(img.src);
+      d.appendChild(img);
+      row.appendChild(d);
+      log.appendChild(row);
+      scrollLog();
+    }
+
+    async function sendPhoto(file) {
+      userPhotoBubble(file);
+      const out = bubble('bot', '…');
+      out.innerHTML = '<span class="analyzing">De EAZYFIX Houtrot-assistent analyseert je foto, een moment geduld</span> <span class="typing"><span></span><span></span><span></span></span>';
+      try {
+        const reduced = await downscaleImage(file);
+        const base64 = reduced ? reduced.base64 : await fileToBase64(file);
+        const mimeType = reduced ? reduced.mimeType : file.type;
+        const resp = await apiFetch('/api/analyze-image', {
+          method: 'POST',
+          body: JSON.stringify({ base64, mimeType, messages: history, conversationId }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) { out.closest('.row').className = 'row row-bot err'; out.textContent = data.error || ('Fout ' + resp.status); return; }
+        // Server levert al schone tekst; flow/productIds zijn techniek, NIET tonen.
+        out.textContent = data.content;
+        // Foto-beurt in de geschiedenis bewaren zodat een vervolgfoto of -vraag
+        // doorgaat op deze schade i.p.v. los te beginnen.
+        history.push({ role: 'user', content: '[foto van de schade verstuurd]' });
+        history.push({ role: 'assistant', content: data.content });
+        addFeedbackRow('[foto: ' + file.name + ']', out);
+        linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out);
+      } catch (e) {
+        out.closest('.row').className = 'row row-bot err'; out.textContent = 'Fout: ' + e.message;
+      }
+    }
+
+    document.getElementById('f').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (sendBtn.disabled) return; // al een beurt bezig: geen tweede parallelle request
+      sendBtn.disabled = true;
+      try {
+        if (pendingPhoto) { const f = pendingPhoto; clearPreview(); await sendPhoto(f); }
+        const text = inEl.value.trim();
+        if (text) { inEl.value = ''; inEl.style.height = 'auto'; await sendText(text); }
+      } finally { sendBtn.disabled = false; inEl.focus(); }
+    });
+    inEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (sendBtn.disabled) return; document.getElementById('f').requestSubmit(); }
+    });
+    // Auto-groeiend invoerveld
+    inEl.addEventListener('input', () => { inEl.style.height = 'auto'; inEl.style.height = Math.min(inEl.scrollHeight, 120) + 'px'; });
+
+    // Welkomstbericht (alleen visueel, niet naar de bot gestuurd)
+    bubble('bot', 'Hoi! Ik ben de EAZYFIX Houtrot-assistent. Stel je vraag over houtrot repareren, of stuur een foto van de schade 👇');
+  </script>
+</body>
+</html>
