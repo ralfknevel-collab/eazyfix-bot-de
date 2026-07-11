@@ -5,21 +5,22 @@
 // Inline-bedragen die uit een regel geknipt worden (regel blijft staan).
 const PRICE_INLINE = [
   /€\s?\d[\d.,]*/g,
-  /\b\d{1,4}[.,]\d{2}\s?(excl|incl|euro)?\b/gi,
+  /\d[\d.,]*\s?€/g,
+  /\b\d{1,4}[.,]\d{2}\s?(excl|incl|inkl|euro)?\b/gi,
   /\b\d{1,4}\s?euro\b/gi,
-  /\b\d{1,3}\s?%\s?korting\b/gi,
+  /\b\d{1,3}\s?%\s?(korting|rabatt)\b/gi,
 ];
 
 // Regels die in hun geheel weg moeten: kortingen, nieuwsbrief-promo, (verlopen)
 // acties en bezorg-/verzendvoorwaarden. Generieke voordeel-taal ("voordeliger dan
 // vervangen", "duizenden euro's besparen") blijft staan — dat is geen prijs.
-const PROMO_LINE = /korting|kortingscode|\bactie\b|aanbieding|nieuwsbrief|vaderdagactie|kerstactie|paasactie|prijzenrad|gratis\s+(bezorging|verzending)|tijdelijke\s+actie|recente berichten|niet goed geld terug|vandaag besteld|morgen in huis|of koop (het product bij|in een winkel)|bekijk de pakketten|pakket en bespaar|bestel (meerdere|één of meerdere|nu)|\bjaar (complete )?garantie\b/i;
+const PROMO_LINE = /rabatt|rabattcode|gutschein|\baktion\b|angebot|newsletter|vatertag|weihnacht|ostern|gl(ü|ue)cksrad|kostenlose(r|s)?\s+(lieferung|versand)|befristete\s+aktion|letzte nachrichten|geld[- ]zur(ü|ue)ck|heute bestellt|morgen (im haus|geliefert)|oder kaufst du (das produkt bei|in einem)|zum webshop|in den warenkorb|nicht vorr(ä|ae)tig|weiterlesen|mehr lesen|paket und spar|bestell(e| jetzt| mehrere)|\bjahre?\s+garantie\b/i;
 
 // Canonieke productregel: houtreparatie is 5–20 mm diep; dieper dan 20 mm = nieuw
 // stuk hout verlijmen. Een reparatiediepte-bereik in "cm diep" is dus altijd een
 // bron-typefout (mm i.p.v. cm). Corrigeer alleen het diepte-bereik, niet losse
 // cm-maten als "ø 2 cm" of "2 cm rondom".
-const DEPTH_CM_TYPO = /\b(\d{1,2}\s*(?:en|tot|-|–)\s*\d{1,2})\s*cm(\s+diep)\b/gi;
+const DEPTH_CM_TYPO = /\b(\d{1,2}\s*(?:und|bis|tot|-|–)\s*\d{1,2})\s*cm(\s+tief)\b/gi;
 
 // Niet-houtherstel pagina's (commercieel/juridisch/organisatie) die buiten de
 // botkennis blijven: voorwaarden, betaalmethoden, retour, verzending, privacy,
@@ -27,12 +28,12 @@ const DEPTH_CM_TYPO = /\b(\d{1,2}\s*(?:en|tot|-|–)\s*\d{1,2})\s*cm(\s+diep)\b/
 // trainings-aanmeldingen, gedateerde live-events, de shop-listing en de
 // verkooppunten-overzichtspagina (daar is de find_verkooppunt-tool voor). De bot
 // verwijst voor deze onderwerpen naar de binnendienst.
-const EXCLUDE_PAGE = /\/klantenservice\/|\/over-eazyfix\/?$|\/solliciteren\/?$|\/vacatures[^/]*\/?$|\/aanmelden-nieuwsbrief\/?$|\/aanmelden-online-training\/?$|\/live\/?$|\/shop\/?$|\/overzicht-verkooppunten\/?$/i;
+const EXCLUDE_PAGE = /\/kundendienst\/|\/agb\b|\/widerruf|\/datenschutz|\/impressum|\/versand|\/zahlung|\/kontakt\/?$|\/(ü|ue)ber-(uns|eazyfix)\/?$|\/stellenangebote?\/?$|\/newsletter[^/]*\/?$|\/(ü|ue)ber-(uns|eazyfix)\/?$|\/verkaufsstellen\/?$|\/shop\/?$|-fba\/?$/i;
 
 // Slecht gescrapete entries waarvan de titel een kale listing-/navigatielabel is
 // (bv. "Shop") i.p.v. een echte product-/paginanaam — die dragen geen bruikbare
 // kennis en mogen nooit boven een specifieke productpagina komen.
-const LISTING_TITLE = /^(shop|webshop|producten?|alle producten|bestsellers|land|menu|winkelmand|inloggen)$/i;
+const LISTING_TITLE = /^(shop|webshop|produkte?|alle produkte|bestseller|startseite|land|men(ü|ue)|warenkorb|kasse|anmelden)$/i;
 
 function isListingJunk(p) {
   return LISTING_TITLE.test(String((p && p.title) || '').trim());

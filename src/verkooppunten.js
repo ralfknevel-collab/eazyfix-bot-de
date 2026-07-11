@@ -55,15 +55,15 @@ function findVerkooppunten(query, limit = 3) {
 const VERKOOPPUNT_TOOL = {
   name: 'find_verkooppunt',
   description:
-    'Zoek fysieke EAZYFIX®-verkooppunten bij een plaats of postcode in Nederland. ' +
-    'Gebruik deze tool zodra de gebruiker wil weten waar producten fysiek te koop zijn ' +
-    'en een plaats of postcode heeft genoemd. Ken je de plaats nog niet, vraag die dan eerst.',
+    'Suche physische EAZYFIX®-Verkaufsstellen zu einem Ort oder einer Postleitzahl in Deutschland. ' +
+    'Nutze dieses Tool, sobald der Nutzer wissen möchte, wo Produkte physisch erhältlich sind ' +
+    'und einen Ort oder eine Postleitzahl genannt hat. Kennst du den Ort noch nicht, frag zuerst danach.',
   input_schema: {
     type: 'object',
     properties: {
       plaats: {
         type: 'string',
-        description: 'Plaatsnaam of (4-cijferige) postcode van de gebruiker, bijv. "IJsselstein" of "3401".',
+        description: 'Ortsname oder Postleitzahl des Nutzers, z. B. "Essen" oder "45127".',
       },
     },
     required: ['plaats'],
@@ -77,15 +77,15 @@ function runVerkooppuntTool(input) {
   if (!stores.length) {
     // Niets gevonden: niet gokken, maar naar de site/webshop én de binnendienst
     // verwijzen (conform de "nooit verzinnen"-regel).
-    return `Geen EAZYFIX-verkooppunt gevonden bij "${plaats || ''}". ` +
-      'Verwijs de gebruiker naar eazy-fix.nl bij Verkooppunten of de webshop voor online bestellen, ' +
-      'of naar de EAZYFIX-binnendienst: +31 (0)85 201 201 1.';
+    return `Keine EAZYFIX-Verkaufsstelle gefunden für "${plaats || ''}". ` +
+      'Verweise den Nutzer auf die Verkaufsstellen-Karte auf eazy-fix.de/verkaufsstellen oder den Webshop für die Online-Bestellung, ' +
+      'oder auf den EAZYFIX-Innendienst: +31 85 201 201 1.';
   }
-  // Eerlijke kop: bij een plaatsmatch "in <plaats>", bij een postcode-match "in de
-  // regio". Geen "dichtstbijzijnde" — er is geen echte afstandssortering.
+  // Ehrliche Überschrift: bei einem Ortstreffer "in <Ort>", bei einem Postleitzahl-
+  // Treffer "in der Region". Kein "nächstgelegene" — es gibt keine echte Entfernungssortierung.
   const kop = kind === 'city'
-    ? `EAZYFIX-verkooppunten in ${plaats}:`
-    : 'EAZYFIX-verkooppunten in de regio (op postcode, niet op exacte afstand):';
+    ? `EAZYFIX-Verkaufsstellen in ${plaats}:`
+    : 'EAZYFIX-Verkaufsstellen in der Region (nach Postleitzahl, nicht nach exakter Entfernung):';
   return `${kop}\n${stores.map(formatStore).join('\n')}`;
 }
 

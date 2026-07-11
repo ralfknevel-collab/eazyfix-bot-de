@@ -13,16 +13,16 @@ test('parseDiagnose laat isHout standaard true als veld ontbreekt', () => {
   assert.strictEqual(d.isHout, true);
 });
 
-test('nietHoutReply benoemt houtherstel en het materiaal, geen em-streepje', () => {
-  const r = nietHoutReply({ materiaal: 'baksteen/metselwerk' });
-  assert.match(r, /houtherstel/i);
-  assert.match(r, /baksteen\/metselwerk/);
+test('nietHoutReply benoemt Holzreparatur en het materiaal, geen em-streepje', () => {
+  const r = nietHoutReply({ materiaal: 'Ziegel/Mauerwerk' });
+  assert.match(r, /Holzreparatur/i);
+  assert.match(r, /Ziegel\/Mauerwerk/);
   assert.doesNotMatch(r, /—|–/);
 });
 
 test('nietHoutReply werkt zonder materiaal', () => {
   const r = nietHoutReply({ materiaal: '' });
-  assert.match(r, /houtherstel/i);
+  assert.match(r, /Holzreparatur/i);
 });
 
 test('parseDiagnose leest kaal JSON', () => {

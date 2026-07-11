@@ -59,7 +59,7 @@ async function geocode(query) {
 }
 
 function dagLabel(i) {
-  return i === 0 ? 'Vandaag' : i === 1 ? 'Morgen' : i === 2 ? 'Overmorgen' : `Dag ${i + 1}`;
+  return i === 0 ? 'Heute' : i === 1 ? 'Morgen' : i === 2 ? 'Übermorgen' : `Tag ${i + 1}`;
 }
 
 // Cache de samenvatting per ~1km (2 decimalen) zodat herhaalde/nabije vragen
@@ -69,14 +69,14 @@ const cache = new Map(); // key -> { ts, text }
 
 // Formatteert genormaliseerde data naar leesbare tekst voor de bot.
 function format(plek, cur, days) {
-  const lines = [`Actueel weer voor ${plek}:`];
+  const lines = [`Aktuelles Wetter für ${plek}:`];
   if (cur) {
-    lines.push(`Nu: ${Math.round(cur.temp)} graden Celsius, ${cur.precip || 0} mm neerslag, luchtvochtigheid ${Math.round(cur.hum)}%.`);
+    lines.push(`Jetzt: ${Math.round(cur.temp)} Grad Celsius, ${cur.precip || 0} mm Niederschlag, Luftfeuchtigkeit ${Math.round(cur.hum)}%.`);
   }
   days.forEach((d, i) => {
     lines.push(
-      `${dagLabel(i)}: ${Math.round(d.min)} tot ${Math.round(d.max)} graden Celsius, ` +
-      `regenkans ${d.rainProb ?? 0}%, ${d.precip ?? 0} mm neerslag.`
+      `${dagLabel(i)}: ${Math.round(d.min)} bis ${Math.round(d.max)} Grad Celsius, ` +
+      `Regenwahrscheinlichkeit ${d.rainProb ?? 0}%, ${d.precip ?? 0} mm Niederschlag.`
     );
   });
   return lines.join('\n');
@@ -88,7 +88,7 @@ async function viaWeatherApi({ plaats, postcode, lat, lon, key }) {
   const q = (Number.isFinite(la) && Number.isFinite(lo))
     ? `${la.toFixed(4)},${lo.toFixed(4)}`
     : String(plaats || postcode || '').trim();
-  if (!q) return `Geen locatie bekend. Vraag de klusser om een plaatsnaam of postcode.`;
+  if (!q) return `Kein Standort bekannt. Frag den Heimwerker nach einem Ortsnamen oder einer Postleitzahl.`;
 
   const cacheKey = `wa:${q.toLowerCase()}`;
   const hit = cache.get(cacheKey);
@@ -122,7 +122,7 @@ async function viaOpenMeteo({ plaats, postcode, lat, lon }) {
   if (!Number.isFinite(la) || !Number.isFinite(lo)) {
     const geo = await geocode(plaats || postcode);
     if (!geo) {
-      return `Geen locatie gevonden voor "${plaats || postcode || ''}". Vraag de klusser om een plaatsnaam of postcode.`;
+      return `Kein Standort gefunden für "${plaats || postcode || ''}". Frag den Heimwerker nach einem Ortsnamen oder einer Postleitzahl.`;
     }
     la = geo.lat; lo = geo.lon; naam = geo.naam;
   }
@@ -166,21 +166,21 @@ async function lookup({ plaats, postcode, lat, lon } = {}) {
       : await viaOpenMeteo({ plaats, postcode, lat, lon });
   } catch (e) {
     console.error(`[weather] lookup faalde via ${key ? 'WeatherAPI' : 'Open-Meteo'} (plaats=${plaats || ''} postcode=${postcode || ''} lat=${lat ?? ''} lon=${lon ?? ''}): ${e.name}: ${e.message}`);
-    return `Weerdata tijdelijk niet beschikbaar (${e.message}). Adviseer op basis van de algemene regels.`;
+    return `Wetterdaten momentan nicht verfügbar (${e.message}). Berate auf Basis der allgemeinen Regeln.`;
   }
 }
 
 // Anthropic tool-definitie.
 const WEATHER_TOOL = {
   name: 'weather_lookup',
-  description: 'Haal het ACTUELE weer en de 3-daagse vooruitblik op (temperatuur nu, min/max per dag, regenkans, neerslag). Gebruik dit ALTIJD bij vragen als "kan ik vandaag repareren", "kan ik nu buiten klussen", "wat is het weer", of wanneer regen of temperatuur het klusadvies bepaalt (verse reparatie mag tijdens het uitharden niet nat worden, hout moet droog zijn). Geef lat en lon door als die bekend zijn (gedeelde locatie), anders plaats of postcode. Vraag niet om coördinaten aan de gebruiker.',
+  description: 'Hole das AKTUELLE Wetter und die 3-Tage-Vorschau (Temperatur jetzt, min/max pro Tag, Regenwahrscheinlichkeit, Niederschlag). Nutze dies IMMER bei Fragen wie "kann ich heute reparieren", "kann ich jetzt draußen arbeiten", "wie ist das Wetter", oder wenn Regen oder Temperatur den Reparatur-Rat bestimmen (frische Reparatur darf während des Aushärtens nicht nass werden, Holz muss trocken sein). Gib lat und lon durch, wenn sie bekannt sind (geteilter Standort), sonst Ort oder Postleitzahl. Frag den Nutzer nicht nach Koordinaten.',
   input_schema: {
     type: 'object',
     properties: {
-      plaats: { type: 'string', description: 'Plaatsnaam, bv. "Waalwijk", "Amsterdam".' },
-      postcode: { type: 'string', description: 'Postcode of de eerste 4 cijfers, bv. "5145".' },
-      lat: { type: 'number', description: 'Breedtegraad van de gedeelde locatie (indien bekend).' },
-      lon: { type: 'number', description: 'Lengtegraad van de gedeelde locatie (indien bekend).' },
+      plaats: { type: 'string', description: 'Ortsname, z. B. "Göppingen", "Berlin".' },
+      postcode: { type: 'string', description: 'Postleitzahl oder die ersten Ziffern, z. B. "73033".' },
+      lat: { type: 'number', description: 'Breitengrad des geteilten Standorts (falls bekannt).' },
+      lon: { type: 'number', description: 'Längengrad des geteilten Standorts (falls bekannt).' },
     },
   },
 };

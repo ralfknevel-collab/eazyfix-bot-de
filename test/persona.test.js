@@ -8,28 +8,30 @@ test('persona-prompts geladen en niet leeg', () => {
   assert.ok(typeof IMAGE_DIAGNOSE_PROMPT === 'string' && IMAGE_DIAGNOSE_PROMPT.length > 200);
 });
 
-test('houtrot-identiteit aanwezig in basis-prompt', () => {
+test('houtrot-identiteit (DE) aanwezig in basis-prompt', () => {
   assert.match(BASE_SYSTEM_PROMPT, /EAZYFIX®/);
-  assert.match(BASE_SYSTEM_PROMPT, /houtrot/i);
-  assert.match(BASE_SYSTEM_PROMPT, /\+31 \(0\)85 201 201 1/);
+  assert.match(BASE_SYSTEM_PROMPT, /Holzfäule/i);
+  assert.match(BASE_SYSTEM_PROMPT, /\+31 85 201 201 1/);
 });
 
-test('analyse-prompt behoudt machine-leesbare tags en verplicht ernst-woord', () => {
+test('analyse-prompt behoudt machine-leesbare tags en verplicht ernst-woord (DE)', () => {
   assert.match(IMAGE_ANALYSIS_PROMPT, /PRODUCTS:/);
   assert.match(IMAGE_ANALYSIS_PROMPT, /FLOW:/);
-  assert.match(IMAGE_ANALYSIS_PROMPT, /"licht", "matig" of "ernstig"/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /"leicht", "mittel" oder "schwer"/);
   // Het rigide format is vervangen door een warm, doorlopend bericht.
-  assert.doesNotMatch(IMAGE_ANALYSIS_PROMPT, /Wat ik zie:/);
+  assert.doesNotMatch(IMAGE_ANALYSIS_PROMPT, /Was ich sehe:/);
 });
 
-test('analyse-prompt dwingt consistente ernst af en verbiedt naar de foto-analyse te verwijzen', () => {
-  assert.match(IMAGE_ANALYSIS_PROMPT, /consistent/i);
-  assert.match(IMAGE_ANALYSIS_PROMPT, /foto-analyse/i);
+test('analyse-prompt dwingt consistente ernst af en verbiedt naar de foto-analyse te verwijzen (DE)', () => {
+  assert.match(IMAGE_ANALYSIS_PROMPT, /konsistent/i);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /Foto-Analyse/i);
 });
 
-test('diagnose-prompt vraagt geldig JSON met de verwachte velden', () => {
+test('diagnose-prompt vraagt geldig JSON met de verwachte (contract-)velden', () => {
   assert.match(IMAGE_DIAGNOSE_PROMPT, /JSON/);
   assert.match(IMAGE_DIAGNOSE_PROMPT, /"duidelijk"/);
   assert.match(IMAGE_DIAGNOSE_PROMPT, /"schade_type"/);
   assert.match(IMAGE_DIAGNOSE_PROMPT, /"zoektermen"/);
+  // ernst-waarden blijven het code-contract licht/matig/ernstig.
+  assert.match(IMAGE_DIAGNOSE_PROMPT, /"licht", "matig", "ernstig"/);
 });

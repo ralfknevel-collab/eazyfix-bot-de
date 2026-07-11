@@ -2,20 +2,26 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 const { findVerkooppunten, formatStore, STORES, VERKOOPPUNT_TOOL, runTool } = require('../src/verkooppunten');
 
+// DE-data: ~34 verkooppunten uit de eazy-fix.de-sitemap. Hornbach-filialen dragen
+// een stad; losse vakhandel-bedrijven hebben city=null (de DE-pagina's bevatten
+// geen adres). Er zijn geen postcodes, dus er is geen postcode-regio-lookup.
+
 test('dataset is geladen en niet leeg', () => {
-  assert.ok(Array.isArray(STORES) && STORES.length > 100);
-  for (const s of STORES.slice(0, 5)) assert.ok(s.name && s.city);
+  assert.ok(Array.isArray(STORES) && STORES.length > 20);
+  for (const s of STORES.slice(0, 5)) assert.ok(s.name);
+  // Een flink deel heeft een stad (de Hornbach-filialen).
+  assert.ok(STORES.filter((s) => s.city).length >= 15);
 });
 
-test('plaatsnaam IJsselstein vindt Bijvoet', () => {
-  const r = findVerkooppunten('IJsselstein');
-  assert.ok(r.some((s) => /bijvoet/i.test(s.name)), 'Bijvoet moet erbij zitten');
+test('plaatsnaam Essen vindt een Hornbach-filiaal', () => {
+  const r = findVerkooppunten('Essen');
+  assert.ok(r.some((s) => /hornbach/i.test(s.name)), 'Hornbach Essen moet erbij zitten');
 });
 
-test('postcode 3401 valt in dezelfde regio als IJsselstein', () => {
-  const r = findVerkooppunten('3401 MS');
-  assert.ok(r.length > 0);
-  assert.ok(r.every((s) => s.zip.slice(0, 2) === '34'));
+test('deel-plaatsnaam matcht (Leipzig vindt Leipzig en Leipzig-Alte Messe)', () => {
+  const r = findVerkooppunten('Leipzig', 3);
+  assert.ok(r.length >= 1);
+  assert.ok(r.every((s) => /leipzig/i.test(s.city || '')));
 });
 
 test('onbekende plaats geeft lege lijst', () => {
@@ -28,13 +34,13 @@ test('lege query geeft lege lijst', () => {
 });
 
 test('limit wordt gerespecteerd', () => {
-  assert.ok(findVerkooppunten('Amsterdam', 2).length <= 2);
+  assert.ok(findVerkooppunten('Leipzig', 1).length <= 1);
 });
 
 test('formatStore geeft compacte regel met naam en plaats', () => {
-  const line = formatStore({ name: 'Test BV', street: 'Weg 1', zip: '1234AB', city: 'TESTSTAD', phone: '+3110', url: 'x.nl' });
-  assert.match(line, /Test BV/);
-  assert.match(line, /TESTSTAD/);
+  const line = formatStore({ name: 'Hornbach Test', street: null, zip: null, city: 'ESSEN', phone: null, url: 'https://www.eazy-fix.de/verkooppunten/x/' });
+  assert.match(line, /Hornbach Test/);
+  assert.match(line, /ESSEN/);
 });
 
 test('tool-spec heeft juiste naam en verplicht plaats-veld', () => {
@@ -42,26 +48,22 @@ test('tool-spec heeft juiste naam en verplicht plaats-veld', () => {
   assert.deepEqual(VERKOOPPUNT_TOOL.input_schema.required, ['plaats']);
 });
 
-test('runTool find_verkooppunt geeft Bijvoet-tekst bij IJsselstein', () => {
-  const out = runTool('find_verkooppunt', { plaats: 'IJsselstein' });
-  assert.match(out, /Bijvoet/);
+test('runTool find_verkooppunt geeft Hornbach-tekst bij Essen', () => {
+  const out = runTool('find_verkooppunt', { plaats: 'Essen' });
+  assert.match(out, /Hornbach/);
 });
 
-test('runTool geeft nette tekst als niets gevonden, met binnendienst-verwijzing', () => {
+test('runTool geeft nette DE-tekst als niets gevonden, met binnendienst-verwijzing', () => {
   const out = runTool('find_verkooppunt', { plaats: 'Atlantis' });
-  assert.match(out, /Geen EAZYFIX-verkooppunt/);
-  assert.match(out, /eazy-fix\.nl/);
-  assert.match(out, /\+31 \(0\)85 201 201 1/);
+  assert.match(out, /Keine EAZYFIX-Verkaufsstelle/);
+  assert.match(out, /eazy-fix\.de/);
+  assert.match(out, /\+31 85 201 201 1/);
 });
 
-test('plaatsmatch labelt "in <plaats>", postcode-match labelt "in de regio" (geen overclaim)', () => {
-  const stad = runTool('find_verkooppunt', { plaats: 'IJsselstein' });
-  assert.match(stad, /verkooppunten in IJsselstein/i);
-  assert.doesNotMatch(stad, /dichtstbijzijnde/i);
-
-  const regio = runTool('find_verkooppunt', { plaats: '3401 MS' });
-  assert.match(regio, /in de regio/i);
-  assert.doesNotMatch(regio, /dichtstbijzijnde/i);
+test('plaatsmatch labelt "in <plaats>" zonder overclaim (geen "nächstgelegene")', () => {
+  const stad = runTool('find_verkooppunt', { plaats: 'Essen' });
+  assert.match(stad, /Verkaufsstellen in Essen/i);
+  assert.doesNotMatch(stad, /nächstgelegene/i);
 });
 
 test('onbekende tool geeft foutmelding', () => {

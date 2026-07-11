@@ -29,11 +29,11 @@ const anthropic = new Anthropic.default({ apiKey: process.env.ANTHROPIC_API_KEY,
 // proberen; overige fouten → neutrale melding zonder technische details.
 function friendlyError(err) {
   const status = err && err.status;
-  if (status === 429) return 'Het is nu erg druk. Wacht een halve minuut en probeer het opnieuw.';
+  if (status === 429) return 'Es ist gerade sehr viel los. Warte eine halbe Minute und versuch es erneut.';
   if (status === 529 || status === 503 || status === 500) {
-    return 'De assistent is even overbelast. Probeer het over een minuutje nog eens — je vraag is niet verloren.';
+    return 'Der Assistent ist gerade überlastet. Versuch es in einer Minute noch einmal — deine Frage ist nicht verloren.';
   }
-  return 'Er ging even iets mis. Probeer het zo opnieuw, of bel de binnendienst op +31 (0)85 201 201 1.';
+  return 'Da ist gerade etwas schiefgelaufen. Versuch es gleich erneut, oder ruf den Innendienst an unter +31 85 201 201 1.';
 }
 
 const VALID_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -147,14 +147,14 @@ app.post('/api/analyze-image', async (req, res) => {
   }
 
   if (images.length === 0) {
-    return res.status(400).json({ error: 'images array (of base64+mimeType) vereist' });
+    return res.status(400).json({ error: 'images-Array (oder base64+mimeType) erforderlich' });
   }
   if (images.length > MAX_IMAGES_PER_MESSAGE) {
-    return res.status(400).json({ error: `Max ${MAX_IMAGES_PER_MESSAGE} foto's per verzoek` });
+    return res.status(400).json({ error: `Max ${MAX_IMAGES_PER_MESSAGE} Fotos pro Anfrage` });
   }
   for (const img of images) {
     if (!img || typeof img.base64 !== 'string' || !VALID_IMAGE_TYPES.includes(img.mimeType)) {
-      return res.status(400).json({ error: 'Ongeldige foto: base64 + ondersteund mimeType nodig (jpeg/png/gif/webp)' });
+      return res.status(400).json({ error: 'Ungültiges Foto: base64 + unterstützter mimeType nötig (jpeg/png/gif/webp)' });
     }
   }
 
@@ -169,12 +169,12 @@ app.post('/api/analyze-image', async (req, res) => {
     const priorMessages = sanitizePriorText(req.body.messages);
 
     let promptText = images.length > 1
-      ? `Analyseer deze ${images.length} foto's van de beschadigde plek (verschillende hoeken/details van dezelfde schade).`
-      : 'Analyseer deze foto van de beschadigde plek.';
+      ? `Analysiere diese ${images.length} Fotos der beschädigten Stelle (verschiedene Winkel/Details desselben Schadens).`
+      : 'Analysiere dieses Foto der beschädigten Stelle.';
     // Loopt er al een gesprek? Behandel de foto dan als aanvulling op de eerder
     // besproken schade in plaats van als losstaand geval.
     if (priorMessages.length > 0) {
-      promptText += ' Dit gesprek loopt al; deze foto is een aanvulling op de eerder besproken schade. Ga daarop door en behandel het niet als een losstaand nieuw geval.';
+      promptText += ' Dieses Gespräch läuft bereits; dieses Foto ergänzt den zuvor besprochenen Schaden. Mach damit weiter und behandle es nicht als eigenständigen neuen Fall.';
     }
 
     // Pass 1: snelle, goedkope, gestructureerde JSON-diagnose. Bepaalt of de
@@ -211,7 +211,7 @@ app.post('/api/analyze-image', async (req, res) => {
     let hint = '';
     if (diagnose) {
       kennisContext = searchContext(buildRagQuery(diagnose), 3);
-      hint = `\n\nVoorlopige diagnose (gebruik als hint, controleer zelf op de foto): schade lijkt ${diagnose.schadeType || 'onbekend'}, ernst ${diagnose.ernst}.`;
+      hint = `\n\nVorläufige Diagnose (nutze als Hinweis, prüfe selbst am Foto): Schaden scheint ${diagnose.schadeType || 'unbekannt'}, Schweregrad ${diagnose.ernst}.`;
     }
 
     // Pass 2: het warme, volledige analyse-antwoord. zoek_kennis blijft als
@@ -241,7 +241,7 @@ app.post('/api/analyze-image', async (req, res) => {
     // Anthropic 400 = foto onbruikbaar (te klein, corrupt, niet te decoderen).
     // Niet de server stuk: laat de app om een betere foto vragen.
     if (err.status === 400) {
-      return res.status(400).json({ error: 'Foto onbruikbaar — stuur een scherpere foto bij goed daglicht.' });
+      return res.status(400).json({ error: 'Foto unbrauchbar — schick ein schärferes Foto bei gutem Tageslicht.' });
     }
     if (err.status === 429) return res.status(429).json({ error: friendlyError(err) });
     res.status(500).json({ error: friendlyError(err) });
@@ -253,11 +253,11 @@ app.post('/api/chat', async (req, res) => {
   const { messages, model, geo } = req.body;
 
   if (!Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: 'messages array vereist' });
+    return res.status(400).json({ error: 'messages-Array erforderlich' });
   }
   for (const m of messages) {
     if (!['user', 'assistant'].includes(m.role) || !validateContent(m.content)) {
-      return res.status(400).json({ error: 'Ongeldig berichtformaat' });
+      return res.status(400).json({ error: 'Ungültiges Nachrichtenformat' });
     }
   }
 
@@ -284,11 +284,11 @@ app.post('/api/chat/stream', async (req, res) => {
   // Volledige validatie vóór de SSE-headers, zodat ongeldige invoer net als
   // /api/chat een echte HTTP 400 krijgt (en niet een 200 met SSE-fout).
   if (!Array.isArray(messages) || messages.length === 0) {
-    return res.status(400).json({ error: 'messages array vereist' });
+    return res.status(400).json({ error: 'messages-Array erforderlich' });
   }
   for (const m of messages) {
     if (!['user', 'assistant'].includes(m.role) || !validateContent(m.content)) {
-      return res.status(400).json({ error: 'Ongeldig berichtformaat' });
+      return res.status(400).json({ error: 'Ungültiges Nachrichtenformat' });
     }
   }
 
@@ -392,14 +392,14 @@ app.post('/api/feedback', async (req, res) => {
   const result = validateFeedback(req.body);
   if (!result.ok) return res.status(400).json({ error: result.error });
   if (!feedbackEnabled()) {
-    return res.status(503).json({ error: 'Feedback uitgeschakeld (geen Supabase-config)' });
+    return res.status(503).json({ error: 'Feedback deaktiviert (keine Supabase-Konfiguration)' });
   }
   try {
     await saveFeedback(result.value);
     res.json({ ok: true });
   } catch (err) {
     console.error('Feedback opslaan mislukt:', err.message);
-    res.status(502).json({ error: 'Feedback kon niet worden opgeslagen' });
+    res.status(502).json({ error: 'Feedback konnte nicht gespeichert werden' });
   }
 });
 

@@ -2,34 +2,34 @@ const { test } = require('node:test');
 const assert = require('node:assert');
 const { productsInText } = require('../src/producten');
 
-test('één product zonder voorbehandeling → één tegel (Houtplamuur)', () => {
-  const r = productsInText('Voor die krasjes in gezond hout gebruik je EAZYFIX® Premium Houtplamuur.');
+test('één product zonder voorbehandeling → één tegel (Holz Feinspachtel)', () => {
+  const r = productsInText('Für die Kratzer in gesundem Holz nimmst du EAZYFIX® Premium Holz Feinspachtel.');
   assert.equal(r.length, 1);
-  assert.match(r[0].name, /plamuur/i);
+  assert.match(r[0].name, /feinspachtel/i);
 });
 
-test('één keer Houtrotvuller → tegel + companion Houtversterker', () => {
-  const r = productsInText('Vul de plek met EAZYFIX® Premium Houtrotvuller (2:1).');
+test('één keer Holzspachtelmasse → tegel + companion Holzimprägnierung', () => {
+  const r = productsInText('Fülle die Stelle mit der EAZYFIX® Premium Holzspachtelmasse (2:1).');
   assert.equal(r.length, 2);
-  assert.match(r[0].name, /Houtrotvuller/i);
-  assert.match(r[0].url, /^https:\/\/www\.eazy-fix\.nl\/product\/premium-houtrotvuller\/$/);
-  assert.match(r[1].name, /houtversterker/i);
+  assert.match(r[0].name, /Holzspachtelmasse/i);
+  assert.match(r[0].url, /eazy-fix\.de\/.*premium-holzspachtelmasse\/$/);
+  assert.match(r[1].name, /impr(ä|ae)gnierung/i);
 });
 
 test('meerdere producten genoemd → tegel van het eerst genoemde product', () => {
-  const text = 'Je kunt Premium Houtrotvuller gebruiken, of voor cosmetische schade Premium Houtplamuur, en eventueel de houtrotfrees.';
+  const text = 'Du kannst die Premium Holzspachtelmasse verwenden, oder für kosmetische Schäden Premium Holz Feinspachtel, und eventuell den Holzfäule Fräser.';
   const r = productsInText(text);
-  // Eerst genoemd = Houtrotvuller (+ companion Houtversterker omdat die voorbehandeling vereist).
-  assert.equal(r[0].name, 'EAZYFIX® Premium Houtrotvuller');
+  // Eerst genoemd = Holzspachtelmasse (+ companion Holzimprägnierung omdat die voorbehandeling vereist).
+  assert.match(r[0].name, /Holzspachtelmasse/i);
   assert.equal(r.length, 2);
 });
 
-test('alleen Houtversterker genoemd → geen tegel (companion telt niet als advies)', () => {
-  assert.deepEqual(productsInText('De Houtversterker verstevigt het hout.'), []);
+test('alleen Holzimprägnierung genoemd → geen tegel (companion telt niet als advies)', () => {
+  assert.deepEqual(productsInText('Die EAZYFIX® Holzimprägnierung verfestigt das Holz.'), []);
 });
 
 test('geen productnaam → lege lijst', () => {
-  assert.deepEqual(productsInText('Hoe gaat het met je?'), []);
+  assert.deepEqual(productsInText('Wie geht es dir?'), []);
 });
 
 test('leeg/ongeldig → lege lijst', () => {

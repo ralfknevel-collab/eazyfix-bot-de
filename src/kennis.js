@@ -189,8 +189,10 @@ function search(query, limit = 3) {
 // misleidende matches op. Die herkennen we en sturen we naar de binnendienst i.p.v.
 // er productuitleg op te plakken. Een how-to/reparatie-signaal in dezelfde vraag
 // wint: dan is het een inhoudelijke vraag (de persona verwijst de prijs apart door).
-const SERVICE_INTENT = /\b(preis|preise|preisliste|kostet|kosten|kostenpunkt|tarif|angebot|bestell|bestellen|bestellung|zahl|zahlen|zahlung|bezahlen|sofort|kreditkarte|paypal|rechnung|liefer|lieferung|lieferzeit|geliefert|versand|versenden|retour|rücksend|rücksendung|zurücksenden|widerruf|garantie|gewährleistung|konto|einloggen|anmelden|passwort|stellenangebot|bewerben|bewerbung|webshop|warenkorb)\b/i;
-const HOWTO_SIGNAL = /\b(reparier|reparieren|reparatur|misch|mischen|mischungsverhältnis|auftrag|auftragen|anwend|anwenden|schritt|schritte|trocknen|schleifen|entfern|entfernen|einwirk|aushärt|aushärten|fräs|fräsen|behandel|behandeln|haftung|haftet|trocknungszeit|verarbeit|verarbeiten|vorbehandeln|grundier)\b/i;
+// Stammen + \w* zodat Duitse verbuigingen meelopen (bezahle/bezahlen/bezahlt,
+// Lieferung/liefern, Bestellung/bestellen). \b vooraan houdt de stam woordinitieel.
+const SERVICE_INTENT = /\b(preis|preisliste|kost|tarif|angebot|bestell|zahl|bezahl|sofort|kreditkart|paypal|rechnung|liefer|versand|versend|retour|rücksend|zurücksend|widerruf|garantie|gewährleist|konto|einlogg|anmeld|passwort|stellenangebot|bewerb|webshop|warenkorb|gutschein|rabatt)\w*/i;
+const HOWTO_SIGNAL = /\b(reparier|reparatur|misch|auftrag|anwend|anbring|aufbring|schritt|trocken|trocknung|schleif|entfern|einwirk|aushärt|fräs|behandel|vorbehandel|haft|verarbeit|grundier|füll|auffüll|modellier|überstreich|überlackier)\w*/i;
 
 function classifyIntent(query) {
   const q = String(query || '');

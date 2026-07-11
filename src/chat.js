@@ -66,17 +66,17 @@ async function runWithTools(messages, opts = {}) {
 // Instructie voor het model: onder het antwoord verschijnt een videokaartje,
 // dus mag het in de tekst kort uitnodigen de video te bekijken (zonder URL).
 function videoInviteNote(videos) {
-  return `ONDER JE ANTWOORD VERSCHIJNT EEN KLIKBAAR VIDEOKAARTJE met de EAZYFIX-video "${videos[0].title}". `
-    + 'Sluit je antwoord af met EEN korte, natuurlijke uitnodiging om die te bekijken, '
-    + 'bijvoorbeeld "Bekijk ook even de video hieronder, daar zie je het stap voor stap." '
-    + 'Plak ZELF GEEN link, URL of YouTube-adres in je tekst (het kaartje regelt dat). '
-    + 'Noem de videotitel niet letterlijk; verwijs gewoon naar "de video hieronder".';
+  return `UNTER DEINER ANTWORT ERSCHEINT EINE KLICKBARE VIDEOKARTE mit dem EAZYFIX-Video "${videos[0].title}". `
+    + 'Schließe deine Antwort mit EINER kurzen, natürlichen Einladung ab, es anzusehen, '
+    + 'zum Beispiel "Schau dir auch kurz das Video unten an, da siehst du es Schritt für Schritt." '
+    + 'Füge SELBST KEINEN Link, keine URL und keine YouTube-Adresse in deinen Text ein (die Karte erledigt das). '
+    + 'Nenne den Videotitel nicht wörtlich; verweise einfach auf "das Video unten".';
 }
 
 // Locatiehint voor weather_lookup uit gedeelde coördinaten (of '' als onbekend).
 function geoNote(geo) {
   if (!geo || !Number.isFinite(Number(geo.lat)) || !Number.isFinite(Number(geo.lon))) return '';
-  return `\nGEDEELDE LOCATIE VAN DE KLUSSER: breedtegraad ${Number(geo.lat).toFixed(4)}, lengtegraad ${Number(geo.lon).toFixed(4)}. Gebruik deze lat/lon bij weather_lookup; vraag dan niet naar plaats of postcode.`;
+  return `\nGETEILTER STANDORT DES HEIMWERKERS: Breitengrad ${Number(geo.lat).toFixed(4)}, Längengrad ${Number(geo.lon).toFixed(4)}. Nutze diese lat/lon bei weather_lookup; frag dann nicht nach Ort oder Postleitzahl.`;
 }
 
 // Bouw de system-context (persona + kennis + video-uitnodiging + geo) en kies de

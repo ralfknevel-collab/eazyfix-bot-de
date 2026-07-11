@@ -55,9 +55,9 @@ function buildRagQuery(diagnose) {
 function unclearReply(diagnose) {
   const reden = diagnose && diagnose.redenOnduidelijk ? diagnose.redenOnduidelijk.trim() : '';
   if (reden) {
-    return `Op deze foto kan ik de schade nog niet goed inschatten: ${reden}. Stuur gerust een nieuwe foto, dan kijk ik er opnieuw naar.`;
+    return `Auf diesem Foto kann ich den Schaden noch nicht gut einschätzen: ${reden}. Schick gerne ein neues Foto, dann schaue ich es mir noch einmal an.`;
   }
-  return 'Op deze foto kan ik de schade nog niet goed inschatten. Stuur gerust een scherpe foto van dichtbij, recht van voren en bij goed daglicht, dan kijk ik er opnieuw naar.';
+  return 'Auf diesem Foto kann ich den Schaden noch nicht gut einschätzen. Schick gerne ein scharfes Foto aus der Nähe, frontal und bei gutem Tageslicht, dann schaue ich es mir noch einmal an.';
 }
 
 // Reply als de foto duidelijk geen hout is (steen, baksteen, metselwerk, beton,
@@ -65,9 +65,9 @@ function unclearReply(diagnose) {
 function nietHoutReply(diagnose) {
   const mat = diagnose && diagnose.materiaal ? diagnose.materiaal.trim() : '';
   const watIkZie = mat
-    ? `Op deze foto zie ik ${mat} en geen hout.`
-    : 'Op deze foto zie ik geen hout.';
-  return `${watIkZie} EAZYFIX® is gespecialiseerd in houtherstel, dus voor deze schade kan ik je geen passend advies geven. Gaat het toch om hout, stuur dan een scherpe close-up van het houten deel, dan kijk ik er opnieuw naar.`;
+    ? `Auf diesem Foto sehe ich ${mat} und kein Holz.`
+    : 'Auf diesem Foto sehe ich kein Holz.';
+  return `${watIkZie} EAZYFIX® ist auf Holzreparatur spezialisiert, daher kann ich dir für diesen Schaden keinen passenden Rat geben. Geht es doch um Holz, schick eine scharfe Nahaufnahme des Holzteils, dann schaue ich es mir noch einmal an.`;
 }
 
 module.exports = { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply };
