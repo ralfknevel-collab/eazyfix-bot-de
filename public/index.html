@@ -183,12 +183,6 @@
       <img class="logo" src="eazyfix-logo.png" alt="EAZYFIX" />
       <span class="beta">Beta</span>
       <span class="status"><span class="dot"></span> Online</span>
-      <button class="gear" id="gear" title="Einstellungen">⚙</button>
-    </div>
-
-    <div class="settings" id="settings">
-      <label for="key">App-Schlüssel (nur nötig, wenn der Server einen verlangt)</label>
-      <input id="key" type="password" placeholder="x-app-key" autocomplete="off" />
     </div>
 
     <div class="msgs" id="log"></div>
@@ -211,12 +205,12 @@
         <button type="button" id="optLib"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Aus Galerie wählen</button>
       </div>
       <div class="disclaimer">Dieser Rat stammt von einer KI und kann Fehler enthalten. Lesen Sie immer die Gebrauchsanweisung auf der Verpackung und fragen Sie im Zweifel kurz nach.</div>
+      <div class="credit">© 2026 Ralf Knevel</div>
     </div>
   </div>
 
   <script>
     const log = document.getElementById('log');
-    const keyEl = document.getElementById('key');
     const photoEl = document.getElementById('photo');
     const photoCamEl = document.getElementById('photoCam');
     const photoMenu = document.getElementById('photoMenu');
@@ -231,10 +225,6 @@
     // testfase. Moet gelijk zijn aan APP_SECRET op de server. Leeg maken om de
     // handmatige invoer weer te verplichten.
     const BAKED_APP_KEY = 'ef-test-7e69de2bea23';
-
-    keyEl.value = localStorage.getItem('appKey') || '';
-    keyEl.addEventListener('change', () => localStorage.setItem('appKey', keyEl.value));
-    document.getElementById('gear').addEventListener('click', () => document.getElementById('settings').classList.toggle('open'));
 
     // Preview van de gekozen foto tonen/verbergen (rij 8: foto zichtbaar vóór verzenden).
     let previewUrl = null;
@@ -317,23 +307,13 @@
 
     function headers() {
       const h = { 'Content-Type': 'application/json' };
-      const key = keyEl.value || BAKED_APP_KEY;
+      const key = BAKED_APP_KEY;
       if (key) h['x-app-key'] = key;
       return h;
     }
 
-    // API-fetch met self-heal. Een oude of verkeerde handmatig ingevoerde sleutel
-    // blijft in localStorage staan en overschrijft de werkende ingebakken
-    // testsleutel, wat een harde 401 geeft. Krijgen we een 401 terwijl er een
-    // afwijkende handmatige sleutel meeging, dan gooien we die eenmalig weg en
-    // proberen we opnieuw met de ingebakken sleutel.
     async function apiFetch(url, opts) {
       let resp = await fetch(url, { ...opts, headers: headers() });
-      if (resp.status === 401 && BAKED_APP_KEY && keyEl.value && keyEl.value !== BAKED_APP_KEY) {
-        localStorage.removeItem('appKey');
-        keyEl.value = '';
-        resp = await fetch(url, { ...opts, headers: headers() });
-      }
       return resp;
     }
     function fileToBase64(file) {
