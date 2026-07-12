@@ -81,7 +81,7 @@ async function saveFeedback(row) {
   // Normaliseer de basis-URL: strip trailing slashes en een eventueel
   // meegekopieerd /rest/v1, zodat een schuine streep te veel niet stuk gaat.
   const base = process.env.SUPABASE_URL.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
-  const url = `${base}/rest/v1/feedback`;
+  const url = `${base}/rest/v1/feedback_eazyfix_de`;
   const res = await fetch(url, {
     method: 'POST',
     headers: {
@@ -100,9 +100,9 @@ async function saveFeedback(row) {
   notifyTelegram(row).catch(() => {});
 }
 
-async function logChat({ conversation_id, question, answer }) {
+async function logChat({ conversation_id, question, answer, image_urls }) {
   const base = process.env.SUPABASE_URL.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
-  const url = `${base}/rest/v1/chats`;
+  const url = `${base}/rest/v1/chats_eazyfix_de`;
   const res = await fetch(url, {
     method: 'POST',
     headers: {
@@ -111,7 +111,7 @@ async function logChat({ conversation_id, question, answer }) {
       Authorization: `Bearer ${process.env.SUPABASE_SERVICE_KEY}`,
       Prefer: 'return=minimal',
     },
-    body: JSON.stringify({ conversation_id, question, answer }),
+    body: JSON.stringify({ conversation_id, question, answer, image_urls: image_urls || null }),
   });
   if (!res.ok) {
     const text = await res.text();
@@ -119,4 +119,44 @@ async function logChat({ conversation_id, question, answer }) {
   }
 }
 
-module.exports = { validateFeedback, feedbackEnabled, saveFeedback, logChat, VALID_RATINGS, buildFeedbackMessage, notifyTelegram };
+// Naam van de openbare storage-bucket voor ingestuurde chat-foto's.
+const CHAT_BUCKET = 'chat-fotos';
+const EXT_BY_MIME = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp' };
+
+// Upload base64-foto's naar Supabase Storage en geef de publieke URLs terug.
+// Faalt per foto stil (een mislukte upload mag de analyse/log nooit breken):
+// bij een fout wordt die foto simpelweg overgeslagen. Geeft [] terug als er
+// niets is geüpload.
+async function uploadChatImages({ conversation_id, images }) {
+  if (!Array.isArray(images) || images.length === 0) return [];
+  const base = process.env.SUPABASE_URL.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+  const folder = (conversation_id || 'foto').replace(/[^a-zA-Z0-9._-]/g, '_');
+  const stamp = Date.now();
+  const urls = [];
+  for (let i = 0; i < images.length; i++) {
+    const img = images[i];
+    const ext = EXT_BY_MIME[img.mimeType] || 'jpg';
+    const path = `${folder}/${stamp}-${i}.${ext}`;
+    try {
+      const res = await fetch(`${base}/storage/v1/object/${CHAT_BUCKET}/${path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': img.mimeType,
+          apikey: process.env.SUPABASE_SERVICE_KEY,
+          Authorization: `Bearer ${process.env.SUPABASE_SERVICE_KEY}`,
+        },
+        body: Buffer.from(img.base64, 'base64'),
+      });
+      if (!res.ok) {
+        console.error(`Foto-upload ${path} mislukt:`, res.status, await res.text());
+        continue;
+      }
+      urls.push(`${base}/storage/v1/object/public/${CHAT_BUCKET}/${path}`);
+    } catch (e) {
+      console.error(`Foto-upload ${path} mislukt:`, e.message);
+    }
+  }
+  return urls;
+}
+
+module.exports = { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages, VALID_RATINGS, buildFeedbackMessage, notifyTelegram };

@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const Anthropic = require('@anthropic-ai/sdk');
 const { IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT } = require('./persona');
-const { validateFeedback, feedbackEnabled, saveFeedback, logChat } = require('./feedback');
+const { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages } = require('./feedback');
 const { stripTags } = require('./parse');
 const { CHAT_TOOLS, runTool } = require('./tools');
 const { runChat, runWithTools, buildChatContext } = require('./chat');
@@ -158,6 +158,17 @@ app.post('/api/analyze-image', async (req, res) => {
     }
   }
 
+  // Bewaar de ingestuurde foto('s) in Supabase Storage en log de chat-regel met
+  // de publieke URLs (fire-and-forget; nooit blokkerend, draait alleen als
+  // Supabase geconfigureerd is). Zo zijn de foto's terug te zien in Supabase.
+  const conversationId = req.body.conversationId || null;
+  function persistPhoto(answer) {
+    if (!feedbackEnabled()) return;
+    uploadChatImages({ conversation_id: conversationId, images })
+      .then((image_urls) => logChat({ conversation_id: conversationId, question: '[foto]', answer, image_urls }))
+      .catch((e) => console.error('Foto-log mislukt:', e.message));
+  }
+
   try {
     const imageBlocks = images.map(img => ({
       type: 'image',
@@ -196,12 +207,16 @@ app.post('/api/analyze-image', async (req, res) => {
 
     // Geen hout (steen/metselwerk/beton/metaal/...): buiten scope, geen gok.
     if (diagnose && !diagnose.isHout) {
-      return res.json({ content: nietHoutReply(diagnose), flow: null, productIds: [], products: [], usage: null });
+      const reply = nietHoutReply(diagnose);
+      persistPhoto(reply);
+      return res.json({ content: reply, flow: null, productIds: [], products: [], usage: null });
     }
 
     // Foto onduidelijk: vraag om een betere foto in plaats van te gokken.
     if (diagnose && !diagnose.duidelijk) {
-      return res.json({ content: unclearReply(diagnose), flow: null, productIds: [], products: [], usage: null });
+      const reply = unclearReply(diagnose);
+      persistPhoto(reply);
+      return res.json({ content: reply, flow: null, productIds: [], products: [], usage: null });
     }
 
     // Geldige diagnose: haal gericht kennisbank-context op en geef een hint mee.
@@ -234,6 +249,7 @@ app.post('/api/analyze-image', async (req, res) => {
     // trailing-regels als de gelekte parenthese-vorm "(flow: … · producten: …)".
     const { text, flow, productIds } = stripTags(raw);
 
+    persistPhoto(text);
     res.json({ content: text, flow, productIds, products: productsInText(text), usage });
   } catch (err) {
     console.error('Image analysis error:', err.message);
