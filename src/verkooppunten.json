@@ -36,14 +36,16 @@
     },
     {
       "name": "HolzLand Holz-Center & Baustoff GmbH Neckarmühlbach",
-      "street": null,
-      "zip": null,
-      "city": null,
+      "street": "Heinsheimer Straße 3",
+      "zip": "74855",
+      "city": "Hassmersheim-Neckarmühlbach",
       "province": null,
-      "phone": null,
-      "url": "https://www.eazy-fix.de/verkooppunten/holzland-holz-center-baustoff-gmbh-neckarmuehlbach-array/",
+      "phone": "+49 6266 920612",
+      "url": "https://www.holzcenter.de",
       "page": "https://www.eazy-fix.de/verkooppunten/holzland-holz-center-baustoff-gmbh-neckarmuehlbach-array/",
-      "full": "HolzLand Holz-Center & Baustoff GmbH Neckarmühlbach"
+      "full": "HolzLand Holz-Center & Baustoff GmbH Neckarmühlbach",
+      "lat": 49.283225,
+      "lng": 9.133819
     },
     {
       "name": "HORNBACH Baumarkt AG",
@@ -69,36 +71,42 @@
     },
     {
       "name": "HolzLand MAHL",
-      "street": null,
-      "zip": null,
-      "city": null,
+      "street": "Hunsdorfer Weg 29",
+      "zip": "46569",
+      "city": "Hünxe - Drevenack",
       "province": null,
-      "phone": null,
-      "url": "https://www.eazy-fix.de/verkooppunten/holzland-mahl-321769/",
+      "phone": "+49 2858 914116",
+      "url": "https://www.holzland-mahl.de",
       "page": "https://www.eazy-fix.de/verkooppunten/holzland-mahl-321769/",
-      "full": "HolzLand MAHL"
+      "full": "HolzLand MAHL",
+      "lat": 51.664698,
+      "lng": 6.738972
     },
     {
       "name": "Schyns GmbH",
-      "street": null,
-      "zip": null,
-      "city": null,
+      "street": "Industriestraße 21-25",
+      "zip": "53721",
+      "city": "Siegburg",
       "province": null,
-      "phone": null,
-      "url": "https://www.eazy-fix.de/verkooppunten/schyns-gmbh-322292/",
+      "phone": "+49 2241 176014",
+      "url": "https://www.holz-schyns.de",
       "page": "https://www.eazy-fix.de/verkooppunten/schyns-gmbh-322292/",
-      "full": "Schyns GmbH"
+      "full": "Schyns GmbH",
+      "lat": 50.798755,
+      "lng": 7.1983
     },
     {
       "name": "August Jungbluth GmbH & Co. KG",
-      "street": null,
-      "zip": null,
-      "city": null,
+      "street": "Normannenstraße 8-16",
+      "zip": "41462",
+      "city": "Neuss",
       "province": null,
-      "phone": null,
-      "url": "https://www.eazy-fix.de/verkooppunten/august-jungbluth-gmbh-co-kg-309790/",
+      "phone": "+49 2131 560863",
+      "url": "https://www.jungbluth-holz.de",
       "page": "https://www.eazy-fix.de/verkooppunten/august-jungbluth-gmbh-co-kg-309790/",
-      "full": "August Jungbluth GmbH & Co. KG"
+      "full": "August Jungbluth GmbH & Co. KG",
+      "lat": 51.217541,
+      "lng": 6.682437
     },
     {
       "name": "Hornbach",
@@ -375,5 +383,6 @@
       "page": "https://www.eazy-fix.de/verkooppunten/hornbach-trier-629-309750/",
       "full": "Hornbach Trier 629"
     }
-  ]
+  ],
+  "source": "Hornbach-filialen (plaats uit titel van /verkooppunten/-paginas) + 4 vakhandels met volledig adres uit kaart_data van eazy-fix.de/verkaufsstellen (gecapture 2026-07-14)"
 }

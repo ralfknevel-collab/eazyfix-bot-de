@@ -29,14 +29,19 @@ module.exports = [
     judges: ['De bot dumpt NIET meteen het volledige stappenplan, maar stelt eerst minstens één diagnosevraag (waar/hoe groot/hoe diep) of vraagt om een foto.'],
   },
   {
-    // DE-verkooppuntdata heeft geen plaats/postcode (city/zip null), dus
-    // find_verkooppunt vindt nooit een lokale match. We toetsen dat de tool wordt
-    // aangeroepen en de bot GEEN verkooppunt verzint, maar eerlijk naar de webshop/
-    // site verwijst. (Data-gat apart gemeld: DE-verkooppunten missen locatievelden.)
-    name: 'Verkaufsstelle nach Ort',
+    // DE-verkooppunten hebben nu echte locaties (uit kaart_data van eazy-fix.de).
+    // Neuss heeft een dealer (August Jungbluth) → tool moet die vinden en noemen.
+    name: 'Verkaufsstelle nach Ort — findet echten Händler',
+    messages: u('Ich wohne in Neuss. Wo kann ich EAZYFIX kaufen?'),
+    checks: [calledTool('find_verkooppunt'), mentions(/Jungbluth/i, 'nennt Jungbluth'), noEmDash],
+    judges: ['Der Bot ruft die Verkaufsstellen-Suche auf und nennt die Verkaufsstelle in Neuss (August Jungbluth) mit Adresse. Er erfindet nichts.'],
+  },
+  {
+    // Kein Händler am Ort → ehrlich auf Karte/Webshop verweisen, nichts erfinden.
+    name: 'Verkaufsstelle nach Ort — kein Treffer, ehrlich',
     messages: u('Ich wohne in Hamburg. Wo kann ich EAZYFIX kaufen?'),
     checks: [calledTool('find_verkooppunt'), noEmDash],
-    judges: ['Der Bot ruft die Verkaufsstellen-Suche auf und erfindet KEINE konkrete Verkaufsstelle. Findet er keine lokale Stelle, verweist er ehrlich auf eazy-fix.de oder den Webshop (zum Beispiel HORNBACH).'],
+    judges: ['Der Bot ruft die Verkaufsstellen-Suche auf und erfindet KEINE Verkaufsstelle. Findet er keine lokale Stelle, verweist er ehrlich auf eazy-fix.de/verkaufsstellen oder den Webshop.'],
   },
   {
     // Antwoord (2:1) mag uit de bot-kennis of via zoek_kennis komen; we toetsen
