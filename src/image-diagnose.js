@@ -70,4 +70,21 @@ function nietHoutReply(diagnose) {
   return `${watIkZie} EAZYFIX® ist auf Holzreparatur spezialisiert, daher kann ich dir für diesen Schaden keinen passenden Rat geben. Geht es doch um Holz, schick eine scharfe Nahaufnahme des Holzteils, dann schaue ich es mir noch einmal an.`;
 }
 
-module.exports = { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply };
+// Bouw de pass-2 analyse-prompt. Puur, zodat het contract testbaar is: één foto
+// vs. meerdere, lopend gesprek als aanvulling, en een optioneel bijschrift wanneer
+// de gebruiker foto + vraag in één beurt stuurt (dan geen los tweede antwoord).
+function buildAnalysisPrompt({ imageCount = 1, hasPrior = false, caption = '' } = {}) {
+  const cap = typeof caption === 'string' ? caption.trim() : '';
+  let text = imageCount > 1
+    ? `Analysiere diese ${imageCount} Fotos der beschädigten Stelle (verschiedene Winkel/Details desselben Schadens).`
+    : 'Analysiere dieses Foto der beschädigten Stelle.';
+  if (hasPrior) {
+    text += ' Dieses Gespräch läuft bereits; dieses Foto ergänzt den zuvor besprochenen Schaden. Mach damit weiter und behandle es nicht als eigenständigen neuen Fall.';
+  }
+  if (cap) {
+    text += ` Der Nutzer schreibt dazu: "${cap}". Geh in deiner Analyse konkret darauf ein.`;
+  }
+  return text;
+}
+
+module.exports = { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt };

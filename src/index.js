@@ -9,7 +9,7 @@ const { CHAT_TOOLS, runTool } = require('./tools');
 const { runChat, runWithTools, buildChatContext } = require('./chat');
 const { productsInText } = require('./producten');
 const { searchContext } = require('./kennis');
-const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply } = require('./image-diagnose');
+const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt } = require('./image-diagnose');
 const { startKeepAlive } = require('./keepalive');
 
 const MAX_TOOL_ROUNDS = 4;
@@ -162,10 +162,13 @@ app.post('/api/analyze-image', async (req, res) => {
   // de publieke URLs (fire-and-forget; nooit blokkerend, draait alleen als
   // Supabase geconfigureerd is). Zo zijn de foto's terug te zien in Supabase.
   const conversationId = req.body.conversationId || null;
+  // Optionele bijschrift-tekst: de gebruiker stuurde foto én vraag in één beurt.
+  // Zonder dit werd de vraag genegeerd (en gaf de frontend een tweede los antwoord).
+  const caption = typeof req.body.caption === 'string' ? req.body.caption.trim().slice(0, 2000) : '';
   function persistPhoto(answer) {
     if (!feedbackEnabled()) return;
     uploadChatImages({ conversation_id: conversationId, images })
-      .then((image_urls) => logChat({ conversation_id: conversationId, question: '[foto]', answer, image_urls }))
+      .then((image_urls) => logChat({ conversation_id: conversationId, question: caption ? '[foto] ' + caption : '[foto]', answer, image_urls }))
       .catch((e) => console.error('Foto-log mislukt:', e.message));
   }
 
@@ -179,14 +182,14 @@ app.post('/api/analyze-image', async (req, res) => {
     // elke foto los te behandelen.
     const priorMessages = sanitizePriorText(req.body.messages);
 
-    let promptText = images.length > 1
-      ? `Analysiere diese ${images.length} Fotos der beschädigten Stelle (verschiedene Winkel/Details desselben Schadens).`
-      : 'Analysiere dieses Foto der beschädigten Stelle.';
-    // Loopt er al een gesprek? Behandel de foto dan als aanvulling op de eerder
-    // besproken schade in plaats van als losstaand geval.
-    if (priorMessages.length > 0) {
-      promptText += ' Dieses Gespräch läuft bereits; dieses Foto ergänzt den zuvor besprochenen Schaden. Mach damit weiter und behandle es nicht als eigenständigen neuen Fall.';
-    }
+    // Prompt-opbouw: één vs. meerdere foto's, lopend gesprek als aanvulling, en het
+    // optionele bijschrift (foto + vraag in één beurt → één antwoord). Puur helper,
+    // zodat dit contract getest is (zie test/image-diagnose.test.js).
+    const promptText = buildAnalysisPrompt({
+      imageCount: images.length,
+      hasPrior: priorMessages.length > 0,
+      caption,
+    });
 
     // Pass 1: snelle, goedkope, gestructureerde JSON-diagnose. Bepaalt of de
     // foto bruikbaar is en levert gerichte zoektermen voor de kennisbank.

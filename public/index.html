@@ -626,7 +626,8 @@
     }
 
     // Toon de verzonden foto zelf in een user-bubbel (rij 8: afbeelding zichtbaar).
-    function userPhotoBubble(file) {
+    // Optioneel bijschrift (foto + vraag in één beurt) eronder tonen.
+    function userPhotoBubble(file, caption) {
       const row = document.createElement('div');
       row.className = 'row row-user user';
       const d = document.createElement('div');
@@ -636,13 +637,15 @@
       img.src = URL.createObjectURL(file);
       img.onload = () => URL.revokeObjectURL(img.src);
       d.appendChild(img);
+      if (caption) { const c = document.createElement('div'); c.textContent = caption; d.appendChild(c); }
       row.appendChild(d);
       log.appendChild(row);
       scrollLog();
     }
 
-    async function sendPhoto(file) {
-      userPhotoBubble(file);
+    async function sendPhoto(file, caption) {
+      caption = (caption || '').trim();
+      userPhotoBubble(file, caption);
       const out = bubble('bot', '…');
       out.innerHTML = '<span class="analyzing">Der EAZYFIX Holzfäule-Assistent analysiert dein Foto, einen Moment Geduld</span> <span class="typing"><span></span><span></span><span></span></span>';
       try {
@@ -651,17 +654,17 @@
         const mimeType = reduced ? reduced.mimeType : file.type;
         const resp = await apiFetch('/api/analyze-image', {
           method: 'POST',
-          body: JSON.stringify({ base64, mimeType, messages: history, conversationId }),
+          body: JSON.stringify({ base64, mimeType, messages: history, conversationId, caption }),
         });
         const data = await resp.json();
         if (!resp.ok) { out.closest('.row').className = 'row row-bot err'; out.textContent = data.error || ('Fehler ' + resp.status); return; }
         // Server levert al schone tekst; flow/productIds zijn techniek, NIET tonen.
         out.textContent = data.content;
         // Foto-beurt in de geschiedenis bewaren zodat een vervolgfoto of -vraag
-        // doorgaat op deze schade i.p.v. los te beginnen.
-        history.push({ role: 'user', content: '[Foto vom Schaden gesendet]' });
+        // doorgaat op deze schade i.p.v. los te beginnen. Bijschrift meenemen.
+        history.push({ role: 'user', content: caption ? '[Foto vom Schaden gesendet] ' + caption : '[Foto vom Schaden gesendet]' });
         history.push({ role: 'assistant', content: data.content });
-        addFeedbackRow('[foto: ' + file.name + ']', out);
+        addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
         linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out);
       } catch (e) {
         out.closest('.row').className = 'row row-bot err'; out.textContent = 'Fehler: ' + e.message;
@@ -673,9 +676,16 @@
       if (sendBtn.disabled) return; // al een beurt bezig: geen tweede parallelle request
       sendBtn.disabled = true;
       try {
-        if (pendingPhoto) { const f = pendingPhoto; clearPreview(); await sendPhoto(f); }
         const text = inEl.value.trim();
-        if (text) { inEl.value = ''; inEl.style.height = 'auto'; await sendText(text); }
+        inEl.value = ''; inEl.style.height = 'auto';
+        if (pendingPhoto) {
+          // Foto (met of zonder tekst): één beurt, één antwoord. Tekst gaat mee als
+          // bijschrift, niet als losse tweede chat-request.
+          const f = pendingPhoto; clearPreview();
+          await sendPhoto(f, text);
+        } else if (text) {
+          await sendText(text);
+        }
       } finally { sendBtn.disabled = false; inEl.focus(); }
     });
     inEl.addEventListener('keydown', (e) => {
