@@ -63,10 +63,20 @@ module.exports = [
     checks: [noFlowTag, noMarkdown, noEmDash],
   },
   {
-    name: 'ernstige schade — binnendienst',
+    // Feedback eazyfix rij 42/47: bij grote schade niet reflexief doorverwijzen;
+    // eerst inhoudelijk helpen (deelvervanging) en/of een controlevraag stellen.
+    name: 'grote houtrot — deelvervanging/controlevraag, niet reflexief binnendienst',
     messages: u('De hele onderdorpel van mijn kozijn is volledig weggerot over een lengte van 80 cm. Wat moet ik doen?'),
     checks: [noEmDash],
-    judges: ['Bij deze ernstige/grote schade verwijst de bot (naast de aanpak) naar de EAZYFIX-binnendienst of het telefoonnummer voor persoonlijke hulp.'],
+    judges: ['De bot stuurt NIET als enige antwoord meteen door naar de binnendienst. Hij helpt inhoudelijk: legt de aanpak uit (bijvoorbeeld deelvervanging — het rotte deel wegzagen en nieuw hout inzetten en verlijmen met EAZYFIX-producten) en/of stelt eerst een gerichte controlevraag (dragend/constructief hout? diepte en omvang?). Een binnendienst-verwijzing mag hooguit als aanvullende zekerheid meekomen, niet als reden om de klant te laten wachten.'],
+  },
+  {
+    // Feedback eazyfix rij 44: kleine ronde gaatjes met boormeel kunnen boktor/
+    // houtworm zijn i.p.v. rot; eerst doorvragen voordat een aanpak wordt gekozen.
+    name: 'gaatjes met boormeel — vraagt door (boktor/houtworm), niet meteen rot',
+    messages: u('In mijn houten kozijn zitten allemaal kleine ronde gaatjes met wat houtmeel eronder. Is dat houtrot en hoe repareer ik het?'),
+    checks: [['stelt een wedervraag', (r) => r.text.includes('?')], noEmDash],
+    judges: ['De bot concludeert niet meteen houtrot, maar herkent dat kleine ronde gaatjes met boormeel op houtworm of boktor (insect) kunnen wijzen, en stelt eerst een controlevraag of benoemt dat onderscheid voordat hij een aanpak kiest.'],
   },
   {
     name: 'how-to via website-kennis',
