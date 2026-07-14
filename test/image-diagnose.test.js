@@ -1,6 +1,41 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply } = require('../src/image-diagnose');
+const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt } = require('../src/image-diagnose');
+
+// Regressie: gebruiker stuurde foto + vraag in één beurt en kreeg 2 antwoorden
+// (feedback rij 6, DE). De vraag hoort als bijschrift IN de foto-analyse, zodat
+// er één antwoord komt. Deze tests borgen dat de prompt het bijschrift meeneemt.
+test('buildAnalysisPrompt: één foto, geen gesprek, geen bijschrift', () => {
+  const t = buildAnalysisPrompt({ imageCount: 1, hasPrior: false, caption: '' });
+  assert.match(t, /Analysiere dieses Foto/);
+  assert.doesNotMatch(t, /läuft bereits/);
+  assert.doesNotMatch(t, /schreibt dazu/);
+});
+
+test('buildAnalysisPrompt: bijschrift wordt letterlijk meegenomen', () => {
+  const t = buildAnalysisPrompt({ imageCount: 1, caption: 'Ist das Holzfäule?' });
+  assert.match(t, /Der Nutzer schreibt dazu: "Ist das Holzfäule\?"/);
+  assert.match(t, /konkret darauf ein/);
+});
+
+test('buildAnalysisPrompt: leeg/whitespace bijschrift voegt niets toe', () => {
+  const t = buildAnalysisPrompt({ imageCount: 1, caption: '   ' });
+  assert.doesNotMatch(t, /schreibt dazu/);
+});
+
+test('buildAnalysisPrompt: meerdere foto\'s + lopend gesprek + bijschrift', () => {
+  const t = buildAnalysisPrompt({ imageCount: 3, hasPrior: true, caption: 'Wie tief muss ich fräsen?' });
+  assert.match(t, /diese 3 Fotos/);
+  assert.match(t, /läuft bereits/);
+  assert.match(t, /Wie tief muss ich fräsen\?/);
+});
+
+test('buildAnalysisPrompt: defaults (geen argument) = één foto zonder extra\'s', () => {
+  const t = buildAnalysisPrompt();
+  assert.match(t, /Analysiere dieses Foto/);
+  assert.doesNotMatch(t, /läuft bereits/);
+  assert.doesNotMatch(t, /schreibt dazu/);
+});
 
 test('parseDiagnose leest is_hout false en materiaal', () => {
   const d = parseDiagnose('{"duidelijk": true, "is_hout": false, "materiaal": "baksteen/metselwerk", "reden_onduidelijk": "", "schade_type": "anders", "ernst": "matig", "zoektermen": []}');
