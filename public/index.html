@@ -388,15 +388,13 @@
       const prefix = '(?:EAZYFIX[\\s®]*(?:Premium\\s*)?|Premium\\s+)';
       const alternation = PRODUCTS.map(p => '(?:' + p.re.source + ')').join('|');
       const combined = new RegExp(prefix + '(?:' + alternation + ')', 'gi');
-      const linked = new Set();
       let html = '', last = 0, m;
       while ((m = combined.exec(text)) !== null) {
         if (m.index === combined.lastIndex) { combined.lastIndex++; continue; }
         const hit = m[0];
         html += esc(text.slice(last, m.index));
         const prod = PRODUCTS.find(p => p.re.test(hit));
-        if (prod && !linked.has(prod.url)) {
-          linked.add(prod.url);
+        if (prod) {
           html += '<a class="product-link" href="' + prod.url + '" target="_blank" rel="noopener">' + esc(hit) + '</a>';
         } else {
           html += esc(hit);
