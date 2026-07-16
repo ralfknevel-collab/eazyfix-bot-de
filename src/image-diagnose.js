@@ -4,6 +4,44 @@
 
 const ERNST_WAARDEN = ['licht', 'matig', 'ernstig'];
 
+// Noodsignalen in het bijschrift bij een foto.
+//
+// WAAROM DETERMINISTISCH EN NIET ALLEEN VIA DE PROMPT: de veiligheidsregel in
+// BASE_SYSTEM_PROMPT vuurt pas in de chatflow. Maar bij "geen hout" of een
+// onduidelijke foto keert de fotoflow al ná pass 1 terug (nietHoutReply /
+// unclearReply) en draait pass 2 nooit. Een noodsignaal in het bijschrift zou
+// dan onbeantwoord blijven. Deze check draait daarom vóór alle foto-analyse.
+//
+// BEWUST SMAL GEHOUDEN: alleen ondubbelzinnige formuleringen. Duitse spreektaal
+// zit vol hyperbool ("diese Arbeit bringt mich um", "ich sterbe vor Hitze") en
+// daar mag geen crisisnummer op afgaan; dat zou de bot onbruikbaar maken en het
+// signaal juist devalueren. Vandaar "mich umbringen" (en niet "bringt mich um")
+// en "sterben wollen" (en niet het kale "sterben"). Vals-negatieven vangt de
+// promptregel in de chatflow alsnog op; vals-positieven vangt niemand op.
+const NOOD_RE = new RegExp([
+  'suizid',
+  'selbstmord',
+  '(mich|mir)\\s+(selbst\\s+)?umbringen',
+  '(mir|mich)\\s+(et)?was\\s+antun',
+  '(will|wollte|möchte|werde)\\s+(nicht\\s+mehr\\s+leben|sterben)',
+  'nicht\\s+mehr\\s+leben\\s+(zu\\s+)?wollen',
+  'will\\s+nicht\\s+mehr\\s+(hier\\s+)?sein',
+  'keinen\\s+(ausweg|sinn)\\s+mehr',
+  'lebensmüde',
+].join('|'), 'i');
+
+// Bevat de vrije gebruikerstekst bij een foto een noodsignaal?
+function containsDistressSignal(text) {
+  return typeof text === 'string' && NOOD_RE.test(text);
+}
+
+// Antwoord bij een noodsignaal. Identiek aan de regel in BASE_SYSTEM_PROMPT
+// (persona.js), zodat chat en fotoflow hetzelfde zeggen. Geen foto-analyse,
+// geen vervolgvraag.
+function distressReply() {
+  return 'Es tut mir leid, dass es dir gerade so schwer fällt. Bitte sprich darüber mit der Telefonseelsorge: kostenlos und rund um die Uhr unter 0800 111 0 111 oder 0800 111 0 222, auch per Chat auf telefonseelsorge.de. Bei akuter Gefahr wähle den Notruf 112.';
+}
+
 // Haal het eerste complete JSON-object uit een tekst (het model kan markdown of
 // omringende tekst toevoegen). Probeer eerst de hele string, daarna de eerste
 // { ... } substring.
@@ -31,10 +69,15 @@ function parseDiagnose(text) {
   const zoektermen = Array.isArray(obj.zoektermen)
     ? obj.zoektermen.filter((t) => typeof t === 'string' && t.trim() !== '')
     : [];
+  // Productfoto (koker/verpakking) i.p.v. houtschade: hoort bij een productvraag,
+  // niet bij een schade-analyse. Default false, zodat een ontbrekend veld nooit een
+  // echte schadefoto als product wegleidt.
+  const isProduct = obj.is_product === true;
   return {
     duidelijk: obj.duidelijk,
     // is_hout ontbreekt bij oude antwoorden: dan standaard true (geen valse afwijzing).
     isHout: typeof obj.is_hout === 'boolean' ? obj.is_hout : true,
+    isProduct,
     materiaal: typeof obj.materiaal === 'string' ? obj.materiaal : '',
     redenOnduidelijk: typeof obj.reden_onduidelijk === 'string' ? obj.reden_onduidelijk : '',
     schadeType: typeof obj.schade_type === 'string' ? obj.schade_type : '',
@@ -87,4 +130,5 @@ function buildAnalysisPrompt({ imageCount = 1, hasPrior = false, caption = '' } 
   return text;
 }
 
-module.exports = { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt };
+module.exports = { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt,
+  containsDistressSignal, distressReply };
