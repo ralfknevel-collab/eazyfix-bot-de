@@ -14,6 +14,13 @@ if (typeof fetch !== 'function') {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// Aparte foutklasse voor "we weten niet waar" (geen locatie meegegeven, geocoding
+// vond niets, postcode geweigerd, of WeatherAPI meldt expliciet "onbekende plaats").
+// Onderscheid met een netwerk/API-fout is nodig zodat lookup() weet dat nogmaals
+// proberen bij de andere provider geen zin heeft: een bevestigd onbekende plaats
+// of geweigerde postcode vindt de andere provider ook niet.
+class LocationNotFoundError extends Error {}
+
 async function fetchOnce(url) {
   // AbortSignal.timeout pas vanaf Node 17.3; val terug op een handmatige timeout.
   const ctrl = new AbortController();
@@ -32,9 +39,10 @@ async function fetchOnce(url) {
 }
 
 // Open-Meteo deelt op Render een uitgaand IP en kan 429 geven. Kort opnieuw
-// proberen met backoff; alleen voor 429 en 5xx.
+// proberen met backoff; alleen voor 429 en 5xx. Drie pogingen omdat de geocoding
+// hier volledig van afhangt: zie geocode().
 async function fetchJson(url) {
-  const delays = [600, 1500];
+  const delays = [600, 1500, 3000];
   for (let attempt = 0; ; attempt++) {
     try {
       return await fetchOnce(url);
@@ -46,16 +54,32 @@ async function fetchJson(url) {
   }
 }
 
+// Plaatsnamen veranderen niet van coördinaten: cache geocode-hits lang (24u) zodat
+// niet elke vraag opnieuw het rate-limit-gevoelige Open-Meteo-geocoding-endpoint
+// raakt (dat deelt hetzelfde IP-gebonden 429-risico als de forecast-endpoint, zie
+// fetchJson hierboven). Alleen positieve hits cachen, geen null (anders blijft een
+// tijdelijke miss hangen).
+const GEO_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 uur
+const geoCache = new Map(); // genormaliseerde query (lowercase) -> { ts, geo }
+
 // Plaats/postcode → { lat, lon, naam } of null.
 async function geocode(query) {
   const q = String(query || '').trim();
   if (!q) return null;
-  const url = `${GEO_URL}?name=${encodeURIComponent(q)}&count=1&language=nl&country=NL`;
+
+  const cacheKey = q.toLowerCase();
+  const hit = geoCache.get(cacheKey);
+  if (hit && (Date.now() - hit.ts) < GEO_CACHE_TTL_MS) return hit.geo;
+
+  // language=de; geen country-filter zodat DE + AT (+ CH) plaatsnamen resolven.
+  const url = `${GEO_URL}?name=${encodeURIComponent(q)}&count=1&language=de`;
   const data = await fetchJson(url);
-  const hit = data && Array.isArray(data.results) ? data.results[0] : null;
-  if (!hit) return null;
-  const naam = [hit.name, hit.admin1].filter(Boolean).join(', ');
-  return { lat: hit.latitude, lon: hit.longitude, naam };
+  const geoHit = data && Array.isArray(data.results) ? data.results[0] : null;
+  if (!geoHit) return null;
+  const naam = [geoHit.name, geoHit.admin1].filter(Boolean).join(', ');
+  const geo = { lat: geoHit.latitude, lon: geoHit.longitude, naam };
+  geoCache.set(cacheKey, { ts: Date.now(), geo });
+  return geo;
 }
 
 function dagLabel(i) {
@@ -65,7 +89,24 @@ function dagLabel(i) {
 // Cache de samenvatting per ~1km (2 decimalen) zodat herhaalde/nabije vragen
 // niet steeds de weer-API raken (voorkomt 429 op het gedeelde Render-IP).
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 min
+const CACHE_MAX = 500; // harde bovengrens tegen onbegrensde groei
 const cache = new Map(); // key -> { ts, text }
+
+// Schrijf via deze helper i.p.v. cache.set: ruimt verlopen entries op en
+// begrenst de omvang. Entries werden voorheen alleen gelezen en nooit
+// verwijderd, waardoor de Map onbegrensd groeide bij unieke locaties.
+function cacheSet(key, text) {
+  const now = Date.now();
+  for (const [k, v] of cache) {
+    if (now - v.ts >= CACHE_TTL_MS) cache.delete(k);
+  }
+  // Nog steeds vol (allemaal verse entries)? Gooi de oudste eruit
+  // (Map itereert in insertion-volgorde).
+  while (cache.size >= CACHE_MAX) {
+    cache.delete(cache.keys().next().value);
+  }
+  cache.set(key, { ts: now, text });
+}
 
 // Formatteert genormaliseerde data naar leesbare tekst voor de bot.
 function format(plek, cur, days) {
@@ -82,20 +123,43 @@ function format(plek, cur, days) {
   return lines.join('\n');
 }
 
-// WeatherAPI.com: één call levert current + 3-daagse. q = "lat,lon" of plaatsnaam.
+// WeatherAPI.com: één call levert current + 3-daagse. Account-key (niet
+// IP-gebonden), dus betrouwbaar vanaf Render. q = "lat,lon" of plaatsnaam.
 async function viaWeatherApi({ plaats, postcode, lat, lon, key }) {
   const la = Number(lat), lo = Number(lon);
   const q = (Number.isFinite(la) && Number.isFinite(lo))
     ? `${la.toFixed(4)},${lo.toFixed(4)}`
     : String(plaats || postcode || '').trim();
-  if (!q) return `Kein Standort bekannt. Frag den Heimwerker nach einem Ortsnamen oder einer Postleitzahl.`;
+  if (!q) throw new LocationNotFoundError('Kein Standort bekannt. Frag den Heimwerker nach einem Ortsnamen oder einer Postleitzahl.');
+  // Deutsche Postleitzahl (5 Ziffern) NICHT an WeatherAPI durchreichen: "10115" (Berlin)
+  // liefert dort New York, andere Postleitzahlen gar nichts. Rechtstreeks getest (juli
+  // 2026): Open-Meteo's geocoding kent Duitse postcodes ook niet betrouwbaar (4 van de 5
+  // testpostcodes, waaronder Berlin/Hamburg/Köln/Stuttgart, gaven geen enkel resultaat;
+  // alleen München resolvde correct). Een omweg via Open-Meteo lost het dus niet op. Een
+  // verkeerde plaats is erger dan geen, dus vragen we liever om een plaatsnaam. Greift nur
+  // bei einer reinen Postleitzahl, niet bij ortsnamen met cijfers en niet bij lat/lon.
+  if (/^\d{5}$/.test(q)) {
+    throw new LocationNotFoundError('Für eine deutsche Postleitzahl kann ich das Wetter leider nicht zuverlässig abrufen. Nenn mir bitte den Ortsnamen, dann schaue ich es nach.');
+  }
 
   const cacheKey = `wa:${q.toLowerCase()}`;
   const hit = cache.get(cacheKey);
   if (hit && (Date.now() - hit.ts) < CACHE_TTL_MS) return hit.text;
 
-  const url = `https://api.weatherapi.com/v1/forecast.json?key=${encodeURIComponent(key)}&q=${encodeURIComponent(q)}&days=3&aqi=no&alerts=no&lang=nl`;
-  const data = await fetchJson(url);
+  const url = `https://api.weatherapi.com/v1/forecast.json?key=${encodeURIComponent(key)}&q=${encodeURIComponent(q)}&days=3&aqi=no&alerts=no&lang=de`;
+  let data;
+  try {
+    data = await fetchJson(url);
+  } catch (e) {
+    // WeatherAPI antwoordt HTTP 400 bij een onbekende plaatsnaam ("no matching
+    // location found"): dat is geen storing maar een verkeerde locatie. Geef
+    // dezelfde Duitse melding als de Open-Meteo-route bij een mislukte geocode,
+    // i.p.v. misleidend "Wetterdaten nicht verfügbar".
+    if (e.status === 400) {
+      throw new LocationNotFoundError(`Kein Standort gefunden für "${q}". Frag den Heimwerker nach einem Ortsnamen oder einer Postleitzahl.`);
+    }
+    throw e;
+  }
 
   const loc = data.location || {};
   const plek = [loc.name, loc.region].filter(Boolean).join(', ') || q;
@@ -109,20 +173,31 @@ async function viaWeatherApi({ plaats, postcode, lat, lon, key }) {
   }));
 
   const text = format(plek, cur, days);
-  cache.set(cacheKey, { ts: Date.now(), text });
+  cacheSet(cacheKey, text);
   return text;
 }
 
-// Open-Meteo: gratis, geen key. Fallback wanneer geen WEATHERAPI_KEY gezet is.
+// Open-Meteo: gratis, geen key, maar IP-gebonden rate-limit (429 op gedeeld
+// Render-IP). Fallback wanneer geen WEATHERAPI_KEY is gezet.
 async function viaOpenMeteo({ plaats, postcode, lat, lon }) {
   let naam = null;
   let la = Number(lat);
   let lo = Number(lon);
 
   if (!Number.isFinite(la) || !Number.isFinite(lo)) {
-    const geo = await geocode(plaats || postcode);
+    const q = String(plaats || postcode || '').trim();
+    // Zelfde weigering als in viaWeatherApi (zie daar), en om dezelfde reden: een
+    // Duitse postcode rechtstreeks aan geocode() geven levert bij Open-Meteo net zo
+    // goed een verkeerde plaats op als bij WeatherAPI (rechtstreeks getest: "10115"
+    // gaf hier zonder deze check New York City, niet Berlin). Zonder WEATHERAPI_KEY
+    // komt een postcode altijd via deze functie binnen, dus de weigering moet hier
+    // ook staan.
+    if (/^\d{5}$/.test(q)) {
+      throw new LocationNotFoundError('Für eine deutsche Postleitzahl kann ich das Wetter leider nicht zuverlässig abrufen. Nenn mir bitte den Ortsnamen, dann schaue ich es nach.');
+    }
+    const geo = await geocode(q);
     if (!geo) {
-      return `Kein Standort gefunden für "${plaats || postcode || ''}". Frag den Heimwerker nach einem Ortsnamen oder einer Postleitzahl.`;
+      throw new LocationNotFoundError(`Kein Standort gefunden für "${q}". Frag den Heimwerker nach einem Ortsnamen oder einer Postleitzahl.`);
     }
     la = geo.lat; lo = geo.lon; naam = geo.naam;
   }
@@ -141,7 +216,7 @@ async function viaOpenMeteo({ plaats, postcode, lat, lon }) {
   });
   const data = await fetchJson(`${FORECAST_URL}?${params.toString()}`);
 
-  const plek = naam || `locatie ${la.toFixed(2)}, ${lo.toFixed(2)}`;
+  const plek = naam || `Standort ${la.toFixed(2)}, ${lo.toFixed(2)}`;
   const c = data.current || {};
   const cur = { temp: c.temperature_2m, precip: c.precipitation, hum: c.relative_humidity_2m };
   const d = data.daily || {};
@@ -153,20 +228,36 @@ async function viaOpenMeteo({ plaats, postcode, lat, lon }) {
   }));
 
   const text = format(plek, cur, days);
-  cache.set(cacheKey, { ts: Date.now(), text });
+  cacheSet(cacheKey, text);
   return text;
 }
 
 // { plaats?, postcode?, lat?, lon? } → leesbare weersamenvatting (3 dagen).
+// Gebruikt WeatherAPI als WEATHERAPI_KEY gezet is, anders Open-Meteo.
+// Faalt WeatherAPI (verlopen key/quota/429/timeout), dan proberen we ALTIJD
+// eerst het keyloze Open-Meteo voordat we "nicht verfügbar" melden. Bij een
+// bevestigde LocationNotFoundError (postcode geweigerd, of WeatherAPI/Open-Meteo
+// vond de plaats echt niet) heeft de andere provider proberen geen zin: die
+// vriendelijke melding gaat direct terug, zonder omweg.
 async function lookup({ plaats, postcode, lat, lon } = {}) {
   const key = process.env.WEATHERAPI_KEY;
+  const ctx = `plaats=${plaats || ''} postcode=${postcode || ''} lat=${lat ?? ''} lon=${lon ?? ''}`;
+  if (key) {
+    try {
+      return await viaWeatherApi({ plaats, postcode, lat, lon, key });
+    } catch (e) {
+      if (e instanceof LocationNotFoundError) return e.message;
+      console.error(`[weather] WeatherAPI faalde (${ctx}): ${e.name}: ${e.message}, val terug op Open-Meteo`);
+    }
+  }
   try {
-    return key
-      ? await viaWeatherApi({ plaats, postcode, lat, lon, key })
-      : await viaOpenMeteo({ plaats, postcode, lat, lon });
+    return await viaOpenMeteo({ plaats, postcode, lat, lon });
   } catch (e) {
-    console.error(`[weather] lookup faalde via ${key ? 'WeatherAPI' : 'Open-Meteo'} (plaats=${plaats || ''} postcode=${postcode || ''} lat=${lat ?? ''} lon=${lon ?? ''}): ${e.name}: ${e.message}`);
-    return `Wetterdaten momentan nicht verfügbar (${e.message}). Berate auf Basis der allgemeinen Regeln.`;
+    if (e instanceof LocationNotFoundError) return e.message;
+    console.error(`[weather] lookup faalde via Open-Meteo (${ctx}): ${e.name}: ${e.message}`);
+    // Geen e.message in de tool-output: die is Engels ("HTTP 400", "fetch
+    // failed") en zou in het Duitse antwoord lekken. Details staan in de log.
+    return 'Wetterdaten momentan nicht verfügbar. Berate auf Basis der allgemeinen Regeln.';
   }
 }
 
@@ -198,4 +289,4 @@ function runWeatherTool(input = {}, ctx = {}) {
   return lookup(inp);
 }
 
-module.exports = { lookup, geocode, WEATHER_TOOL, runWeatherTool };
+module.exports = { lookup, geocode, LocationNotFoundError, WEATHER_TOOL, runWeatherTool };

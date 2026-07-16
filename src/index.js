@@ -2,14 +2,15 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const Anthropic = require('@anthropic-ai/sdk');
-const { IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT } = require('./persona');
+const { BASE_SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT } = require('./persona');
 const { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages } = require('./feedback');
 const { stripTags } = require('./parse');
 const { CHAT_TOOLS, runTool } = require('./tools');
 const { runChat, runWithTools, buildChatContext } = require('./chat');
 const { productsInText } = require('./producten');
 const { searchContext } = require('./kennis');
-const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt } = require('./image-diagnose');
+const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt,
+  containsDistressSignal, distressReply } = require('./image-diagnose');
 const { startKeepAlive } = require('./keepalive');
 
 const MAX_TOOL_ROUNDS = 4;
@@ -172,6 +173,46 @@ app.post('/api/analyze-image', async (req, res) => {
       .catch((e) => console.error('Foto-log mislukt:', e.message));
   }
 
+  // VEILIGHEIDSGRENS, vóór alle foto-analyse. De regel in IMAGE_ANALYSIS_PROMPT
+  // vuurt pas in pass 2, maar bij "geen hout" of een onduidelijke foto keert deze
+  // handler al ná pass 1 terug en draait pass 2 nooit. Een noodsignaal in het
+  // bijschrift zou dan onbeantwoord blijven. Deze check staat daarom vóór de
+  // eerste modelcall en kost geen tokens.
+  if (containsDistressSignal(caption)) {
+    const reply = distressReply();
+    console.log('Foto met noodsignaal in bijschrift: doorverwezen naar Telefonseelsorge, geen analyse.');
+    if (feedbackEnabled()) {
+      logChat({
+        conversation_id: conversationId,
+        question: '[foto] [noodsignaal, bijschrift niet gelogd]',
+        answer: reply,
+        image_urls: [],
+      }).catch(() => {});
+    }
+    return res.json({ content: reply, flow: null, productIds: [], products: [], usage: null });
+  }
+
+  // Productfoto (verpakking/koker) i.p.v. houtschade: niet afwijzen met "geen
+  // hout", maar de productvraag gewoon beantwoorden met de normale assistent
+  // plus kennisbank-context.
+  async function runProductAnswer(imageBlocks, caption) {
+    const kennisContext = searchContext(caption || 'EAZYFIX Produkt', 3);
+    const system = [{ type: 'text', text: BASE_SYSTEM_PROMPT }];
+    if (kennisContext) system.push({ type: 'text', text: kennisContext });
+    const userText = caption
+      ? `Auf dem Foto ist ein EAZYFIX® Produkt (Verpackung, Kartusche oder Etikett), kein Holzschaden. Der Nutzer fragt: "${caption}". Beantworte diese Produktfrage. Kannst du etwas allein von der Verpackung nicht mit Sicherheit sagen (etwa das genaue Haltbarkeitsdatum oder die Chargennummer), verweise darauf, wo das auf der Verpackung steht, und frag es bei Bedarf nach.`
+      : 'Auf dem Foto ist ein EAZYFIX® Produkt (Verpackung, Kartusche oder Etikett), kein Holzschaden. Sag kurz, welches Produkt du siehst, und frag, was der Nutzer dazu wissen möchte.';
+    const response = await anthropic.messages.create({
+      model: MODEL,
+      max_tokens: 2000,
+      thinking: { type: 'adaptive' },
+      system,
+      messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: userText }] }],
+    });
+    const textBlock = response.content.find((b) => b.type === 'text');
+    return { content: textBlock ? textBlock.text : '', usage: response.usage };
+  }
+
   try {
     const imageBlocks = images.map(img => ({
       type: 'image',
@@ -206,6 +247,15 @@ app.post('/api/analyze-image', async (req, res) => {
       diagnose = parseDiagnose(diagText);
     } catch (e) {
       console.error('Pass-1 diagnose mislukt, val terug op een-pass:', e.message);
+    }
+
+    // Productfoto (koker/verpakking) met een productvraag: niet als "geen hout"
+    // afwijzen, maar de vraag beantwoorden. Staat vóór de hout-check, want een
+    // productfoto is per definitie geen houtschade.
+    if (diagnose && diagnose.isProduct) {
+      const out = await runProductAnswer(imageBlocks, caption);
+      persistPhoto(out.content);
+      return res.json({ content: out.content, flow: null, productIds: [], products: productsInText(out.content), usage: out.usage });
     }
 
     // Geen hout (steen/metselwerk/beton/metaal/...): buiten scope, geen gok.
