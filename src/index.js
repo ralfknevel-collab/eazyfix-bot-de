@@ -10,7 +10,7 @@ const { runChat, runWithTools, buildChatContext } = require('./chat');
 const { productsInText } = require('./producten');
 const { searchContext } = require('./kennis');
 const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt,
-  containsDistressSignal, distressReply } = require('./image-diagnose');
+  containsDistressSignal, distressReply, analyseFases } = require('./image-diagnose');
 const { startKeepAlive } = require('./keepalive');
 
 const MAX_TOOL_ROUNDS = 4;
@@ -314,6 +314,195 @@ app.post('/api/analyze-image', async (req, res) => {
     }
     if (err.status === 429) return res.status(429).json({ error: friendlyError(err) });
     res.status(500).json({ error: friendlyError(err) });
+  }
+});
+
+// POST /api/analyze-image/stream, zelfde analyse als /api/analyze-image, maar als
+// SSE. Zendt fase-events (foto/schade/kennisbank/advies) op echte mijlpalen, streamt
+// pass 2 woord voor woord (met dezelfde tool-lus als vangnet als de niet-streaming
+// handler via runWithTools), en houdt de verbinding open met een heartbeat tijdens
+// de stille denk-pauze van pass 2 (anders kapt een tussenliggende proxy een lange
+// stille stream af). De oude /api/analyze-image blijft ongewijzigd als fallback.
+app.post('/api/analyze-image/stream', async (req, res) => {
+  const images = Array.isArray(req.body.images) ? req.body.images : [];
+  if (images.length === 0) {
+    return res.status(400).json({ error: 'images-Array (oder base64+mimeType) erforderlich' });
+  }
+  if (images.length > MAX_IMAGES_PER_MESSAGE) {
+    return res.status(400).json({ error: `Max ${MAX_IMAGES_PER_MESSAGE} Fotos pro Anfrage` });
+  }
+  for (const img of images) {
+    if (!img || typeof img.base64 !== 'string' || !VALID_IMAGE_TYPES.includes(img.mimeType)) {
+      return res.status(400).json({ error: 'Ungültiges Foto: base64 + unterstützter mimeType nötig (jpeg/png/gif/webp)' });
+    }
+  }
+  const conversationId = req.body.conversationId || null;
+  const caption = typeof req.body.caption === 'string' ? req.body.caption.trim().slice(0, 2000) : '';
+  const priorMessages = sanitizePriorText(req.body.messages);
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
+
+  // Heartbeat: SSE-commentaarregel elke 10s, houdt de verbinding open tijdens de
+  // denk-pauze van pass 2. Een commentaarregel (begint met ':') negeert de client.
+  const heartbeat = setInterval(() => res.write(': ping\n\n'), 10000);
+  // Stopt de modelstream als de klusser de pagina sluit. BEWUST res.on('close'),
+  // niet req.on('close'): dat laatste vuurt ook bij een normale, voltooide
+  // request/response-cyclus en zou de stream dan meteen weer afbreken.
+  const abort = new AbortController();
+  res.on('close', () => { abort.abort(); clearInterval(heartbeat); });
+
+  // Verzamelt het volledige antwoord voor de fire-and-forget foto-log achteraf.
+  let volledig = '';
+  const logStraks = () => {
+    if (!volledig || !feedbackEnabled()) return;
+    uploadChatImages({ conversation_id: conversationId, images })
+      .then((image_urls) => logChat({ conversation_id: conversationId, question: caption ? '[foto] ' + caption : '[foto]', answer: volledig, image_urls }))
+      .catch((e) => console.error('Foto-log mislukt:', e.message));
+  };
+  // Streamt een kant-en-klaar antwoord als één tekst-event (voor de korte routes).
+  const streamTekst = (tekst) => { volledig = tekst; send({ text: tekst }); };
+
+  try {
+    const imageBlocks = images.map(img => ({
+      type: 'image',
+      source: { type: 'base64', media_type: img.mimeType, data: img.base64 },
+    }));
+
+    // VEILIGHEIDSGRENS, vóór alle foto-analyse, net als de niet-streaming handler.
+    // Geen fase-events; de foto's en het bijschrift worden hier bewust NIET gelogd.
+    if (containsDistressSignal(caption)) {
+      const reply = distressReply();
+      console.log('Foto met noodsignaal in bijschrift: doorverwezen naar Telefonseelsorge, geen analyse.');
+      if (feedbackEnabled()) {
+        logChat({ conversation_id: conversationId, question: '[foto] [noodsignaal, bijschrift niet gelogd]', answer: reply, image_urls: [] }).catch(() => {});
+      }
+      send({ text: reply });
+      send({ done: true, wenselijkeFotos: [] });
+      return res.end();
+    }
+
+    // Fase 1: foto bekijken.
+    send({ phase: 'foto' });
+
+    // Pass 1: snelle, goedkope, gestructureerde JSON-diagnose. Eén poging, net als
+    // de niet-streaming handler: mislukt pass 1, dan loopt pass 2 hieronder door
+    // met lege kennis-context en mag het model zelf zoek_kennis aanroepen (oude
+    // een-pass-gedrag als vangnet, zie image-diagnose.js analyseFases).
+    let diagnose = null;
+    try {
+      const diagResp = await anthropic.messages.create({
+        model: MODEL,
+        max_tokens: 1024,
+        output_config: { effort: 'low' },
+        system: IMAGE_DIAGNOSE_PROMPT,
+        messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: 'Geef de diagnose als JSON.' }] }],
+      }, { signal: abort.signal });
+      const diagText = (diagResp.content.find((b) => b.type === 'text') || {}).text || '';
+      diagnose = parseDiagnose(diagText);
+    } catch (e) {
+      if (abort.signal.aborted) throw e;
+      console.error('Pass-1 diagnose mislukt, val terug op een-pass:', e.message);
+    }
+
+    // Fase 2: schade bepaald.
+    send({ phase: 'schade' });
+
+    const plan = analyseFases(diagnose);
+    if (plan.route === 'unclear') { streamTekst(unclearReply(diagnose)); send({ done: true, wenselijkeFotos: [] }); logStraks(); return res.end(); }
+    if (plan.route === 'niethout') { streamTekst(nietHoutReply(diagnose)); send({ done: true, wenselijkeFotos: [] }); logStraks(); return res.end(); }
+    if (plan.route === 'product') {
+      // Productvraag: gewone assistent plus kennisbank-context, in één antwoord.
+      const kennisContext = searchContext(caption || 'EAZYFIX Produkt', 3);
+      const system = [{ type: 'text', text: BASE_SYSTEM_PROMPT }];
+      if (kennisContext) system.push({ type: 'text', text: kennisContext });
+      const userText = caption
+        ? `Auf dem Foto ist ein EAZYFIX® Produkt (Verpackung, Kartusche oder Etikett), kein Holzschaden. Der Nutzer fragt: "${caption}". Beantworte diese Produktfrage. Kannst du etwas allein von der Verpackung nicht mit Sicherheit sagen (etwa das genaue Haltbarkeitsdatum oder die Chargennummer), verweise darauf, wo das auf der Verpackung steht, und frag es bei Bedarf nach.`
+        : 'Auf dem Foto ist ein EAZYFIX® Produkt (Verpackung, Kartusche oder Etikett), kein Holzschaden. Sag kurz, welches Produkt du siehst, und frag, was der Nutzer dazu wissen möchte.';
+      const resp = await anthropic.messages.create({
+        model: MODEL,
+        max_tokens: 2000,
+        thinking: { type: 'adaptive' },
+        system,
+        messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: userText }] }],
+      }, { signal: abort.signal });
+      const tekst = (resp.content.find((b) => b.type === 'text') || {}).text || '';
+      streamTekst(tekst); send({ done: true, wenselijkeFotos: [] }); logStraks(); return res.end();
+    }
+
+    // Advies-pad: fase 3, kennisbank vooraf ophalen als hint. Mislukte diagnose:
+    // lege context en hint, dan mag het model in pass 2 zelf zoek_kennis aanroepen.
+    send({ phase: 'kennisbank' });
+    const promptText = buildAnalysisPrompt({ imageCount: images.length, hasPrior: priorMessages.length > 0, caption });
+    let kennisContext = '';
+    let hint = '';
+    if (diagnose) {
+      kennisContext = searchContext(buildRagQuery(diagnose), 3);
+      hint = `\n\nVorläufige Diagnose (nutze als Hinweis, prüfe selbst am Foto): Schaden scheint ${diagnose.schadeType || 'unbekannt'}, Schweregrad ${diagnose.ernst}.`;
+    }
+
+    // Fase 4: advies opstellen, pass 2 als stream met dezelfde tool-lus als de
+    // niet-streaming handler (zoek_kennis blijft als vangnet beschikbaar).
+    send({ phase: 'advies' });
+    const system = [{ type: 'text', text: IMAGE_ANALYSIS_PROMPT }];
+    if (kennisContext) system.push({ type: 'text', text: kennisContext });
+
+    let convo = [...priorMessages, { role: 'user', content: [...imageBlocks, { type: 'text', text: promptText + hint }] }];
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      const stream = anthropic.messages.stream({
+        model: MODEL,
+        max_tokens: 8000,
+        thinking: { type: 'adaptive' },
+        output_config: { effort: 'xhigh' },
+        system,
+        tools: CHAT_TOOLS,
+        messages: convo,
+      }, { signal: abort.signal });
+
+      let roundText = '';
+      for await (const event of stream) {
+        if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+          roundText += event.delta.text;
+          volledig += event.delta.text;
+          send({ text: event.delta.text });
+        }
+      }
+      const final = await stream.finalMessage();
+      if (final.stop_reason !== 'tool_use') break;
+      // Tool-ronde: geen aankondigingstekst getoond (de fase-events dekken dat al).
+      const toolResults = await Promise.all(
+        final.content
+          .filter((b) => b.type === 'tool_use')
+          .map(async (b) => {
+            console.log(`  tool: ${b.name}(${JSON.stringify(b.input)})`);
+            return { type: 'tool_result', tool_use_id: b.id, content: await runTool(b.name, b.input, {}) };
+          })
+      );
+      convo = [...convo, { role: 'assistant', content: final.content }, { role: 'user', content: toolResults }];
+    }
+
+    // Defensief tegen tag-lek (PRODUCTS:/FLOW:), zelfde aanpak als /api/chat/stream:
+    // deze regels horen NOOIT zichtbaar te blijven. Strip ze pas als de volledige
+    // tekst binnen is en corrigeer de client met een reset plus de schone tekst.
+    const cleaned = stripTags(volledig).text;
+    if (cleaned !== volledig) {
+      send({ reset: true });
+      send({ text: cleaned });
+      volledig = cleaned;
+    }
+    send({ done: true, geanalyseerd: true, wenselijkeFotos: [] });
+    logStraks();
+    res.end();
+  } catch (err) {
+    if (!abort.signal.aborted) {
+      console.error('Foto-stream-fout:', err.message);
+      send({ error: friendlyError(err) });
+    }
+    res.end();
+  } finally {
+    clearInterval(heartbeat);
   }
 });
 

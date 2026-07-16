@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt } = require('../src/image-diagnose');
+const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt, analyseFases } = require('../src/image-diagnose');
 
 // Regressie: gebruiker stuurde foto + vraag in één beurt en kreeg 2 antwoorden
 // (feedback rij 6, DE). De vraag hoort als bijschrift IN de foto-analyse, zodat
@@ -111,4 +111,44 @@ test('unclearReply werkt zonder reden', () => {
   const r = unclearReply({ redenOnduidelijk: '' });
   assert.match(r, /foto/i);
   assert.doesNotMatch(r, /—|–/);
+});
+
+// analyseFases bepaalt de fase-stappen en route voor de streaming-endpoint.
+// Zie de uitgebreide toelichting in image-diagnose.js: anders dan de Repair-Care-
+// variant is een mislukte pass-1 (diagnose null) hier GEEN "unclear"-route, maar
+// gaat door naar 'advies' (het model mag zelf zoek_kennis als vangnet aanroepen).
+test('analyseFases: productfoto geeft route product zonder kennisbank/advies-fase', () => {
+  const p = analyseFases({ isProduct: true, isHout: true, duidelijk: true });
+  assert.strictEqual(p.route, 'product');
+  assert.deepStrictEqual(p.fases, ['foto', 'schade']);
+});
+
+test('analyseFases: geen hout geeft route niethout', () => {
+  const p = analyseFases({ isProduct: false, isHout: false, duidelijk: true });
+  assert.strictEqual(p.route, 'niethout');
+  assert.deepStrictEqual(p.fases, ['foto', 'schade']);
+});
+
+test('analyseFases: onduidelijke foto geeft route unclear', () => {
+  const p = analyseFases({ isProduct: false, isHout: true, duidelijk: false });
+  assert.strictEqual(p.route, 'unclear');
+  assert.deepStrictEqual(p.fases, ['foto', 'schade']);
+});
+
+test('analyseFases: duidelijke houtfoto geeft route advies met alle 4 fases', () => {
+  const p = analyseFases({ isProduct: false, isHout: true, duidelijk: true });
+  assert.strictEqual(p.route, 'advies');
+  assert.deepStrictEqual(p.fases, ['foto', 'schade', 'kennisbank', 'advies']);
+});
+
+test('analyseFases: mislukte diagnose (null) gaat door naar advies, geen unclear', () => {
+  const p = analyseFases(null);
+  assert.strictEqual(p.route, 'advies');
+  assert.deepStrictEqual(p.fases, ['foto', 'schade', 'kennisbank', 'advies']);
+});
+
+test('analyseFases: product staat vóór niethout/unclear in de volgorde van checks', () => {
+  // is_hout false EN is_product true: product wint (net als de niet-streaming handler).
+  const p = analyseFases({ isProduct: true, isHout: false, duidelijk: false });
+  assert.strictEqual(p.route, 'product');
 });

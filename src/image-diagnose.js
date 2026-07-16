@@ -130,5 +130,22 @@ function buildAnalysisPrompt({ imageCount = 1, hasPrior = false, caption = '' } 
   return text;
 }
 
+// Bepaal uit de pass-1-diagnose welke fase-stappen en welke route de streaming-
+// endpoint volgt. Puur, zodat de event-volgorde vastligt en getest is zonder het
+// model of de HTTP-laag. De volgorde van de checks is dezelfde als in de niet-
+// streaming /api/analyze-image handler: product en niet-hout vóór onduidelijk.
+//
+// LET OP, ANDERS DAN DE REPAIR-CARE-VARIANT: een mislukte pass-1 (diagnose null,
+// bv. door een API-fout) is HIER geen "unclear"-route. De niet-streaming handler
+// laat pass 2 in dat geval doorlopen met lege kennis-context, zodat het model
+// zelf de zoek_kennis-tool als vangnet kan aanroepen (het oude een-pass-gedrag).
+// Die route heet daarom 'advies' zonder de kennisbank-fase vooraf te garanderen.
+function analyseFases(diagnose) {
+  if (diagnose && diagnose.isProduct) return { fases: ['foto', 'schade'], route: 'product' };
+  if (diagnose && !diagnose.isHout) return { fases: ['foto', 'schade'], route: 'niethout' };
+  if (diagnose && !diagnose.duidelijk) return { fases: ['foto', 'schade'], route: 'unclear' };
+  return { fases: ['foto', 'schade', 'kennisbank', 'advies'], route: 'advies' };
+}
+
 module.exports = { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt,
-  containsDistressSignal, distressReply };
+  containsDistressSignal, distressReply, analyseFases };

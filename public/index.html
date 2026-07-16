@@ -95,6 +95,15 @@
     .typing span:nth-child(2){ animation-delay:.2s;} .typing span:nth-child(3){ animation-delay:.4s;}
     @keyframes blink { 0%,80%,100%{ opacity:.25; transform: translateY(0);} 40%{ opacity:1; transform: translateY(-3px);} }
 
+    /* Stappenblok tijdens foto-analyse: loopt mee met de fase-events */
+    .fases { display: flex; flex-direction: column; gap: 4px; margin: 2px 0; }
+    .fases .stap { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #8a90a0; transition: color .2s; }
+    .fases .stap.actief { color: var(--ink); font-weight: 500; }
+    .fases .stap.klaar { color: var(--green); }
+    .fases .stap .mark { width: 18px; height: 16px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+    .fases .stap .mark svg { display: block; }
+    .fases .stap .mark .typing span { width: 4px; height: 4px; }
+
     /* Feedback */
     .fb { display: flex; gap: 6px; align-items: center; margin: -4px 0 0 39px; flex-wrap: wrap; }
     .fb button { display: inline-flex; align-items: center; justify-content: center; min-height: 26px; padding: 4px 9px; border: 1px solid #d6d9e0; border-radius: 9px; background: #fff; color: var(--navy); cursor: pointer; font-size: 13px; line-height: 1; }
@@ -650,31 +659,124 @@
       scrollLog();
     }
 
+    function faseLabel(phase) {
+      const labels = { foto: 'Foto ansehen', schade: 'Schaden bestimmen', kennisbank: 'Wissensdatenbank abfragen', advies: 'Rat formulieren' };
+      return labels[phase] || '';
+    }
+
+    // Foto-analyse via de streaming-endpoint: toont een stappenblok dat meeloopt met
+    // de fase-events en laat daarna het advies binnenstromen. Valt bij stream-uitval
+    // (voor het eerste tekst-event) terug op de oude niet-streaming endpoint.
     async function sendPhoto(file, caption) {
       caption = (caption || '').trim();
       userPhotoBubble(file, caption);
-      const out = bubble('bot', '…');
-      out.innerHTML = '<span class="analyzing">Der EAZYFIX Holzfäule-Assistent analysiert dein Foto, einen Moment Geduld</span> <span class="typing"><span></span><span></span><span></span></span>';
+      const out = bubble('bot', '...');
+
+      // Bouw het stappenblok. Elke fase krijgt een regel; ze worden pas zichtbaar
+      // (actief/klaar) zodra het bijbehorende event binnenkomt.
+      const orde = ['foto', 'schade', 'kennisbank', 'advies'];
+      const fasesEl = document.createElement('div');
+      fasesEl.className = 'fases';
+      const stapEls = {};
+      out.innerHTML = '';
+      out.appendChild(fasesEl);
+      // Lijnstijl-SVG-vinkje in dezelfde stijl als de fotoknop (geen emoji). De
+      // actieve stap toont de bestaande typing-dots.
+      const checkSvg = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+      const actiefMark = '<span class="typing"><span></span><span></span><span></span></span>';
+      function toonFase(phase) {
+        // Markeer alle eerder getoonde stappen als klaar, de nieuwe als actief.
+        for (const p of orde) {
+          if (!stapEls[p]) continue;
+          stapEls[p].className = 'stap klaar';
+          stapEls[p].querySelector('.mark').innerHTML = checkSvg;
+        }
+        if (!stapEls[phase]) {
+          const el = document.createElement('div');
+          el.className = 'stap';
+          el.innerHTML = '<span class="mark"></span><span class="lbl"></span>';
+          el.querySelector('.lbl').textContent = faseLabel(phase);
+          fasesEl.appendChild(el);
+          stapEls[phase] = el;
+        }
+        stapEls[phase].className = 'stap actief';
+        stapEls[phase].querySelector('.mark').innerHTML = actiefMark;
+      }
+
+      const reduced = await downscaleImage(file);
+      const base64 = reduced ? reduced.base64 : await fileToBase64(file);
+      const mimeType = reduced ? reduced.mimeType : file.type;
+
+      let acc = '', gestreamd = false, klaarData = null;
       try {
-        const reduced = await downscaleImage(file);
-        const base64 = reduced ? reduced.base64 : await fileToBase64(file);
-        const mimeType = reduced ? reduced.mimeType : file.type;
-        const resp = await apiFetch('/api/analyze-image', {
+        const resp = await apiFetch('/api/analyze-image/stream', {
           method: 'POST',
-          body: JSON.stringify({ base64, mimeType, messages: history, conversationId, caption }),
+          body: JSON.stringify({ images: [{ base64, mimeType }], messages: history, conversationId, caption }),
         });
-        const data = await resp.json();
-        if (!resp.ok) { out.closest('.row').className = 'row row-bot err'; out.textContent = data.error || ('Fehler ' + resp.status); return; }
-        // Server levert al schone tekst; flow/productIds zijn techniek, NIET tonen.
-        out.textContent = data.content;
-        // Foto-beurt in de geschiedenis bewaren zodat een vervolgfoto of -vraag
-        // doorgaat op deze schade i.p.v. los te beginnen. Bijschrift meenemen.
-        history.push({ role: 'user', content: caption ? '[Foto vom Schaden gesendet] ' + caption : '[Foto vom Schaden gesendet]' });
-        history.push({ role: 'assistant', content: data.content });
-        addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
-        linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out);
+        if (!resp.ok || !resp.body) throw new Error('stream ' + resp.status);
+        const reader = resp.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop();
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue; // heartbeat (': ping') wordt zo genegeerd
+            let obj; try { obj = JSON.parse(line.slice(6)); } catch { continue; }
+            if (obj.phase) { toonFase(obj.phase); }
+            if (obj.error) { throw new Error(obj.error); }
+            if (obj.reset) { acc = ''; if (gestreamd) out.textContent = ''; }
+            if (typeof obj.text === 'string') {
+              if (!gestreamd) { gestreamd = true; out.innerHTML = ''; } // stappenblok weg bij eerste tekst
+              acc += obj.text;
+              out.textContent = acc;
+            }
+            if (obj.done) { klaarData = obj; }
+          }
+        }
+        if (!gestreamd && !klaarData) throw new Error('stream leeg');
+
+        if (klaarData) {
+          // Foto-beurt in de geschiedenis bewaren zodat een vervolgfoto of -vraag
+          // doorgaat op deze schade i.p.v. los te beginnen. Bijschrift meenemen.
+          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out);
+          history.push({ role: 'user', content: caption ? '[Foto vom Schaden gesendet] ' + caption : '[Foto vom Schaden gesendet]' });
+          history.push({ role: 'assistant', content: acc });
+          addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
+        } else {
+          // Er kwam wel tekst binnen, maar nooit een {done}-event: mogelijk afgekapt.
+          out.textContent = acc + '\n\n(Die Verbindung ist unterbrochen; das ist die Antwort bis hierhin.)';
+          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out);
+          addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
+        }
       } catch (e) {
-        out.closest('.row').className = 'row row-bot err'; out.textContent = 'Fehler: ' + e.message;
+        // Kwam er al tekst binnen, laat die staan met een korte notitie. Anders val
+        // terug op de oude niet-streaming endpoint zodat de klusser altijd antwoord krijgt.
+        if (gestreamd && acc) {
+          out.textContent = acc + '\n\n(Die Verbindung ist unterbrochen; das ist die Antwort bis hierhin.)';
+          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out);
+          addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
+          return;
+        }
+        try {
+          const resp = await apiFetch('/api/analyze-image', {
+            method: 'POST',
+            body: JSON.stringify({ base64, mimeType, messages: history, conversationId, caption }),
+          });
+          const data = await resp.json();
+          if (!resp.ok) { out.closest('.row').className = 'row row-bot err'; out.textContent = data.error || ('Fehler ' + resp.status); return; }
+          // Server levert al schone tekst; flow/productIds zijn techniek, NIET tonen.
+          out.textContent = data.content;
+          history.push({ role: 'user', content: caption ? '[Foto vom Schaden gesendet] ' + caption : '[Foto vom Schaden gesendet]' });
+          history.push({ role: 'assistant', content: data.content });
+          addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
+          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out);
+        } catch (e2) {
+          out.closest('.row').className = 'row row-bot err'; out.textContent = 'Fehler: ' + e2.message;
+        }
       }
     }
 
