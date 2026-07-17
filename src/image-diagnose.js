@@ -106,7 +106,10 @@ function unclearReply(diagnose) {
 // Reply als de foto duidelijk geen hout is (steen, baksteen, metselwerk, beton,
 // metaal, kunststof). EAZYFIX® is uitsluitend houtherstel, dus geen gok.
 function nietHoutReply(diagnose) {
-  const mat = diagnose && diagnose.materiaal ? diagnose.materiaal.trim() : '';
+  let mat = diagnose && diagnose.materiaal ? diagnose.materiaal.trim() : '';
+  // Het model zet soms zelf al "kein Holz" in de materiaalomschrijving; strip dat
+  // zodat de zin niet "kein Holz und kein Holz" wordt.
+  mat = mat.replace(/[\s,;.]*(?:und\s+)?kein Holz\.?\s*$/i, '').replace(/[\s,;.]+$/, '').trim();
   const watIkZie = mat
     ? `Auf diesem Foto sehe ich ${mat} und kein Holz.`
     : 'Auf diesem Foto sehe ich kein Holz.';
