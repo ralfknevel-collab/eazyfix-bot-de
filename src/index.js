@@ -486,13 +486,16 @@ app.post('/api/analyze-image/stream', async (req, res) => {
     // Defensief tegen tag-lek (PRODUCTS:/FLOW:), zelfde aanpak als /api/chat/stream:
     // deze regels horen NOOIT zichtbaar te blijven. Strip ze pas als de volledige
     // tekst binnen is en corrigeer de client met een reset plus de schone tekst.
-    const cleaned = stripTags(volledig).text;
+    const { text: cleaned, flow, productIds } = stripTags(volledig);
     if (cleaned !== volledig) {
       send({ reset: true });
       send({ text: cleaned });
       volledig = cleaned;
     }
-    send({ done: true, geanalyseerd: true, wenselijkeFotos: [] });
+    // Geef flow/productIds/products mee in het slot, net als de niet-streaming
+    // /api/analyze-image, zodat de app de productaanbevelingen en de flow-knop ook
+    // na een streaming-analyse toont.
+    send({ done: true, geanalyseerd: true, wenselijkeFotos: [], flow, productIds, products: productsInText(cleaned) });
     logStraks();
     res.end();
   } catch (err) {
