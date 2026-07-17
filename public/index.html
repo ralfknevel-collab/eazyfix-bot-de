@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>EAZYFIX Holzfäule-Assistent</title>
+  <title>Eazyfix AI</title>
   <meta name="description" content="Die EAZYFIX-App: Holzfäule erkennen, direkt Rat und die richtige Vorgehensweise erhalten. Mach ein Foto oder stell deine Frage." />
   <link rel="icon" href="eazyfix-icon.png" />
   <meta property="og:type" content="website" />
@@ -64,7 +64,8 @@
 
     /* Kop */
     .top { background: var(--navy); color: #fff; padding: 16px 18px; display: flex; align-items: center; gap: 12px; position: relative; }
-    .top .logo { height: 30px; display: block; }
+    .top .logo { height: 40px; display: block; }
+    .top .title { font-size: 15px; font-weight: 700; color: #fff; }
     .top .beta { background: var(--green); color: var(--green-dark); font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .06em; }
     .top .status { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #c7ccda; }
     .top .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(121,193,67,.6); animation: pulse 2s infinite; }
@@ -196,7 +197,7 @@
         border-radius: 0; box-shadow: none;
       }
       .top { padding: 12px 14px; gap: 8px; }
-      .top .logo { height: 26px; }
+      .top .logo { height: 32px; }
       .top .status { display: none; } /* bespaart ruimte op smalle schermen */
       .msgs { padding: 14px 12px; gap: 12px; }
       .msg { max-width: 88%; font-size: 15px; }
@@ -211,6 +212,7 @@
   <div class="chat">
     <div class="top">
       <img class="logo" src="eazyfix-logo.png" alt="EAZYFIX" />
+      <span class="title">Eazyfix AI</span>
       <span class="status"><span class="dot"></span> Online</span>
       <button type="button" class="kebab" id="kebabBtn" aria-label="Menü" title="Menü"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
       <div class="kebab-menu" id="kebabMenu" hidden><button type="button" id="endChatBtn">Chat beenden</button></div>
