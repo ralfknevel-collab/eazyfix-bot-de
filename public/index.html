@@ -63,7 +63,7 @@
     }
 
     /* Kop */
-    .top { background: var(--navy); color: #fff; padding: 16px 18px; display: flex; align-items: center; gap: 12px; }
+    .top { background: var(--navy); color: #fff; padding: 16px 18px; display: flex; align-items: center; gap: 12px; position: relative; }
     .top .logo { height: 30px; display: block; }
     .top .beta { background: var(--green); color: var(--green-dark); font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .06em; }
     .top .status { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #c7ccda; }
@@ -128,8 +128,21 @@
     #send { width: 40px; height: 40px; flex: 0 0 auto; border: 0; border-radius: 13px; background: var(--green); color: #fff; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
     #send:disabled { opacity: .5; cursor: default; }
     .credit { text-align: center; font-size: 11px; color: #aab; padding: 8px 0 2px; }
-    .disclaimer { text-align: center; font-size: 10.5px; line-height: 1.35; color: #b3b9c6; padding: 7px 10px 0; max-width: 560px; margin: 0 auto; }
     .credit b { color: var(--muted); font-weight: 600; }
+
+    /* Opening: datum-scheiding en deelname-kop */
+    .datescheiding { text-align: center; font-size: 11px; color: #b3b9c6; margin: 8px 0 2px; }
+    .deelname { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280; margin: 2px 0 8px; padding-left: 2px; }
+    .deelname .deelname-av { width: 20px; height: 20px; border-radius: 50%; overflow: hidden; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; background: #eef2f0; }
+    .deelname .deelname-av img { width: 16px; height: 16px; object-fit: contain; display: block; }
+
+    /* Kebab-menu in de kop */
+    .kebab { margin-left: auto; background: transparent; border: 0; padding: 4px; cursor: pointer; color: rgba(255,255,255,.9); border-radius: 8px; display: flex; }
+    .kebab:hover { background: rgba(255,255,255,.15); }
+    .kebab-menu { position: absolute; right: 12px; top: 52px; z-index: 30; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.14); padding: 6px; min-width: 160px; }
+    .kebab-menu[hidden] { display: none; }
+    .kebab-menu button { display: flex; align-items: center; gap: 8px; width: 100%; background: transparent; border: 0; padding: 8px 10px; border-radius: 8px; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
+    .kebab-menu button:hover { background: #eef4ef; }
 
     /* Inline productlink (groene chip) in de antwoordtekst */
     .product-link {
@@ -192,6 +205,8 @@
       <img class="logo" src="eazyfix-logo.png" alt="EAZYFIX" />
       <span class="beta">Beta</span>
       <span class="status"><span class="dot"></span> Online</span>
+      <button type="button" class="kebab" id="kebabBtn" aria-label="Menü" title="Menü"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
+      <div class="kebab-menu" id="kebabMenu" hidden><button type="button" id="endChatBtn">Chat beenden</button></div>
     </div>
 
     <div class="msgs" id="log"></div>
@@ -213,7 +228,6 @@
         <button type="button" id="optCam"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg> Foto aufnehmen</button>
         <button type="button" id="optLib"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg> Aus Galerie wählen</button>
       </div>
-      <div class="disclaimer">Dieser Rat stammt von einer KI und kann Fehler enthalten. Lesen Sie immer die Gebrauchsanweisung auf der Verpackung und fragen Sie im Zweifel kurz nach.</div>
       <div class="credit">© 2026 Ralf Knevel</div>
     </div>
   </div>
@@ -275,7 +289,7 @@
     });
 
     const history = []; // { role, content }
-    const conversationId = 'c-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+    let conversationId = 'c-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
 
     // Browser-locatie (voor weather_lookup). Best-effort: vraag eenmalig, sla op
     // als toegestaan. Bij weigeren/niet-beschikbaar wordt 'm niet meegestuurd;
@@ -803,8 +817,62 @@
     // Auto-groeiend invoerveld
     inEl.addEventListener('input', () => { inEl.style.height = 'auto'; inEl.style.height = Math.min(inEl.scrollHeight, 120) + 'px'; });
 
-    // Welkomstbericht (alleen visueel, niet naar de bot gestuurd)
-    bubble('bot', 'Hallo! Ich bin der EAZYFIX Holzfäule-Assistent. Stell deine Frage zur Holzfäule-Reparatur oder schick ein Foto vom Schaden 👇');
+    // Toont de opening: datum-scheiding, deelname-kop en het openingsbericht met de
+    // AI-waarschuwing. Herbruikbaar: ook na "Chat beenden".
+    function nuTijd() {
+      return new Date().toLocaleTimeString('de-DE', { hour: 'numeric', minute: '2-digit' });
+    }
+    function toonOpening() {
+      const t = nuTijd();
+      const scheiding = document.createElement('div');
+      scheiding.className = 'datescheiding';
+      scheiding.textContent = 'Heute · ' + t;
+      log.appendChild(scheiding);
+      const deelname = document.createElement('div');
+      deelname.className = 'deelname';
+      const deelAv = document.createElement('span');
+      deelAv.className = 'deelname-av';
+      const deelImg = document.createElement('img');
+      deelImg.src = 'eazyfix-logo.png';
+      deelImg.alt = 'EAZYFIX';
+      deelImg.onerror = () => { deelAv.remove(); };
+      deelAv.appendChild(deelImg);
+      const deelTxt = document.createElement('span');
+      deelTxt.textContent = 'Eazyfix nimmt teil · ' + t;
+      deelname.appendChild(deelAv);
+      deelname.appendChild(deelTxt);
+      log.appendChild(deelname);
+      bubble('bot',
+        'Hallo! Ich bin der EAZYFIX Holzfäule-Assistent. Stell deine Frage zur Holzfäule-Reparatur oder schick ein Foto vom Schaden 👇'
+        + '\n\n'
+        + 'Hinweis: Generative KI kann Fehler machen, prüfe daher immer die Ergebnisse. Wenn du persönliche Daten teilst, werden diese nur zur Bearbeitung deiner Anfrage und für Analysen verwendet.'
+        + '\n\n'
+        + 'Dieser Rat stammt von einer KI und kann Fehler enthalten. Lesen Sie immer die Gebrauchsanweisung auf der Verpackung und fragen Sie im Zweifel kurz nach.'
+      );
+    }
+    toonOpening();
+
+    // Chat beenden: bevestiging tonen, gesprek wissen (berichten, geschiedenis,
+    // nieuw conversation-id), en een frisse opening starten.
+    function beeindigChat() {
+      const t = nuTijd();
+      log.innerHTML = '';
+      history.length = 0;
+      conversationId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID() : String(Date.now());
+      const bevestig = document.createElement('div');
+      bevestig.className = 'datescheiding';
+      bevestig.textContent = 'Du hast den Chat um ' + t + ' beendet';
+      log.appendChild(bevestig);
+      toonOpening();
+    }
+
+    // Kebab-menu: openen/sluiten en "Chat beenden" koppelen
+    const kebabBtn = document.getElementById('kebabBtn');
+    const kebabMenu = document.getElementById('kebabMenu');
+    kebabBtn.addEventListener('click', (e) => { e.stopPropagation(); kebabMenu.hidden = !kebabMenu.hidden; });
+    document.getElementById('endChatBtn').addEventListener('click', () => { kebabMenu.hidden = true; beeindigChat(); });
+    document.addEventListener('click', (e) => { if (!kebabMenu.hidden && !kebabMenu.contains(e.target) && e.target !== kebabBtn) kebabMenu.hidden = true; });
   </script>
 </body>
 </html>
