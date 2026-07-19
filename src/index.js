@@ -10,7 +10,7 @@ const { runChat, runWithTools, buildChatContext } = require('./chat');
 const { productsInText } = require('./producten');
 const { searchContext } = require('./kennis');
 const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt,
-  containsDistressSignal, distressReply, analyseFases } = require('./image-diagnose');
+  buildDiagnosePrompt, containsDistressSignal, distressReply, analyseFases } = require('./image-diagnose');
 const { startKeepAlive } = require('./keepalive');
 
 const MAX_TOOL_ROUNDS = 4;
@@ -241,7 +241,7 @@ app.post('/api/analyze-image', async (req, res) => {
         max_tokens: 1024,
         output_config: { effort: 'low' },
         system: IMAGE_DIAGNOSE_PROMPT,
-        messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: 'Geef de diagnose als JSON.' }] }],
+        messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: buildDiagnosePrompt({ caption }) }] }],
       });
       const diagText = (diagResp.content.find((b) => b.type === 'text') || {}).text || '';
       diagnose = parseDiagnose(diagText);
@@ -278,7 +278,7 @@ app.post('/api/analyze-image', async (req, res) => {
     let kennisContext = '';
     let hint = '';
     if (diagnose) {
-      kennisContext = searchContext(buildRagQuery(diagnose), 3);
+      kennisContext = searchContext(buildRagQuery(diagnose, caption), 3);
       hint = `\n\nVorläufige Diagnose (nutze als Hinweis, prüfe selbst am Foto): Schaden scheint ${diagnose.schadeType || 'unbekannt'}, Schweregrad ${diagnose.ernst}.`;
     }
 
@@ -398,7 +398,7 @@ app.post('/api/analyze-image/stream', async (req, res) => {
         max_tokens: 1024,
         output_config: { effort: 'low' },
         system: IMAGE_DIAGNOSE_PROMPT,
-        messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: 'Geef de diagnose als JSON.' }] }],
+        messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: buildDiagnosePrompt({ caption }) }] }],
       }, { signal: abort.signal });
       const diagText = (diagResp.content.find((b) => b.type === 'text') || {}).text || '';
       diagnose = parseDiagnose(diagText);
@@ -439,7 +439,7 @@ app.post('/api/analyze-image/stream', async (req, res) => {
     let kennisContext = '';
     let hint = '';
     if (diagnose) {
-      kennisContext = searchContext(buildRagQuery(diagnose), 3);
+      kennisContext = searchContext(buildRagQuery(diagnose, caption), 3);
       hint = `\n\nVorläufige Diagnose (nutze als Hinweis, prüfe selbst am Foto): Schaden scheint ${diagnose.schadeType || 'unbekannt'}, Schweregrad ${diagnose.ernst}.`;
     }
 

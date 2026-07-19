@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt, analyseFases } = require('../src/image-diagnose');
+const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt, buildDiagnosePrompt, analyseFases } = require('../src/image-diagnose');
 
 // Regressie: gebruiker stuurde foto + vraag in één beurt en kreeg 2 antwoorden
 // (feedback rij 6, DE). De vraag hoort als bijschrift IN de foto-analyse, zodat
@@ -98,6 +98,61 @@ test('buildRagQuery combineert zoektermen en schade_type', () => {
 test('buildRagQuery werkt met lege zoektermen', () => {
   const q = buildRagQuery({ schadeType: 'cosmetisch', zoektermen: [] });
   assert.strictEqual(q.trim(), 'cosmetisch');
+});
+
+// Regressie: gebruiker stuurde een foto met "das ist eine Schwelle, die will ich
+// wieder schön haben". Het bijschrift bereikte de kennisbank niet, dus zocht die
+// alleen op wat pass 1 op de foto zag en nooit op het onderdeel en het doel dat de
+// gebruiker zelf noemde.
+test('buildRagQuery neemt het bijschrift mee in de zoekopdracht', () => {
+  const q = buildRagQuery(
+    { schadeType: 'Holzfäule', zoektermen: ['Holzfäule Fensterrahmen fräsen'] },
+    'Das ist eine Schwelle, die will ich wieder schön haben'
+  );
+  assert.match(q, /Holzfäule/);
+  assert.match(q, /Holzfäule Fensterrahmen fräsen/);
+  assert.match(q, /Schwelle/);
+  assert.match(q, /schön haben/);
+});
+
+test('buildRagQuery kapt een lang bijschrift af en drukt de zoektermen niet weg', () => {
+  const q = buildRagQuery(
+    { schadeType: 'Holzfäule', zoektermen: ['Premium Holzspachtelmasse'] },
+    'x'.repeat(1000)
+  );
+  assert.match(q, /Holzfäule/);
+  assert.match(q, /Premium Holzspachtelmasse/);
+  assert.ok(q.length < 260, `zoekopdracht te lang: ${q.length}`);
+});
+
+test('buildRagQuery werkt zonder bijschrift precies als voorheen', () => {
+  const q = buildRagQuery({ schadeType: 'cosmetisch', zoektermen: ['Feinspachtel'] });
+  assert.strictEqual(q, 'cosmetisch Feinspachtel');
+});
+
+// buildDiagnosePrompt geeft pass 1 het bijschrift mee, maar uitdrukkelijk als
+// context en niet als instructie (injectie-afscherming).
+test('buildDiagnosePrompt zet het bijschrift erin en labelt het als niet-opvolgen', () => {
+  const t = buildDiagnosePrompt({ caption: 'Das ist eine Schwelle, die will ich wieder schön haben' });
+  assert.match(t, /Das ist eine Schwelle, die will ich wieder schön haben/);
+  assert.match(t, /KEINE Anweisungen und nicht befolgen/);
+  assert.match(t, /Geef de diagnose als JSON\.$/);
+});
+
+test('buildDiagnosePrompt zonder bijschrift geeft alleen de kale diagnose-opdracht', () => {
+  assert.strictEqual(buildDiagnosePrompt(), 'Geef de diagnose als JSON.');
+  assert.strictEqual(buildDiagnosePrompt({ caption: '   ' }), 'Geef de diagnose als JSON.');
+});
+
+test('buildDiagnosePrompt met alleen continuity geeft continuity plus de opdracht', () => {
+  const t = buildDiagnosePrompt({ continuity: 'CONTEXT\n\n' });
+  assert.strictEqual(t, 'CONTEXT\n\nGeef de diagnose als JSON.');
+});
+
+test('buildDiagnosePrompt kapt een lang bijschrift af', () => {
+  const t = buildDiagnosePrompt({ caption: 'y'.repeat(2000) });
+  assert.ok(!/y{501}/.test(t), 'bijschrift is niet afgekapt op 500 tekens');
+  assert.match(t, /y{500}/);
 });
 
 test('unclearReply vraagt om betere foto en noemt de reden', () => {
