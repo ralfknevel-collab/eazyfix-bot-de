@@ -53,3 +53,17 @@ DECLINED = user decided not to pursue
 **Suggested improvement:** Voeg aan systematic-debugging een regel toe: als working-tree bestanden onverwacht wijzigen, krimpen of "modified by linter"-meldingen geven terwijl jij ze net bewerkte, behandel dat als een git-state-signaal. Draai eerst `git status`, `git reflog -5`, en grep op conflict-markers (`^<<<<<<<`) vóór je edits herhaalt of iets commit. Vertrouw de "intentional/linter"-annotatie niet als de inhoud niet als opmaak leest (bv. hele secties of array-items verdwenen).
 
 **Principle:** Een working tree is gedeelde, levende state. Onverwachte bestandswijzigingen midden in je eigen edits duiden vaker op een concurrent git-operatie (branch-switch, merge, rebase, reset) dan op een linter. Diagnose via git-state kost seconden en voorkomt dat je andermans in-flight werk overschrijft; blind door-editen is de dure fout.
+
+### Observation 4: Subagents kunnen geen rapportbestanden schrijven — briefing moet tekst-teruggave vragen
+
+**Date:** 2026-07-20
+**Session context:** Analyse van 268 live-chat transcripts (EAZYFIX DE) met 8 parallelle analyse-agents over 8 transcript-chunks.
+**Skill:** task-observer (en elke skill die fan-out naar subagents beschrijft)
+**Type:** open-source
+**Phase/Area:** Delegatie naar subagents / promptontwerp voor parallelle analyse
+
+**Issue:** De briefing droeg elke subagent op het rapport naar een bestand te schrijven én als eindantwoord terug te geven. De harness blokkeerde het schrijven ("Subagents should return findings as text, not write report files"); twee agents meldden dit expliciet in hun antwoord. Eén van de acht agents viel bovendien uit op een API-limiet en moest opnieuw gestart worden; omdat er geen bestand op schijf stond, was er geen tussenresultaat om op terug te vallen — alleen een volledige herstart hielp.
+
+**Suggested improvement:** In fan-out-instructies standaard alleen om tekst-teruggave vragen, niet om een bestandspad. Plan daarnaast expliciet voor gedeeltelijke uitval: nummer de deeltaken, houd bij welke terugkwamen, en start alleen de ontbrekende opnieuw in plaats van de hele batch.
+
+**Principle:** Bij parallelle delegatie is het resultaatkanaal van de subagent het enige betrouwbare artefact. Ontwerp de opdracht rond dat kanaal en ga ervan uit dat een deel van de fan-out faalt; per-deeltaak herstartbaarheid is goedkoper dan een volledige herhaling.
