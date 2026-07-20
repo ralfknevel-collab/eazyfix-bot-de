@@ -174,7 +174,7 @@ function buildAnalysisPrompt({ imageCount = 1, hasPrior = false, caption = '' } 
 // entfiel die Material-Prüfung (is_hout), sodass ein Foto von Mauerwerk als Holzfäule
 // behandelt werden konnte. Jetzt gleich wie die NL-Bot: ehrlich melden und nichts raten.
 function analyseFoutReply() {
-  return 'Bei mir ist beim Betrachten deines Fotos etwas schiefgelaufen; das liegt nicht am Foto selbst. Schick es gleich noch einmal, dann schaue ich erneut. Klappt es dann immer noch nicht, ruf kurz den EAZYFIX®-Innendienst an unter +31 85 201 201 1.';
+  return 'Bei mir ist beim Betrachten deines Fotos etwas schiefgelaufen; das liegt nicht am Foto selbst. Schick es gleich noch einmal, dann schaue ich erneut. Klappt es dann immer noch nicht, ruf kurz den EAZYFIX®-Innendienst an unter 03222 1097923.';
 }
 
 function analyseFases(diagnose) {

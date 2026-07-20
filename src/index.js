@@ -34,7 +34,7 @@ function friendlyError(err) {
   if (status === 529 || status === 503 || status === 500) {
     return 'Der Assistent ist gerade überlastet. Versuch es in einer Minute noch einmal — deine Frage ist nicht verloren.';
   }
-  return 'Da ist gerade etwas schiefgelaufen. Versuch es gleich erneut, oder ruf den Innendienst an unter +31 85 201 201 1.';
+  return 'Da ist gerade etwas schiefgelaufen. Versuch es gleich erneut, oder ruf den Innendienst an unter 03222 1097923.';
 }
 
 const VALID_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];

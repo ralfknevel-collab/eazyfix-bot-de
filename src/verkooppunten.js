@@ -105,7 +105,7 @@ function runVerkooppuntTool(input) {
     return `Keine EAZYFIX-Verkaufsstelle gefunden für "${plaats || ''}". ` +
       'Sag ehrlich, dass in der Nähe keine Verkaufsstelle bekannt ist, und verweise auf den Webshop auf eazy-fix.de für die Online-Bestellung ' +
       'oder auf die Verkaufsstellen-Karte auf eazy-fix.de/verkaufsstellen. ' +
-      'Schick den Nutzer nicht zu einer weit entfernten Verkaufsstelle. Bei Fragen: EAZYFIX-Innendienst +31 85 201 201 1.';
+      'Schick den Nutzer nicht zu einer weit entfernten Verkaufsstelle. Bei Fragen: EAZYFIX-Innendienst 03222 1097923.';
   }
 
   // Ehrliche Überschrift: bei einem Ortstreffer "in <Ort>", bei einem Postleitzahl-

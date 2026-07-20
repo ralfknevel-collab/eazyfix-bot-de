@@ -407,7 +407,7 @@ function serviceFallback(onderwerp) {
   return `Die Frage zu "${onderwerp || ''}" betrifft kommerzielle oder Service-Themen ` +
     '(wie Preise, Bestellung, Bezahlung, Lieferung, Rücksendung oder Garantie). Dazu hat der ' +
     'EAZYFIX®-Bot bewusst keine Daten. Erfinde NICHTS: verweise den Heimwerker freundlich an den ' +
-    'Webshop auf eazy-fix.de oder den EAZYFIX®-Innendienst (+31 85 201 201 1). Für eine physische ' +
+    'Webshop auf eazy-fix.de oder den EAZYFIX®-Innendienst (03222 1097923). Für eine physische ' +
     'Verkaufsstelle darfst du das Tool find_verkooppunt nutzen, wenn der Heimwerker einen Ort oder ' +
     'eine Postleitzahl nennt.';
 }
@@ -417,7 +417,7 @@ function noMatchFallback(onderwerp) {
   return `Keine verlässlichen Informationen auf eazy-fix.de zu "${onderwerp || ''}" gefunden. ` +
     'Erfinde selbst NICHTS und rate nicht. Sag dem Heimwerker ehrlich und freundlich, in deinem ' +
     'normalen warmen Heimwerker-Ton, dass du das gerade nicht sicher weißt, und verweise für eine ' +
-    'verlässliche Antwort an den EAZYFIX®-Innendienst: +31 85 201 201 1.';
+    'verlässliche Antwort an den EAZYFIX®-Innendienst: 03222 1097923.';
 }
 
 function runKennisTool(input) {

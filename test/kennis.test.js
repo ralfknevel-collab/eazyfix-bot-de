@@ -172,7 +172,7 @@ test('commerciële vraag krijgt geen kennis-injectie en wordt doorverwezen (DE)'
   assert.equal(searchContext('was kostet die Holzspachtelmasse'), '');
   const tool = runKennisTool({ onderwerp: 'wann wird meine Bestellung geliefert' });
   assert.match(tool, /kommerzielle oder Service-Themen/);
-  assert.match(tool, /\+31 85 201 201 1/);
+  assert.match(tool, /03222 1097923/);
 });
 
 test('zwakke/off-topic vraag injecteert geen kennis (confidence-drempel)', () => {
@@ -188,7 +188,7 @@ test('zwakke/off-topic vraag injecteert geen kennis (confidence-drempel)', () =>
 test('lege vraag geeft nette terugval: niet verzinnen, verwijs naar binnendienst (DE)', () => {
   const out = runKennisTool({ onderwerp: '' });
   assert.match(out, /Keine verlässlichen Informationen/);
-  assert.match(out, /\+31 85 201 201 1/);
+  assert.match(out, /03222 1097923/);
 });
 
 test('tool-spec heeft naam zoek_kennis en verplicht onderwerp', () => {

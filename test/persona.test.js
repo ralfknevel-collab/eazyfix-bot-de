@@ -11,7 +11,7 @@ test('persona-prompts geladen en niet leeg', () => {
 test('houtrot-identiteit (DE) aanwezig in basis-prompt', () => {
   assert.match(BASE_SYSTEM_PROMPT, /EAZYFIX®/);
   assert.match(BASE_SYSTEM_PROMPT, /Holzfäule/i);
-  assert.match(BASE_SYSTEM_PROMPT, /\+31 85 201 201 1/);
+  assert.match(BASE_SYSTEM_PROMPT, /03222 1097923/);
 });
 
 test('analyse-prompt behoudt machine-leesbare tags en verplicht ernst-woord (DE)', () => {
@@ -150,4 +150,20 @@ test('basis-prompt bevat het escalatieblok voor bestelling, levering en retour',
 
 test('basis-prompt geeft de voorraad-disclaimer bij verkooppunten', () => {
   assert.match(BASE_SYSTEM_PROMPT, /Lagerbestand einer Verkaufsstelle/);
+});
+
+// Duitse klanten krijgen het Duitse nummer (staat ook zo op eazy-fix.de);
+// alleen bij een Nederlandstalige bezoeker geldt het Nederlandse nummer.
+test('basis-prompt geeft standaard het Duitse telefoonnummer', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /03222 1097923/);
+  assert.match(BASE_SYSTEM_PROMPT, /Standard ist die deutsche Nummer/);
+  // de NL-uitzondering staat er precies één keer, als uitzondering
+  const nl = BASE_SYSTEM_PROMPT.match(/\+31 85 201 201 1/g) || [];
+  assert.equal(nl.length, 1, 'het NL-nummer hoort alleen in de uitzonderingsregel');
+  assert.match(BASE_SYSTEM_PROMPT, /NIEDERLÄNDISCH/);
+});
+
+test('foto-analyse-prompt gebruikt het Duitse nummer', () => {
+  assert.match(IMAGE_ANALYSIS_PROMPT, /03222 1097923/);
+  assert.doesNotMatch(IMAGE_ANALYSIS_PROMPT, /\+31 85/);
 });

@@ -58,7 +58,7 @@ test('runTool geeft nette DE-tekst als niets gevonden, met binnendienst-verwijzi
   const out = runTool('find_verkooppunt', { plaats: 'Atlantis' });
   assert.match(out, /Keine EAZYFIX-Verkaufsstelle/);
   assert.match(out, /eazy-fix\.de/);
-  assert.match(out, /\+31 85 201 201 1/);
+  assert.match(out, /03222 1097923/);
 });
 
 test('plaatsmatch labelt "in <plaats>" zonder overclaim (geen "nächstgelegene")', () => {
