@@ -116,3 +116,38 @@ test('prijsregel noemt naast de webshop ook de verkooppunten', () => {
   assert.match(IMAGE_ANALYSIS_PROMPT, /Verkaufsstelle in seiner Nähe/);
   assert.match(IMAGE_ANALYSIS_PROMPT, /Stadt oder Postleitzahl/);
 });
+
+// Regressies uit de analyse van 268 live-chatgesprekken (docs/chatanalyse-DE-2026-07.md).
+// De laagste beoordelingen ontstonden niet door verkeerde informatie maar door de
+// vorm: een link in plaats van een antwoord, en een kaal "nee" zonder alternatief.
+test('basis-prompt eist eerst antwoorden, daarna pas een link', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /ANTWORTEN STATT VERWEISEN/);
+  assert.match(BASE_SYSTEM_PROMPT, /NIEMALS nur einen Link/);
+  assert.match(BASE_SYSTEM_PROMPT, /Ein "Nein" darf nie allein stehen/);
+});
+
+test('basis-prompt verbiedt te ontkennen dat de bot een bot is', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /BIST DU EIN BOT/);
+  assert.match(BASE_SYSTEM_PROMPT, /digitale Assistent von EAZYFIX®/);
+  assert.match(BASE_SYSTEM_PROMPT, /Streite das NIEMALS ab/);
+});
+
+// De menselijke medewerker kon in het ordersysteem kijken, coulance geven en
+// terugbellen. De bot kan dat niet en moet dat eerlijk zeggen in plaats van te
+// improviseren; bijna drie op de tien gesprekken raken dit.
+test('basis-prompt bevat het escalatieblok voor bestelling, levering en retour', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /BESTELLUNG, LIEFERUNG, RETOURE UND REKLAMATION/);
+  assert.match(BASE_SYSTEM_PROMPT, /KEINEN Zugriff auf das Bestellsystem/);
+  // geen leveringsbelofte, geen coulance, geen fiscale toezegging
+  assert.match(BASE_SYSTEM_PROMPT, /Versprich NIEMALS einen Liefertermin/);
+  assert.match(BASE_SYSTEM_PROMPT, /Sag NIEMALS eine Gutschrift/);
+  assert.match(BASE_SYSTEM_PROMPT, /Umsatzsteuer/);
+  // kan niet bellen of mailen
+  assert.match(BASE_SYSTEM_PROMPT, /kannst nicht telefonieren/);
+  // Amazon-bestellingen horen bij Amazon
+  assert.match(BASE_SYSTEM_PROMPT, /Amazon/);
+});
+
+test('basis-prompt geeft de voorraad-disclaimer bij verkooppunten', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /Lagerbestand einer Verkaufsstelle/);
+});
