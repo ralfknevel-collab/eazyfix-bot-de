@@ -49,17 +49,22 @@ const STOP = new Set(
 // Holzfäule-synoniemen: woorden uit dezelfde groep tellen als elkaar, zodat
 // spreektaal ("mein Fensterholz ist weich") de juiste pagina ("Holzfäule Fenster")
 // vindt. Duitse termen, afgestemd op de DE-kennis (eazy-fix.de).
+// Nederlandse spreektaal staat bewust IN de Duitse groepen, niet in eigen groepen:
+// een kwart van de gesprekken op de Duitse chat is Nederlands ("mijn kozijn is
+// zacht", "past de koker in een kitpistool"), en alleen zo vindt zo'n vraag de
+// Duitse pagina. Een losse NL-groep zou wel NL-woorden onderling koppelen, maar
+// niet aan hun Duitse tegenhanger.
 const SYNGROUPS = [
-  ['holzfäule', 'fäule', 'fäulnis', 'faul', 'faules', 'morsch', 'morsches', 'weich', 'weiches', 'schwammig', 'angegriffen', 'vermodert', 'verrottet'],
-  ['fensterrahmen', 'rahmen', 'fenster', 'fensterholz'],
-  ['tür', 'türen', 'türrahmen', 'türpfosten'],
-  ['fensterbank', 'schwelle', 'türschwelle', 'sohlbank'],
-  ['lack', 'farbe', 'anstrich', 'lackschicht', 'blättert', 'abblättern', 'blase', 'abplatzen'],
+  ['holzfäule', 'fäule', 'fäulnis', 'faul', 'faules', 'morsch', 'morsches', 'weich', 'weiches', 'schwammig', 'angegriffen', 'vermodert', 'verrottet', 'houtrot', 'zacht', 'aangetast'],
+  ['fensterrahmen', 'rahmen', 'fenster', 'fensterholz', 'kozijn', 'raamkozijn', 'raam'],
+  ['tür', 'türen', 'türrahmen', 'türpfosten', 'deur', 'deurkozijn'],
+  ['fensterbank', 'schwelle', 'türschwelle', 'sohlbank', 'dorpel', 'onderdorpel', 'vensterbank'],
+  ['lack', 'farbe', 'anstrich', 'lackschicht', 'blättert', 'abblättern', 'blase', 'abplatzen', 'verf', 'lak', 'bladdert'],
   ['fräser', 'fräsen', 'holzfäulefräser', 'ausfräsen', 'wegfräsen', 'abtragen'],
   ['dremel', 'multitool', 'bohrmaschine', 'akkuschrauber', 'maschine', 'drehzahl', 'umdrehungen', 'rotary', 'rotationswerkzeug'],
-  ['holzspachtelmasse', 'spachtelmasse', 'spachtel', 'füllen', 'auffüllen', 'epoxid', 'epoxy', 'abdichten'],
-  ['feinspachtel', 'holzfeinspachtel', 'feinspachteln'],
-  ['holzimprägnierung', 'imprägnierung', 'imprägnieren', 'vorbehandeln', 'härter', 'verfestiger', 'primer'],
+  ['holzspachtelmasse', 'spachtelmasse', 'spachtel', 'füllen', 'auffüllen', 'epoxid', 'epoxy', 'abdichten', 'houtrotvuller', 'vulmiddel'],
+  ['feinspachtel', 'holzfeinspachtel', 'feinspachteln', 'plamuur', 'plamuren'],
+  ['holzimprägnierung', 'imprägnierung', 'imprägnieren', 'vorbehandeln', 'härter', 'verfestiger', 'primer', 'houtversterker', 'verharder'],
   ['mischungsverhältnis', 'verhältnis', 'mischen', 'anmischen', 'anrühren'],
   ['aushärten', 'trocknen', 'trocknungszeit', 'härten', 'aushärtezeit', 'verarbeitungszeit'],
   ['feuchte', 'feucht', 'feuchtigkeit', 'feuchtemessgerät', 'holzfeuchtemessgerät', 'feuchtigkeitsmesser', 'holzfeuchte', 'nass', 'feuchtegehalt'],
@@ -70,6 +75,22 @@ const SYNGROUPS = [
   ['werkzeug', 'breitspachtel', 'schmalspachtel', 'mischspachtel', 'modellierstrips', 'mischbrett', 'kartuschenpresse'],
   ['treppe', 'treppenstufe', 'stufe'],
   ['möbel', 'tisch', 'schrank', 'möbelstück'],
+  // Onderstaande groepen komen uit de analyse van 268 live-chatgesprekken
+  // (docs/chatanalyse-DE-2026-07.md). Het zijn de woorden waarmee klanten hun
+  // vraag echt stellen; ze ontbraken hierboven, waardoor zoek_kennis op deze
+  // onderwerpen niets of het verkeerde ophaalde.
+  ['lieferung', 'lieferzeit', 'liefern', 'versand', 'versandkosten', 'verschicken', 'paket', 'werktage', 'bestellung', 'bestellt', 'amazon', 'levertijd', 'bezorging', 'verzending'],
+  ['haltbarkeit', 'haltbar', 'angebrochen', 'geöffnet', 'lagerung', 'lagern', 'aufbewahren', 'aufbewahrung', 'mindesthaltbarkeit', 'houdbaar', 'aangebroken'],
+  ['ergiebigkeit', 'menge', 'wieviel', 'reicht', 'ausreichend', 'verbrauch', 'kartuschen', 'inhalt'],
+  ['kartuschenpistole', 'silikonpistole', 'auspresspistole', 'kartusche', 'kartuschenpresse', 'pistole', 'koker', 'tube', 'kitpistool', 'kitpatroon'],
+  ['oszillierend', 'rotierend', 'schaft', 'kopfdurchmesser', 'aufsatz'],
+  ['untergrund', 'haftung', 'haftet', 'kunststoff', 'pvc', 'melamin', 'glas', 'mdf', 'spanplatte', 'sperrholz', 'multiplex', 'styropor', 'stein', 'beton', 'spaanplaat', 'kunststof', 'boeidelen'],
+  ['einfärben', 'abtönen', 'abtönkonzentrat', 'farbkonzentrat', 'pigment', 'ockergelb', 'beige', 'lasur', 'beize'],
+  ['garantie', 'gewährleistung', 'reklamation', 'umtausch', 'retoure', 'rücksendung', 'rückgabe', 'widerruf', 'defekt', 'beschwerde'],
+  ['temperatur', 'kälte', 'kalt', 'frost', 'frostsicher', 'winter', 'hitze', 'grad'],
+  ['teilersatz', 'einleimen', 'einkleben', 'kleben', 'laminieren', 'holzstück', 'ersetzen'],
+  ['bohren', 'schrauben', 'schraube', 'schraubloch', 'dübel', 'nachbearbeiten', 'schroefgat', 'schroefgaten', 'voorboren'],
+  ['rabatt', 'gutschein', 'aktionscode', 'newsletter', 'angebot'],
 ];
 
 // Lichte Duitse stemmer: vouwt umlauten uit (ä -> ae, zodat "Holzfäule" matcht met
@@ -411,7 +432,12 @@ function searchContext(query, limit = 3) {
   if (classifyIntent(query) === 'service') return '';
   const stems = queryStems(query).expanded;
   // Alleen voldoende sterke matches injecteren — zwakke treffers leiden tot gokken.
-  const found = confidentSearch(query, limit);
+  // Video's tellen hier NIET mee als leidende kennis: een video-entry is alleen een
+  // titel, geen tekst met feiten, en zou een echte productpagina verdringen. Ze
+  // blijven wel beschikbaar via relevantVideos (eigen pad, als aanvulling).
+  // Nodig sinds de Nederlandse spreektaal in de synoniemgroepen staat: daardoor
+  // matchen de Nederlandstalige video's wél op Nederlandse vragen.
+  const found = confidentSearch(query, limit + 3).filter((p) => p.type !== 'video').slice(0, limit);
   if (!found.length) return '';
   return 'RELEVANTES EAZY-FIX.DE-WISSEN (maßgeblich über Annahmen):\n\n' +
     found.map((p) => formatEntry(p, stems)).join('\n\n');

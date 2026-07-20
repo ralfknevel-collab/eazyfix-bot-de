@@ -195,3 +195,43 @@ test('tool-spec heeft naam zoek_kennis en verplicht onderwerp', () => {
   assert.equal(KENNIS_TOOL.name, 'zoek_kennis');
   assert.deepEqual(KENNIS_TOOL.input_schema.required, ['onderwerp']);
 });
+
+// Uit de chatanalyse: een kwart van de gesprekken op de Duitse chat is Nederlands.
+// De NL-spreektaal staat daarom in de Duitse synoniemgroepen, zodat zo'n vraag de
+// Duitse pagina vindt in plaats van niets.
+test('Nederlandse productnamen vinden de Duitse pagina', () => {
+  const cases = [
+    ['houtrotvuller gebruiken', /spachtelmasse|all-in-one/i],
+    ['plamuur voor kleine gaatjes', /feinspachtel/i],
+    ['houtversterker aanbrengen', /impr(ä|ae)gnierung/i],
+    ['past de koker in een kitpistool', /kartusche/i],
+  ];
+  for (const [q, re] of cases) {
+    const r = search(q, 3);
+    assert.ok(r.length > 0, `geen resultaat voor "${q}"`);
+    const blob = r.map((p) => p.title + ' ' + p.slug).join(' ');
+    assert.match(blob, re, `"${q}" vond: ${r.map((p) => p.title).join(' | ')}`);
+  }
+});
+
+// Servicevragen (levering, retour, bestelling) mogen geen productkennis injecteren:
+// die kennis staat er niet in en zou tot gokken leiden. De persona verwijst ze door.
+test('levering- en retourvragen leveren geen kenniscontext op', () => {
+  for (const q of ['Lieferzeit nach Deutschland', 'Wo ist meine Bestellung', 'Rücksendung Widerruf']) {
+    assert.equal(classifyIntent(q), 'service', `"${q}" moet service zijn`);
+    assert.equal(searchContext(q, 2), '', `"${q}" mag geen context injecteren`);
+  }
+});
+
+// Video-entries zijn alleen een titel, geen feitentekst. Sinds de Nederlandse
+// spreektaal in de synoniemgroepen staat, matchen de NL-video's op NL-vragen en
+// verdrongen ze de Duitse productpagina's uit de context. Ze horen in het aparte
+// video-pad (relevantVideos), niet in de leidende kennis.
+test('video-items komen niet in de kenniscontext terecht', () => {
+  const ctx = searchContext('mijn kozijn is zacht en aangetast', 3);
+  assert.ok(ctx.length > 0, 'een echte houtrotvraag moet kennis opleveren');
+  const videoTitles = DATA.filter((p) => p.type === 'video').map((p) => p.title).filter(Boolean);
+  for (const t of videoTitles) {
+    assert.ok(!ctx.includes(t), `video "${t}" hoort niet in de kenniscontext`);
+  }
+});
