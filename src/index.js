@@ -10,7 +10,7 @@ const { runChat, runWithTools, buildChatContext } = require('./chat');
 const { productsInText } = require('./producten');
 const { searchContext } = require('./kennis');
 const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt,
-  buildDiagnosePrompt, containsDistressSignal, distressReply, analyseFases } = require('./image-diagnose');
+  buildDiagnosePrompt, containsDistressSignal, distressReply, analyseFoutReply, analyseFases } = require('./image-diagnose');
 const { startKeepAlive } = require('./keepalive');
 
 const MAX_TOOL_ROUNDS = 4;
@@ -249,6 +249,14 @@ app.post('/api/analyze-image', async (req, res) => {
       console.error('Pass-1 diagnose mislukt, val terug op een-pass:', e.message);
     }
 
+    // Pass 1 technisch mislukt: eerlijke storingsmelding in plaats van een ongecontroleerde
+    // analyse. Zonder deze tak verviel de materiaal-check en kon steen als houtrot langskomen.
+    if (!diagnose) {
+      const reply = analyseFoutReply();
+      persistPhoto(reply);
+      return res.json({ content: reply, flow: null, productIds: [], products: [], usage: null });
+    }
+
     // Productfoto (koker/verpakking) met een productvraag: niet als "geen hout"
     // afwijzen, maar de vraag beantwoorden. Staat vóór de hout-check, want een
     // productfoto is per definitie geen houtschade.
@@ -409,6 +417,13 @@ app.post('/api/analyze-image/stream', async (req, res) => {
 
     // Fase 2: schade bepaald.
     send({ phase: 'schade' });
+
+    // Pass 1 technisch mislukt: eerlijke storingsmelding, geen verzoek om een betere foto
+    // en geen ongecontroleerde analyse (de materiaal-check zou dan wegvallen).
+    if (!diagnose) {
+      const reply = analyseFoutReply();
+      streamTekst(reply); send({ done: true, wenselijkeFotos: [] }); logStraks(); return res.end();
+    }
 
     const plan = analyseFases(diagnose);
     if (plan.route === 'unclear') { streamTekst(unclearReply(diagnose)); send({ done: true, wenselijkeFotos: [] }); logStraks(); return res.end(); }

@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt, buildDiagnosePrompt, analyseFases } = require('../src/image-diagnose');
+const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt, buildDiagnosePrompt, analyseFoutReply, analyseFases } = require('../src/image-diagnose');
 
 // Regressie: gebruiker stuurde foto + vraag in één beurt en kreeg 2 antwoorden
 // (feedback rij 6, DE). De vraag hoort als bijschrift IN de foto-analyse, zodat
@@ -196,14 +196,35 @@ test('analyseFases: duidelijke houtfoto geeft route advies met alle 4 fases', ()
   assert.deepStrictEqual(p.fases, ['foto', 'schade', 'kennisbank', 'advies']);
 });
 
-test('analyseFases: mislukte diagnose (null) gaat door naar advies, geen unclear', () => {
+// GEWIJZIGD 20-07-2026, bewust omgedraaid. Deze test legde vast dat een mislukte pass 1
+// doorging naar het adviespad (het oude een-pass-vangnet). Dat vangnet slaat echter de
+// materiaal-check (is_hout) over, waardoor een foto van steen of beton alsnog als houtrot
+// behandeld kon worden; precies de fout waarvoor die check ooit is ingebouwd. De NL-bot
+// doet dit al andersom. Bij een technische storing meldt de bot dat nu eerlijk in plaats
+// van ongecontroleerd te raden.
+test('analyseFases: mislukte diagnose (null) gaat naar unclear, niet naar advies', () => {
   const p = analyseFases(null);
-  assert.strictEqual(p.route, 'advies');
-  assert.deepStrictEqual(p.fases, ['foto', 'schade', 'kennisbank', 'advies']);
+  assert.strictEqual(p.route, 'unclear');
+  assert.deepStrictEqual(p.fases, ['foto', 'schade']);
 });
 
 test('analyseFases: product staat vóór niethout/unclear in de volgorde van checks', () => {
   // is_hout false EN is_product true: product wint (net als de niet-streaming handler).
   const p = analyseFases({ isProduct: true, isHout: false, duidelijk: false });
   assert.strictEqual(p.route, 'product');
+});
+
+// Gelijkgetrokken met de NL-bot (20-07-2026). Deze bot liet een lege diagnose doorvallen
+// naar het adviespad, waardoor de materiaal-check (is_hout) wegviel en een foto van steen
+// alsnog als houtrot behandeld kon worden.
+test('lege diagnose gaat naar unclear, niet naar advies', () => {
+  assert.strictEqual(analyseFases(null).route, 'unclear');
+});
+
+test('analyseFoutReply meldt een storing en vraagt niet om een beter foto', () => {
+  const r = analyseFoutReply();
+  assert.match(r, /liegt nicht am Foto selbst/);
+  assert.doesNotMatch(r, /schärfer|scharfes Foto/i);
+  assert.notStrictEqual(r, unclearReply(null));
+  assert.doesNotMatch(r, /—|–/);
 });

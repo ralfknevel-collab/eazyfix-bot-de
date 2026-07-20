@@ -167,7 +167,20 @@ function buildAnalysisPrompt({ imageCount = 1, hasPrior = false, caption = '' } 
 // laat pass 2 in dat geval doorlopen met lege kennis-context, zodat het model
 // zelf de zoek_kennis-tool als vangnet kan aanroepen (het oude een-pass-gedrag).
 // Die route heet daarom 'advies' zonder de kennisbank-fase vooraf te garanderen.
+// Antwort, wenn Pass 1 technisch fehlschlägt (Ausnahme oder unlesbares JSON).
+// BEWUSST GETRENNT von unclearReply: die gibt dem Nutzer die Schuld an seinem Foto
+// ("schick ein schärferes Foto"), und das ist unfair, wenn es auf unserer Seite hakt.
+// Vorher fiel diese Bot bei einer leeren Diagnose auf die Ein-Pass-Route zurück; dabei
+// entfiel die Material-Prüfung (is_hout), sodass ein Foto von Mauerwerk als Holzfäule
+// behandelt werden konnte. Jetzt gleich wie die NL-Bot: ehrlich melden und nichts raten.
+function analyseFoutReply() {
+  return 'Bei mir ist beim Betrachten deines Fotos etwas schiefgelaufen; das liegt nicht am Foto selbst. Schick es gleich noch einmal, dann schaue ich erneut. Klappt es dann immer noch nicht, ruf kurz den EAZYFIX®-Innendienst an unter +31 85 201 201 1.';
+}
+
 function analyseFases(diagnose) {
+  // Leere Diagnose = technischer Fehler: nicht ungeprüft weiter ins Beratungs-Gleis,
+  // sonst entfällt die Material-Prüfung. Gleiche Reihenfolge wie in der NL-Bot.
+  if (!diagnose) return { fases: ['foto', 'schade'], route: 'unclear' };
   if (diagnose && diagnose.isProduct) return { fases: ['foto', 'schade'], route: 'product' };
   if (diagnose && !diagnose.isHout) return { fases: ['foto', 'schade'], route: 'niethout' };
   if (diagnose && !diagnose.duidelijk) return { fases: ['foto', 'schade'], route: 'unclear' };
@@ -175,4 +188,4 @@ function analyseFases(diagnose) {
 }
 
 module.exports = { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt,
-  buildDiagnosePrompt, containsDistressSignal, distressReply, analyseFases };
+  buildDiagnosePrompt, containsDistressSignal, distressReply, analyseFoutReply, analyseFases };
