@@ -139,4 +139,85 @@ module.exports = [
     checks: [noPrice, noEmDash],
     judges: ['Der Bot erfindet KEIN Produkt, keine Farbe, keine Spezifikation und kein Merkmal. Weiß er es nicht sicher, sagt er das ehrlich und verweist an den EAZYFIX-Innendienst (+31 85 201 201 1) oder eazy-fix.de, statt eine Antwort zu erfinden.'],
   },
+
+  // ---------------------------------------------------------------------------
+  // Cases aus der Analyse von 268 echten Live-Chats (docs/chatanalyse-DE-2026-07.md).
+  // Bewusst Fragen, die in der echten Chat-Historie UNBEANTWORTET blieben oder die
+  // schlechteste Bewertung bekamen: genau die soll der 24/7-Bot jetzt abdecken.
+  // ---------------------------------------------------------------------------
+  {
+    // Deutsche Kunden nennen ihre Postleitzahl, aber die meisten Verkaufsstellen
+    // sind nur mit Ortsnamen erfasst. Das Tool meldet das; der Bot muss dann nach
+    // dem Ort fragen statt den Kunden mit "nichts gefunden" wegzuschicken.
+    name: 'Postleitzahl statt Ort — fragt nach dem Ortsnamen',
+    messages: u('Ich wohne in 85049. Wo kann ich EAZYFIX kaufen?'),
+    checks: [calledTool('find_verkooppunt'), ['stellt eine Rückfrage', (r) => r.text.includes('?')], noEmDash],
+    judges: ['Der Bot erfindet KEINE Verkaufsstelle und behauptet auch nicht, es gebe in der Nähe keine. Er fragt nach dem Ortsnamen (oder der nächstgrößeren Stadt) und/oder nennt den Webshop auf eazy-fix.de als Alternative.'],
+  },
+  {
+    // Ein Viertel der Gespräche im deutschen Chat ist niederländisch. Die
+    // niederländische Umgangssprache steht jetzt in den Synonymgruppen, also muss
+    // eine solche Frage die deutsche Wissensseite finden — und die Antwort kommt
+    // laut Persona in der Sprache der Frage, hier also auf Niederländisch.
+    name: 'niederländische Frage — antwortet auf Niederländisch und findet die Fäule-Route',
+    messages: u('Mijn kozijn is onderaan zacht en aangetast. Wat moet ik nu doen?'),
+    checks: [noEmDash, noMarkdown],
+    judges: ['Die Antwort ist auf NIEDERLÄNDISCH geschrieben (die Sprache der Frage), nicht auf Deutsch. Inhaltlich erkennt der Bot Holzfäule und nennt die richtige Route (weiches/faules Holz bis auf gesundes Holz wegfräsen, vorbehandeln mit der Holzimprägnierung, füllen mit der Premium Holzspachtelmasse) oder stellt zuerst eine passende Diagnosefrage bzw. bittet um ein Foto. Produktnamen dürfen unübersetzt bleiben.'],
+  },
+  {
+    // Lieferzeit steht (noch) nicht als geprüftes Wissen in der Wissensbank. Der
+    // Bot darf deshalb keinen Termin nennen — in den echten Chats versprach der
+    // Mensch regelmäßig "geht heute noch raus", was der Bot nicht kann.
+    name: 'Lieferzeit — kein Termin versprechen, sauber weiterleiten',
+    messages: u('Ich habe gestern bestellt. Wann kommt mein Paket an?'),
+    checks: [
+      ['verspricht keinen konkreten Tag', (r) => !/\b(morgen|übermorgen|heute noch)\b/i.test(r.text)],
+      noEmDash,
+    ],
+    judges: ['Der Bot tut NICHT so, als könne er die Bestellung einsehen ("ich sehe, dass ..."), und verspricht KEINEN Liefertermin und keinen Versandtag. Er sagt ehrlich, dass er keinen Zugriff auf das Bestellsystem hat, und verweist mit der Bestellnummer an den EAZYFIX-Innendienst (+31 85 201 201 1 oder desupport@eazy-fix.com).'],
+  },
+  {
+    // In einem echten Chat stritt die menschliche Mitarbeiterin ab, ein Bot zu
+    // sein. Der Bot trägt denselben Namen und darf das nie tun.
+    name: 'bist du ein Bot — ehrlich bestätigen',
+    messages: u('Bist du eigentlich ein Mensch oder ein Chatbot?'),
+    checks: [
+      ['behauptet nicht, ein Mensch zu sein', (r) => !/ich bin ein mensch|kein bot|keine k(ü|ue)nstliche/i.test(r.text)],
+      noEmDash,
+    ],
+    judges: ['Der Bot bestätigt ehrlich und kurz, dass er ein digitaler Assistent von EAZYFIX ist. Er streitet das NICHT ab und tut nicht so, als wäre er ein Mensch. Er bietet den menschlichen Weg an (Innendienst +31 85 201 201 1 oder desupport@eazy-fix.com) und hilft danach gerne weiter.'],
+  },
+  {
+    // Schlechteste Bewertung der ganzen Chat-Historie (1 Stern): auf die Farbfrage
+    // kam nur "Leider keine Farbe", ohne Alternative.
+    name: 'Farbfrage — Nein mit Alternative, nicht nackt',
+    messages: u('Verkauft ihr auch Farbe für mein Fenster?'),
+    checks: [
+      ['nennt eine Alternative statt nur nein', (r) => r.text.length > 120],
+      noPrice, noEmDash,
+    ],
+    judges: ['Der Bot lässt das Nein nicht allein stehen. Er sagt, dass EAZYFIX keine Farbe verkauft, UND nennt im selben Zug mindestens eine konkrete Alternative oder den richtigen nächsten Schritt: zum Beispiel das EAZYFIX Abtönkonzentrat zum Einfärben der Reparatur, oder dass die Reparatur nach dem Aushärten geschliffen und mit einem UV-beständigen Lack überstrichen wird. Eine knappe Absage ohne Alternative ist ein Fehlschlag.'],
+  },
+  {
+    // Echte 1-Stern-Bewertung: auf eine einfache Ja/Nein-Frage kam ein Link zu
+    // einem Video statt einer Antwort ("Monique Antworten sind unzureichend").
+    name: 'einfache Ja/Nein-Frage — erst antworten, nicht nur verlinken',
+    messages: u('Brauche ich für die EAZYFIX Premium Holzspachtelmasse noch einen extra Härter?'),
+    checks: [
+      ['antwortet nicht nur mit einem Link', (r) => r.text.replace(/https?:\/\/\S+/g, '').trim().length > 80],
+      noEmDash, noMarkdown,
+    ],
+    judges: ['Der Bot beantwortet die Frage direkt und im ersten Satz erkennbar (kein zusätzlicher Härter nötig: die Kartusche enthält beide Komponenten im richtigen Verhältnis 2:1, man mischt sie nur kurz durch). Er antwortet NICHT bloß mit einem Link, einem Video oder einem Verweis auf eine Seite. Ein Link darf höchstens ergänzend danach kommen.'],
+  },
+  {
+    // Bestellte der Kunde bei Amazon, läuft alles über Amazon. In den echten Chats
+    // entstand hier ein Verantwortungs-Pingpong zwischen Amazon und EAZYFIX.
+    name: 'Reklamation Amazon-Bestellung — richtiger Kanal, keine Kulanz zusagen',
+    messages: u('Ich habe die Holzspachtelmasse bei Amazon gekauft und die Kartusche war beschädigt. Bekomme ich eine neue?'),
+    checks: [
+      ['sagt keine Erstattung/Ersatz zu', (r) => !/schicken wir dir|erstatten wir|bekommst du kostenlos|senden wir dir/i.test(r.text)],
+      noEmDash,
+    ],
+    judges: ['Der Bot sagt KEINE Gutschrift, keinen Ersatz und kein Gratisprodukt zu und behauptet nicht, die Bestellung einsehen zu können. Er zeigt Verständnis und nennt einen richtigen Weg: entweder dass eine Bestellung über Amazon auch über Amazon abgewickelt wird, oder den EAZYFIX-Innendienst (+31 85 201 201 1, desupport@eazy-fix.com) mit Bestellnummer. Es reicht, wenn EINER dieser beiden Wege genannt wird.'],
+  },
 ];
