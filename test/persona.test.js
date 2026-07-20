@@ -90,3 +90,13 @@ test('All-in-One Spachtel staat als universele koker, niet als Holzfaeule-set', 
   assert.doesNotMatch(IMAGE_ANALYSIS_PROMPT, /All-in-One Spachtel \(Holzfäule, komplettes Set\)/);
   assert.match(IMAGE_ANALYSIS_PROMPT, /NICHT bei echter Holzfäule/);
 });
+
+// Audit 20-07-2026: persona zei "ca. 20 Min." waar de kennisbank 20-25 Min zegt (22 chunks),
+// en "ca. 30.000 U/min" voor de frees waar de bron een ONDERGRENS bedoelt ("mindestens
+// 30.000", 21 chunks). "Ca." leest als "25.000 gaat ook".
+test('Verarbeitungszeit en Drehzahl volgen de kennisbank', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /Verarbeitungszeit 20 bis 25 Min/);
+  assert.doesNotMatch(BASE_SYSTEM_PROMPT, /Verarbeitungszeit ca\. 20 Min/);
+  assert.match(BASE_SYSTEM_PROMPT, /mindestens 30\.000 U\/min/);
+  assert.doesNotMatch(BASE_SYSTEM_PROMPT, /ca\. 30\.000 U\/min/);
+});
