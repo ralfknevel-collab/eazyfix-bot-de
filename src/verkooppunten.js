@@ -25,7 +25,16 @@ function formatStore(s) {
 // 1) plaatsnaam (exact of deel) → kind 'city'; anders 2) postcode → zelfde regio
 // (eerste 2 cijfers) → kind 'region'. Geen echte afstandssortering: er zijn geen
 // coördinaten per winkel, dus we claimen niet "dichtstbijzijnde".
-// Geeft { stores, kind } met kind 'city' | 'region' | 'none'.
+//
+// Belangrijk over de brondata: de meeste verkooppunten (de Hornbach-filialen)
+// staan er alleen met een plaatsnaam in; slechts een handvol heeft een postcode.
+// Een postcode-zoekopdracht kan die filialen dus per definitie niet vinden. In
+// Duitsland is een postcode juist de normale manier om je woonplaats te noemen,
+// dus zonder opvang zou een Duitse klant met een postcode altijd "niets
+// gevonden" krijgen, ook als er een filiaal in zijn eigen stad staat. Daarom
+// geven we in dat geval kind 'ask_city' terug: dan vraagt de bot om de
+// plaatsnaam in plaats van de klant weg te sturen.
+// Geeft { stores, kind } met kind 'city' | 'region' | 'ask_city' | 'none'.
 function findWithMatch(query, limit = 3) {
   const q = norm(query);
   if (!q) return { stores: [], kind: 'none' };
@@ -36,11 +45,15 @@ function findWithMatch(query, limit = 3) {
   });
   if (byCity.length) return { stores: byCity.slice(0, limit), kind: 'city' };
 
-  const zip = q.match(/(\d{4})\s*[a-z]{0,2}/);
+  // Duitse postcodes zijn 5-cijferig (de oude regex ging uit van de Nederlandse
+  // 4-cijferige vorm). Regio = de eerste twee cijfers.
+  const zip = q.match(/\b(\d{5})\b/);
   if (zip) {
     const p2 = zip[1].slice(0, 2);
     const near = STORES.filter((s) => s.zip && s.zip.replace(/\s+/g, '').slice(0, 2) === p2);
     if (near.length) return { stores: near.slice(0, limit), kind: 'region' };
+    // Wel een postcode, maar de meeste verkooppunten hebben er geen: vraag de plaats.
+    return { stores: [], kind: 'ask_city' };
   }
 
   return { stores: [], kind: 'none' };
@@ -55,9 +68,11 @@ function findVerkooppunten(query, limit = 3) {
 const VERKOOPPUNT_TOOL = {
   name: 'find_verkooppunt',
   description:
-    'Suche physische EAZYFIX®-Verkaufsstellen zu einem Ort oder einer Postleitzahl in Deutschland. ' +
+    'Suche physische EAZYFIX®-Verkaufsstellen zu einem Ort in Deutschland. ' +
     'Nutze dieses Tool, sobald der Nutzer wissen möchte, wo Produkte physisch erhältlich sind ' +
-    'und einen Ort oder eine Postleitzahl genannt hat. Kennst du den Ort noch nicht, frag zuerst danach.',
+    'und einen Ort oder eine Postleitzahl genannt hat. Kennst du den Ort noch nicht, frag zuerst danach. ' +
+    'Die Verkaufsstellen sind nach ORTSNAMEN erfasst: frag bevorzugt nach dem Ort. ' +
+    'Nennt der Nutzer nur eine Postleitzahl, gib sie trotzdem hier ein; das Tool sagt dir dann, ob du nach dem Ortsnamen fragen sollst.',
   input_schema: {
     type: 'object',
     properties: {
@@ -74,19 +89,35 @@ const VERKOOPPUNT_TOOL = {
 function runVerkooppuntTool(input) {
   const plaats = input && input.plaats;
   const { stores, kind } = findWithMatch(plaats, 3);
+
+  if (kind === 'ask_city') {
+    // Postcode gegeven, maar de verkooppunten staan grotendeels alleen met een
+    // plaatsnaam in de data. Niet "niets gevonden" melden: dan stuurt de bot een
+    // klant weg terwijl er een filiaal in zijn stad kan staan.
+    return `Zur Postleitzahl "${plaats}" ist keine Verkaufsstelle hinterlegt; unsere Verkaufsstellen sind nach Ort erfasst, nicht nach Postleitzahl. ` +
+      'Frag den Nutzer kurz nach dem Ortsnamen (oder der nächstgrößeren Stadt) und such dann noch einmal. ' +
+      'Nenne zusätzlich den Webshop auf eazy-fix.de als Alternative. Erfinde keine Verkaufsstelle.';
+  }
+
   if (!stores.length) {
     // Niets gevonden: niet gokken, maar naar de site/webshop én de binnendienst
     // verwijzen (conform de "nooit verzinnen"-regel).
     return `Keine EAZYFIX-Verkaufsstelle gefunden für "${plaats || ''}". ` +
-      'Verweise den Nutzer auf die Verkaufsstellen-Karte auf eazy-fix.de/verkaufsstellen oder den Webshop für die Online-Bestellung, ' +
-      'oder auf den EAZYFIX-Innendienst: +31 85 201 201 1.';
+      'Sag ehrlich, dass in der Nähe keine Verkaufsstelle bekannt ist, und verweise auf den Webshop auf eazy-fix.de für die Online-Bestellung ' +
+      'oder auf die Verkaufsstellen-Karte auf eazy-fix.de/verkaufsstellen. ' +
+      'Schick den Nutzer nicht zu einer weit entfernten Verkaufsstelle. Bei Fragen: EAZYFIX-Innendienst +31 85 201 201 1.';
   }
+
   // Ehrliche Überschrift: bei einem Ortstreffer "in <Ort>", bei einem Postleitzahl-
   // Treffer "in der Region". Kein "nächstgelegene" — es gibt keine echte Entfernungssortierung.
   const kop = kind === 'city'
     ? `EAZYFIX-Verkaufsstellen in ${plaats}:`
     : 'EAZYFIX-Verkaufsstellen in der Region (nach Postleitzahl, nicht nach exakter Entfernung):';
-  return `${kop}\n${stores.map(formatStore).join('\n')}`;
+  // Vaste voorraad-disclaimer: we hebben geen zicht op de winkelvoorraad. Zonder
+  // deze regel reed een klant 60 km voor niets (chat coCrJng2w8V5d).
+  const voorraad = 'Hinweis für die Antwort: Wir haben keinen Einblick in den Lagerbestand der Verkaufsstellen. ' +
+    'Rate dem Nutzer, vor der Fahrt kurz dort anzurufen, und nenne den Webshop als sichere Alternative.';
+  return `${kop}\n${stores.map(formatStore).join('\n')}\n${voorraad}`;
 }
 
 // Dispatch op toolnaam (uitbreidbaar voor latere tools).
