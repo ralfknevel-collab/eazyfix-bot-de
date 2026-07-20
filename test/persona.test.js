@@ -77,3 +77,16 @@ test('diagnose-prompt vraagt geldig JSON met de verwachte (contract-)velden', ()
   // ernst-waarden blijven het code-contract licht/matig/ernstig.
   assert.match(IMAGE_DIAGNOSE_PROMPT, /"licht", "matig", "ernstig"/);
 });
+
+// Audit 20-07-2026: de persona zette Premium All-in-One Spachtel weg als "vollständiges
+// Paket" en als Holzfäule-route, terwijl de kennisbank een losse 150 ml universele koker
+// beschrijft (0-1 cm, 7-10 min, 30 min uitharden). Die specs dragen de Holzfäule-route
+// (0,5-2 cm, 4 uur) niet.
+test('All-in-One Spachtel staat als universele koker, niet als Holzfaeule-set', () => {
+  // Productbeschrijving staat in de basisprompt, de PRODUKTWAHL-lijst in de foto-prompt.
+  assert.doesNotMatch(BASE_SYSTEM_PROMPT, /All-in-One Spachtel: vollständiges Paket/);
+  assert.match(BASE_SYSTEM_PROMPT, /All-in-One Spachtel: universelle 2-Komponenten/);
+  assert.match(BASE_SYSTEM_PROMPT, /KEIN Set und KEIN Ersatz für die Holzfäule-Vorgehensweise/);
+  assert.doesNotMatch(IMAGE_ANALYSIS_PROMPT, /All-in-One Spachtel \(Holzfäule, komplettes Set\)/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /NICHT bei echter Holzfäule/);
+});
