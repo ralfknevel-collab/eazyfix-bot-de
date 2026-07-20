@@ -235,3 +235,21 @@ test('video-items komen niet in de kenniscontext terecht', () => {
     assert.ok(!ctx.includes(t), `video "${t}" hoort niet in de kenniscontext`);
   }
 });
+
+// Over service-onderwerpen heeft de bot bewust geen eigen data: die vragen gaan
+// naar de website of de binnendienst. Deze woorden kwamen in de echte chats vaak
+// voor maar vielen eerder buiten de poort, waardoor er alsnog productkennis werd
+// opgehaald bij een vraag over een pakket of een omruiling.
+test('pakket-, zending-, omruil- en reclamatievragen gaan naar de doorverwijzing', () => {
+  for (const q of ['Wann kommt mein Paket an', 'Wo ist meine Sendung', 'Ich möchte die Kartusche umtauschen', 'Reklamation defektes Produkt']) {
+    assert.equal(classifyIntent(q), 'service', `"${q}" moet service zijn`);
+    assert.equal(searchContext(q, 2), '', `"${q}" mag geen kennis injecteren`);
+    const out = runKennisTool({ onderwerp: q });
+    assert.match(out, /Innendienst|eazy-fix\.de/, `"${q}" moet doorverwijzen`);
+  }
+});
+
+// Tegenproef: een how-to-vraag met een servicewoord erin blijft inhoudelijk.
+test('how-to-signaal wint van het servicewoord', () => {
+  assert.equal(classifyIntent('wie lange muss die Reparatur trocknen bevor ich sie überstreiche'), 'content');
+});

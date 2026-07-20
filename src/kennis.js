@@ -212,7 +212,12 @@ function search(query, limit = 3) {
 // wint: dan is het een inhoudelijke vraag (de persona verwijst de prijs apart door).
 // Stammen + \w* zodat Duitse verbuigingen meelopen (bezahle/bezahlen/bezahlt,
 // Lieferung/liefern, Bestellung/bestellen). \b vooraan houdt de stam woordinitieel.
-const SERVICE_INTENT = /\b(preis|preisliste|kost|tarif|angebot|bestell|zahl|bezahl|sofort|kreditkart|paypal|rechnung|liefer|versand|versend|retour|rücksend|zurücksend|widerruf|garantie|gewährleist|konto|einlogg|anmeld|passwort|stellenangebot|bewerb|webshop|warenkorb|gutschein|rabatt)\w*/i;
+// Uitgebreid met paket/sendung/zustell/umtausch/reklamation: die woorden komen in
+// de echte chats vaak voor ("wann kommt mein Paket an", "ich möchte umtauschen")
+// maar vielen buiten de poort, waardoor zulke vragen alsnog productkennis kregen
+// in plaats van een doorverwijzing. Over service-onderwerpen heeft de bot bewust
+// geen eigen data: hij verwijst naar de website of de binnendienst.
+const SERVICE_INTENT = /\b(preis|preisliste|kost|tarif|angebot|bestell|zahl|bezahl|sofort|kreditkart|paypal|rechnung|liefer|versand|versend|paket|sendung|zustell|retour|rücksend|zurücksend|umtausch|widerruf|garantie|gewährleist|reklamation|konto|einlogg|anmeld|passwort|stellenangebot|bewerb|webshop|warenkorb|gutschein|rabatt)\w*/i;
 const HOWTO_SIGNAL = /\b(reparier|reparatur|misch|auftrag|anwend|anbring|aufbring|schritt|trocken|trocknung|schleif|entfern|einwirk|aushärt|fräs|behandel|vorbehandel|haft|verarbeit|grundier|füll|auffüll|modellier|überstreich|überlackier)\w*/i;
 
 function classifyIntent(query) {
