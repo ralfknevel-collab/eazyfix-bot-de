@@ -109,3 +109,10 @@ test('foto-prompt verbiedt verzonnen bedragen en verwijst naar de webshop', () =
   assert.match(IMAGE_ANALYSIS_PROMPT, /keinen Gesamtpreis und keine Preisspanne/);
   assert.match(IMAGE_ANALYSIS_PROMPT, /Webshop auf eazy-fix\.de/);
 });
+
+// Correctie 20-07-2026: de prijsregel verwees alleen naar de webshop, terwijl EAZYFIX
+// ook fysieke verkooppunten heeft met een opzoekfunctie op plaats of postcode.
+test('prijsregel noemt naast de webshop ook de verkooppunten', () => {
+  assert.match(IMAGE_ANALYSIS_PROMPT, /Verkaufsstelle in seiner Nähe/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /Stadt oder Postleitzahl/);
+});
