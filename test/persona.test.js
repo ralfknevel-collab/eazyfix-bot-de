@@ -100,3 +100,12 @@ test('Verarbeitungszeit en Drehzahl volgen de kennisbank', () => {
   assert.match(BASE_SYSTEM_PROMPT, /mindestens 30\.000 U\/min/);
   assert.doesNotMatch(BASE_SYSTEM_PROMPT, /ca\. 30\.000 U\/min/);
 });
+
+// Audit foto-analyse 20-07-2026 (zusterbot): op "wat kost dit ongeveer aan materiaal?"
+// rekende de bot een prijs voor. De chat-prompt verbood het verzinnen van bedragen al
+// (blok PREISE), de foto-prompt bevatte geen enkele prijsregel.
+test('foto-prompt verbiedt verzonnen bedragen en verwijst naar de webshop', () => {
+  assert.match(IMAGE_ANALYSIS_PROMPT, /Erfinde NIEMALS einen Betrag/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /keinen Gesamtpreis und keine Preisspanne/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /Webshop auf eazy-fix\.de/);
+});
