@@ -139,7 +139,7 @@ test('basis-prompt bevat het escalatieblok voor bestelling, levering en retour',
   assert.match(BASE_SYSTEM_PROMPT, /BESTELLUNG, LIEFERUNG, RETOURE UND REKLAMATION/);
   assert.match(BASE_SYSTEM_PROMPT, /KEINEN Zugriff auf das Bestellsystem/);
   // geen leveringsbelofte, geen coulance, geen fiscale toezegging
-  assert.match(BASE_SYSTEM_PROMPT, /Versprich NIEMALS einen Liefertermin/);
+  assert.match(BASE_SYSTEM_PROMPT, /Versprich NIEMALS einen konkreten Liefertermin/);
   assert.match(BASE_SYSTEM_PROMPT, /Sag NIEMALS eine Gutschrift/);
   assert.match(BASE_SYSTEM_PROMPT, /Umsatzsteuer/);
   // kan niet bellen of mailen
@@ -166,4 +166,35 @@ test('basis-prompt geeft standaard het Duitse telefoonnummer', () => {
 test('foto-analyse-prompt gebruikt het Duitse nummer', () => {
   assert.match(IMAGE_ANALYSIS_PROMPT, /03222 1097923/);
   assert.doesNotMatch(IMAGE_ANALYSIS_PROMPT, /\+31 85/);
+});
+
+// Door de binnendienst bevestigde feiten (navraag 2026-07-21). Deze mag de bot
+// voortaan zelf noemen; ze staan in de persona omdat kennis.js liefer-/versand-/
+// garantie-vragen bewust naar de binnendienst stuurt (SERVICE_INTENT) en de persona
+// altijd aanwezig en leidend is.
+test('basis-prompt mag de levertijd als richtwaarde noemen (3 bis 5 Werktage)', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /3 bis 5 Werktage/);
+  // maar nooit een concrete leverdag beloven
+  assert.match(BASE_SYSTEM_PROMPT, /kein fester Termin/);
+});
+
+test('basis-prompt noemt gratis verzending vanaf 50 euro', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /ab 50 € Bestellwert ist der Versand kostenlos/);
+});
+
+test('basis-prompt noemt de 10 jaar garantie, afwikkeling via de binnendienst', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /10 Jahre Garantie/);
+});
+
+test('basis-prompt kleurt de uitgeharde spachtelmasse licht eiken', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /hell eichenfarben/);
+});
+
+// Correctie 2026-07-21: de Hornbach-filialen zijn gestopt en er is geen kaart meer
+// op de Duitse site. De persona stuurt nu online-first (webshop/Amazon/Hornbach online)
+// en verwijst niet meer naar een verkooppunten-kaart.
+test('basis-prompt is online-first voor verkooppunten en noemt geen dode kaart', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /online bei HORNBACH/);
+  assert.match(BASE_SYSTEM_PROMPT, /HolzLand MAHL/);
+  assert.doesNotMatch(BASE_SYSTEM_PROMPT, /Verkaufsstellen-Karte auf eazy-fix\.de\/verkaufsstellen/);
 });
