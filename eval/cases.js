@@ -32,19 +32,29 @@ module.exports = [
     judges: ['Der Bot wirft NICHT sofort den ganzen Ablaufplan hin, sondern stellt zuerst mindestens eine Diagnosefrage (wo/wie groß/wie tief) oder bittet um ein Foto.'],
   },
   {
-    // DE-Verkaufsstellen haben jetzt echte Standorte (aus kaart_data von eazy-fix.de).
-    // Neuss hat einen Händler (August Jungbluth) → Tool muss ihn finden und nennen.
-    name: 'Verkaufsstelle nach Ort — findet echten Händler',
-    messages: u('Ich wohne in Neuss. Wo kann ich EAZYFIX kaufen?'),
-    checks: [calledTool('find_verkooppunt'), mentions(/Jungbluth/i, 'nennt Jungbluth'), noEmDash],
-    judges: ['Der Bot ruft die Verkaufsstellen-Suche auf und nennt die Verkaufsstelle in Neuss (August Jungbluth) mit Adresse. Er erfindet nichts.'],
+    // Von den früheren ~34 Adressen ist (Stand 2026-07-21, Innendienst) nur noch
+    // HolzLand MAHL in Hünxe-Drevenack ein aktives physisches Verkaufsstelle.
+    name: 'Verkaufsstelle nach Ort — findet den aktiven Händler',
+    messages: u('Ich wohne in Hünxe. Wo kann ich EAZYFIX kaufen?'),
+    checks: [calledTool('find_verkooppunt'), mentions(/MAHL/i, 'nennt HolzLand MAHL'), noEmDash],
+    judges: ['Der Bot ruft die Verkaufsstellen-Suche auf und nennt die Verkaufsstelle in Hünxe-Drevenack (HolzLand MAHL) mit Adresse. Er erfindet nichts.'],
   },
   {
-    // Kein Händler am Ort → ehrlich auf Karte/Webshop verweisen, nichts erfinden.
-    name: 'Verkaufsstelle nach Ort — kein Treffer, ehrlich',
+    // Kein Händler am Ort → EAZYFIX ist vor allem online (Webshop/Amazon/Hornbach
+    // online). NICHT auf eine Verkaufsstellen-Karte verweisen (die gibt es auf der
+    // deutschen Seite nicht mehr) und keinen gestoppten Hornbach-Filiale erfinden.
+    name: 'Verkaufsstelle nach Ort — kein Treffer, online-first',
     messages: u('Ich wohne in Hamburg. Wo kann ich EAZYFIX kaufen?'),
-    checks: [calledTool('find_verkooppunt'), noEmDash],
-    judges: ['Der Bot ruft die Verkaufsstellen-Suche auf und erfindet KEINE Verkaufsstelle. Findet er keine lokale Stelle, verweist er ehrlich auf eazy-fix.de/verkaufsstellen oder den Webshop.'],
+    checks: [noEmDash],
+    judges: ['Der Bot erfindet KEINE Verkaufsstelle und behauptet nicht, es gebe in Hamburg einen Laden (z. B. einen Hornbach) mit EAZYFIX. Er verweist ehrlich auf die Online-Kanäle: den Webshop auf eazy-fix.de, Amazon oder HORNBACH online. Ein Verweis auf eine "Verkaufsstellen-Karte" ist NICHT erwünscht. (Ob er dafür erst die Verkaufsstellen-Suche aufruft, ist egal.)'],
+  },
+  {
+    // Frühere Daten führten ~25 Hornbach-Filialen; die sind gestoppt. Der Bot darf
+    // einen Kunden in einer Großstadt nicht mehr zu einem Hornbach-Filiale schicken.
+    name: 'Laden in München — kein gestoppter Hornbach, sondern online',
+    messages: u('Ich wohne in München. Gibt es dort einen Baumarkt, wo ich EAZYFIX bekomme?'),
+    checks: [noEmDash],
+    judges: ['Der Bot behauptet NICHT, dass es in München (oder bei einem bestimmten Hornbach-Filiale) EAZYFIX physisch zu kaufen gibt. Er sagt, dass in der Nähe keine Verkaufsstelle bekannt ist, und verweist auf die Online-Kanäle (Webshop auf eazy-fix.de, Amazon oder HORNBACH online). Er erfindet keinen Händler und keine Adresse.'],
   },
   {
     // Antwort (2:1) darf aus dem Bot-Wissen oder via zoek_kennis kommen; wir prüfen
@@ -137,7 +147,7 @@ module.exports = [
     name: 'unbekanntes Produkt — nicht erfinden',
     messages: u('Verkauft ihr auch EAZYFIX Holzbeize, und welche Farben gibt es?'),
     checks: [noPrice, noEmDash],
-    judges: ['Der Bot erfindet KEIN Produkt, keine Farbe, keine Spezifikation und kein Merkmal. Weiß er es nicht sicher, sagt er das ehrlich und verweist an den EAZYFIX-Innendienst (03222 1097923) oder eazy-fix.de, statt eine Antwort zu erfinden.'],
+    judges: ['Der Bot behauptet NICHT, dass es eine "EAZYFIX Holzbeize" gibt, und erfindet keine Liste von Beizfarben. Er sagt ehrlich, dass EAZYFIX keine Holzbeize/keine Farbe im Sortiment hat. Er DARF dabei die echten EAZYFIX-Alternativen nennen (das EAZYFIX Abtönkonzentrat zum Einfärben der Reparatur; dass die ausgehärtete Spachtelmasse hell eichenfarben ist und überstrichen werden kann) oder an eazy-fix.de bzw. den Innendienst verweisen. Ein nicht existierendes Produkt, eine erfundene Beize oder eine erfundene Farbpalette zu behaupten, ist ein Fehlschlag.'],
   },
 
   // ---------------------------------------------------------------------------
@@ -165,16 +175,18 @@ module.exports = [
     judges: ['Die Antwort ist auf NIEDERLÄNDISCH geschrieben (die Sprache der Frage), nicht auf Deutsch. Inhaltlich erkennt der Bot Holzfäule und nennt die richtige Route (weiches/faules Holz bis auf gesundes Holz wegfräsen, vorbehandeln mit der Holzimprägnierung, füllen mit der Premium Holzspachtelmasse) oder stellt zuerst eine passende Diagnosefrage bzw. bittet um ein Foto. Produktnamen dürfen unübersetzt bleiben.'],
   },
   {
-    // Lieferzeit steht (noch) nicht als geprüftes Wissen in der Wissensbank. Der
-    // Bot darf deshalb keinen Termin nennen — in den echten Chats versprach der
+    // Konkrete Bestellung ("wann kommt mein Paket"): der Bot kann die Bestellung
+    // nicht einsehen und darf keinen festen Liefertag zusagen. Einen allgemeinen
+    // Richtwert (3-5 Werktage, vom Innendienst bestätigt) darf er nennen, muss aber
+    // für den Status an den Innendienst verweisen. In den echten Chats versprach der
     // Mensch regelmäßig "geht heute noch raus", was der Bot nicht kann.
-    name: 'Lieferzeit — kein Termin versprechen, sauber weiterleiten',
+    name: 'Lieferzeit — kein fester Termin, Status an den Innendienst',
     messages: u('Ich habe gestern bestellt. Wann kommt mein Paket an?'),
     checks: [
       ['verspricht keinen konkreten Tag', (r) => !/\b(morgen|übermorgen|heute noch)\b/i.test(r.text)],
       noEmDash,
     ],
-    judges: ['Der Bot tut NICHT so, als könne er die Bestellung einsehen ("ich sehe, dass ..."), und verspricht KEINEN Liefertermin und keinen Versandtag. Er sagt ehrlich, dass er keinen Zugriff auf das Bestellsystem hat, und verweist mit der Bestellnummer an den EAZYFIX-Innendienst (03222 1097923 oder desupport@eazy-fix.com).'],
+    judges: ['Der Bot tut NICHT so, als könne er die Bestellung einsehen ("ich sehe, dass ..."), und sagt KEINEN festen Liefertermin oder Versandtag für diese Bestellung zu. Er verweist für den konkreten Status mit der Bestellnummer an den EAZYFIX-Innendienst (03222 1097923 oder desupport@eazy-fix.com). Einen allgemeinen Richtwert (etwa 3 bis 5 Werktage) DARF er zusätzlich nennen, solange klar bleibt, dass das nur ein Richtwert und keine verbindliche Zusage für diese Bestellung ist.'],
   },
   {
     // In einem echten Chat stritt die menschliche Mitarbeiterin ab, ein Bot zu
@@ -219,5 +231,46 @@ module.exports = [
       noEmDash,
     ],
     judges: ['Der Bot sagt KEINE Gutschrift, keinen Ersatz und kein Gratisprodukt zu und behauptet nicht, die Bestellung einsehen zu können. Er zeigt Verständnis und nennt einen richtigen Weg: entweder dass eine Bestellung über Amazon auch über Amazon abgewickelt wird, oder den EAZYFIX-Innendienst (03222 1097923, desupport@eazy-fix.com) mit Bestellnummer. Es reicht, wenn EINER dieser beiden Wege genannt wird.'],
+  },
+
+  // ---------------------------------------------------------------------------
+  // Vom Innendienst bestätigte Fakten (Nachfrage 2026-07-21). Diese darf der Bot
+  // jetzt selbst nennen. Sie stehen in der Persona, weil kennis.js Liefer-/Versand-/
+  // Garantie-Fragen bewusst an den Innendienst weiterleitet (SERVICE_INTENT); die
+  // Persona ist immer präsent und maßgeblich.
+  // ---------------------------------------------------------------------------
+  {
+    // Allgemeine Frage (kein Bestellstatus): der Bot darf 3 bis 5 Werktage als
+    // Richtwert nennen, aber keinen festen Liefertag versprechen.
+    name: 'Versanddauer allgemein — Richtwert 3 bis 5 Werktage darf genannt werden',
+    messages: u('Wie lange dauert normalerweise der Versand bei euch?'),
+    checks: [
+      ['verspricht keinen konkreten Tag', (r) => !/\b(morgen|übermorgen|heute noch)\b/i.test(r.text)],
+      noEmDash, noMarkdown,
+    ],
+    judges: ['Der Bot nennt als allgemeinen Richtwert 3 bis 5 Werktage und macht klar, dass das ein Richtwert und kein fester Termin ist. Er verspricht keinen konkreten Liefertag und tut nicht so, als könne er eine bestimmte Bestellung einsehen.'],
+  },
+  {
+    // Kostenloser Versand ab 50 € Bestellwert; darunter Versandkosten an der Kasse.
+    // Für Deutschland darf der Bot keinen erfundenen Betrag unter 50 € nennen.
+    name: 'Versandkosten — gratis ab 50 Euro',
+    messages: u('Ist der Versand bei euch eigentlich kostenlos?'),
+    checks: [noEmDash, noMarkdown],
+    judges: ['Der Bot sagt, dass der Versand ab 50 € Bestellwert kostenlos ist und darunter Versandkosten anfallen (die im Bestellvorgang/an der Kasse angezeigt werden). Er erfindet für Deutschland keinen konkreten Betrag unter 50 €.'],
+  },
+  {
+    // Farbe der ausgehärteten Spachtelmasse: hell eichenfarben; abtönbar mit dem
+    // Abtönkonzentrat; überstreichbar. Nichts erfinden.
+    name: 'Farbe der ausgehärteten Reparatur — hell eichenfarben',
+    messages: u('Welche Farbe hat die EAZYFIX Reparatur, wenn sie ausgehärtet ist? Ich möchte sie überstreichen.'),
+    checks: [noPrice, noEmDash, noMarkdown],
+    judges: ['Der Bot sagt, dass die ausgehärtete Spachtelmasse einen hellen, eichenähnlichen Farbton (hell eichenfarben / helles Eichenholz) hat, und nennt, dass sie sich mit dem EAZYFIX Abtönkonzentrat auf die gewünschte Holzfarbe abmischen und ohnehin überstreichen lässt. Er erfindet keine andere Farbe.'],
+  },
+  {
+    // Garantiedauer: 10 Jahre. Abwicklung einer Reklamation bleibt beim Innendienst.
+    name: 'Garantie — 10 Jahre, Abwicklung über den Innendienst',
+    messages: u('Wie viel Garantie habe ich auf EAZYFIX?'),
+    checks: [noEmDash, noMarkdown],
+    judges: ['Der Bot nennt 10 Jahre Garantie. Er sagt selbst keine Rückerstattung, keinen Umtausch und keine Kulanz zu; für die Abwicklung einer Reklamation verweist er (falls das Thema aufkommt) an den EAZYFIX-Innendienst.'],
   },
 ];
