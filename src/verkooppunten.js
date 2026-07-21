@@ -64,15 +64,16 @@ function findVerkooppunten(query, limit = 3) {
   return findWithMatch(query, limit).stores;
 }
 
-// Tool-definitie voor de Anthropic API (tool-use in de chat).
+// Tool-definitie für die Anthropic API (tool-use in die Chat).
+// HINWEIS: Deutsche Hornbachs sind seit >1 Jahr nicht mehr Verkaufspartner.
+// Das Tool wird daher nur für NL/BE/AT benutzt.
 const VERKOOPPUNT_TOOL = {
   name: 'find_verkooppunt',
   description:
-    'Suche physische EAZYFIX®-Verkaufsstellen zu einem Ort in Deutschland. ' +
-    'Nutze dieses Tool, sobald der Nutzer wissen möchte, wo Produkte physisch erhältlich sind ' +
-    'und einen Ort oder eine Postleitzahl genannt hat. Kennst du den Ort noch nicht, frag zuerst danach. ' +
-    'Die Verkaufsstellen sind nach ORTSNAMEN erfasst: frag bevorzugt nach dem Ort. ' +
-    'Nennt der Nutzer nur eine Postleitzahl, gib sie trotzdem hier ein; das Tool sagt dir dann, ob du nach dem Ortsnamen fragen sollst.',
+    'Suche physische EAZYFIX-Verkaufsstellen für Orte in Niederlanden, Belgien oder Österreich. ' +
+    'Nutze dieses Tool NICHT für deutsche Anfragen — es gibt keine deutschen Verkaufsstellen mehr. ' +
+    'In Deutschland: verweise auf eazy-fix.de oder Amazon.de. ' +
+    'Für NL/BE/AT: Nutze das Tool, sobald der Nutzer einen Ort oder eine Postleitzahl nennt.',
   input_schema: {
     type: 'object',
     properties: {
@@ -96,15 +97,15 @@ function runVerkooppuntTool(input) {
     // klant weg terwijl er een filiaal in zijn stad kan staan.
     return `Zur Postleitzahl "${plaats}" ist keine Verkaufsstelle hinterlegt; unsere Verkaufsstellen sind nach Ort erfasst, nicht nach Postleitzahl. ` +
       'Frag den Nutzer kurz nach dem Ortsnamen (oder der nächstgrößeren Stadt) und such dann noch einmal. ' +
-      'Nenne zusätzlich den Webshop auf eazy-fix.de als Alternative. Erfinde keine Verkaufsstelle.';
+      'Nenne zusätzlich, dass EAZYFIX® vor allem online erhältlich ist: Webshop auf eazy-fix.de, Amazon oder HORNBACH online. Erfinde keine Verkaufsstelle.';
   }
 
   if (!stores.length) {
     // Niets gevonden: niet gokken, maar naar de site/webshop én de binnendienst
     // verwijzen (conform de "nooit verzinnen"-regel).
     return `Keine EAZYFIX-Verkaufsstelle gefunden für "${plaats || ''}". ` +
-      'Sag ehrlich, dass in der Nähe keine Verkaufsstelle bekannt ist, und verweise auf den Webshop auf eazy-fix.de für die Online-Bestellung ' +
-      'oder auf die Verkaufsstellen-Karte auf eazy-fix.de/verkaufsstellen. ' +
+      'Sag ehrlich, dass in der Nähe keine physische Verkaufsstelle bekannt ist. EAZYFIX® ist vor allem online erhältlich: ' +
+      'verweise auf den Webshop auf eazy-fix.de, auf Amazon oder auf HORNBACH online. ' +
       'Schick den Nutzer nicht zu einer weit entfernten Verkaufsstelle. Bei Fragen: EAZYFIX-Innendienst 03222 1097923.';
   }
 
