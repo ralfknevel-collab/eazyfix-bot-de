@@ -257,6 +257,16 @@ app.post('/api/analyze-image', async (req, res) => {
       return res.json({ content: reply, flow: null, productIds: [], products: [], usage: null });
     }
 
+    // Foto onduidelijk: vraag om een betere foto in plaats van te gokken. Staat BEWUST
+    // vóór de product- en hout-check (zelfde volgorde als analyseFases): op een onscherpe
+    // foto mag geen stellig "product" of "geen hout" komen. Kunnen we de foto niet goed
+    // zien, dan is "stuur een betere foto" de enige eerlijke uitkomst.
+    if (diagnose && !diagnose.duidelijk) {
+      const reply = unclearReply(diagnose);
+      persistPhoto(reply);
+      return res.json({ content: reply, flow: null, productIds: [], products: [], usage: null });
+    }
+
     // Productfoto (koker/verpakking) met een productvraag: niet als "geen hout"
     // afwijzen, maar de vraag beantwoorden. Staat vóór de hout-check, want een
     // productfoto is per definitie geen houtschade.
@@ -273,13 +283,6 @@ app.post('/api/analyze-image', async (req, res) => {
       return res.json({ content: reply, flow: null, productIds: [], products: [], usage: null });
     }
 
-    // Foto onduidelijk: vraag om een betere foto in plaats van te gokken.
-    if (diagnose && !diagnose.duidelijk) {
-      const reply = unclearReply(diagnose);
-      persistPhoto(reply);
-      return res.json({ content: reply, flow: null, productIds: [], products: [], usage: null });
-    }
-
     // Geldige diagnose: haal gericht kennisbank-context op en geef een hint mee.
     // Mislukte diagnose: lege context, dan mag het model in pass-2 zelf
     // zoek_kennis aanroepen (oude een-pass-gedrag als vangnet).
@@ -287,7 +290,7 @@ app.post('/api/analyze-image', async (req, res) => {
     let hint = '';
     if (diagnose) {
       kennisContext = searchContext(buildRagQuery(diagnose, caption), 3);
-      hint = `\n\nVorläufige Diagnose (nutze als Hinweis, prüfe selbst am Foto): Schaden scheint ${diagnose.schadeType || 'unbekannt'}, Schweregrad ${diagnose.ernst}.`;
+      hint = `\n\nVorläufige Diagnose (nutze als Hinweis, prüfe selbst am Foto): Schaden scheint ${diagnose.schadeType || 'unbekannt'}${diagnose.ernst && diagnose.ernst !== 'onbekend' ? `, Schweregrad ${diagnose.ernst}` : ''}.`;
     }
 
     // Pass 2: het warme, volledige analyse-antwoord. zoek_kennis blijft als
@@ -455,7 +458,7 @@ app.post('/api/analyze-image/stream', async (req, res) => {
     let hint = '';
     if (diagnose) {
       kennisContext = searchContext(buildRagQuery(diagnose, caption), 3);
-      hint = `\n\nVorläufige Diagnose (nutze als Hinweis, prüfe selbst am Foto): Schaden scheint ${diagnose.schadeType || 'unbekannt'}, Schweregrad ${diagnose.ernst}.`;
+      hint = `\n\nVorläufige Diagnose (nutze als Hinweis, prüfe selbst am Foto): Schaden scheint ${diagnose.schadeType || 'unbekannt'}${diagnose.ernst && diagnose.ernst !== 'onbekend' ? `, Schweregrad ${diagnose.ernst}` : ''}.`;
     }
 
     // Fase 4: advies opstellen, pass 2 als stream met dezelfde tool-lus als de

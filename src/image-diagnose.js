@@ -81,7 +81,11 @@ function parseDiagnose(text) {
     materiaal: typeof obj.materiaal === 'string' ? obj.materiaal : '',
     redenOnduidelijk: typeof obj.reden_onduidelijk === 'string' ? obj.reden_onduidelijk : '',
     schadeType: typeof obj.schade_type === 'string' ? obj.schade_type : '',
-    ernst: ERNST_WAARDEN.includes(ernstRaw) ? ernstRaw : 'matig',
+    // Een ongeldige of ontbrekende ernst NIET stil naar "matig" duwen: dan is een mislukte
+    // inschatting niet te onderscheiden van een echte "matig", en dat anker sleept via de hint
+    // mee naar pass 2. Val terug op "onbekend" (interne waarde, past bij de Nederlandstalige
+    // ERNST_WAARDEN); de hint in index.js laat de ernst dan weg zodat pass 2 zelf oordeelt.
+    ernst: ERNST_WAARDEN.includes(ernstRaw) ? ernstRaw : 'onbekend',
     zoektermen,
   };
 }
@@ -146,7 +150,7 @@ function nietHoutReply(diagnose) {
 function buildAnalysisPrompt({ imageCount = 1, hasPrior = false, caption = '' } = {}) {
   const cap = typeof caption === 'string' ? caption.trim() : '';
   let text = imageCount > 1
-    ? `Analysiere diese ${imageCount} Fotos der beschädigten Stelle (verschiedene Winkel/Details desselben Schadens).`
+    ? `Analysiere diese ${imageCount} Fotos. Sie können denselben Schaden aus verschiedenen Blickwinkeln zeigen, es können aber auch verschiedene Stellen sein. Bestimme zuerst selbst, ob es wirklich dieselbe Stelle ist. Bist du unsicher oder weicht ein Foto deutlich ab (anderes Bauteil, andere Farbe, andere Umgebung), sag das ausdrücklich und behandle dieses Foto separat, statt eine gemeinsame Diagnose mit verbindenden Details zu erfinden.`
     : 'Analysiere dieses Foto der beschädigten Stelle.';
   if (hasPrior) {
     text += ' Dieses Gespräch läuft bereits; dieses Foto ergänzt den zuvor besprochenen Schaden. Mach damit weiter und behandle es nicht als eigenständigen neuen Fall.';
@@ -181,9 +185,11 @@ function analyseFases(diagnose) {
   // Leere Diagnose = technischer Fehler: nicht ungeprüft weiter ins Beratungs-Gleis,
   // sonst entfällt die Material-Prüfung. Gleiche Reihenfolge wie in der NL-Bot.
   if (!diagnose) return { fases: ['foto', 'schade'], route: 'unclear' };
+  // "duidelijk" zuerst (nach der Null-Prüfung): ein unscharfes Foto darf kein sicheres
+  // "kein Holz" oder "Produkt" ergeben, sonst faellt ein Urteil, das das Bild nicht traegt.
+  if (diagnose && !diagnose.duidelijk) return { fases: ['foto', 'schade'], route: 'unclear' };
   if (diagnose && diagnose.isProduct) return { fases: ['foto', 'schade'], route: 'product' };
   if (diagnose && !diagnose.isHout) return { fases: ['foto', 'schade'], route: 'niethout' };
-  if (diagnose && !diagnose.duidelijk) return { fases: ['foto', 'schade'], route: 'unclear' };
   return { fases: ['foto', 'schade', 'kennisbank', 'advies'], route: 'advies' };
 }
 

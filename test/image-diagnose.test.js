@@ -30,6 +30,13 @@ test('buildAnalysisPrompt: meerdere foto\'s + lopend gesprek + bijschrift', () =
   assert.match(t, /Wie tief muss ich fräsen\?/);
 });
 
+test('buildAnalysisPrompt: meerdere foto\'s dwingen niet langer "dieselbe schade" af', () => {
+  const t = buildAnalysisPrompt({ imageCount: 2 });
+  assert.doesNotMatch(t, /Details desselben Schadens/);
+  assert.match(t, /verschiedene Stellen/);
+  assert.match(t, /separat/);
+});
+
 test('buildAnalysisPrompt: defaults (geen argument) = één foto zonder extra\'s', () => {
   const t = buildAnalysisPrompt();
   assert.match(t, /Analysiere dieses Foto/);
@@ -81,11 +88,19 @@ test('parseDiagnose geeft null bij onparseerbare of vormloze input', () => {
   assert.strictEqual(parseDiagnose(null), null);
 });
 
-test('parseDiagnose normaliseert ongeldige ernst naar matig en niet-array zoektermen naar leeg', () => {
+test('parseDiagnose valt bij ongeldige ernst terug op "onbekend" (niet stil op "matig") en niet-array zoektermen naar leeg', () => {
   const d = parseDiagnose('{"duidelijk": true, "schade_type": "cosmetisch", "ernst": "kapot", "zoektermen": "nope"}');
-  assert.strictEqual(d.ernst, 'matig');
+  assert.strictEqual(d.ernst, 'onbekend');
   assert.deepStrictEqual(d.zoektermen, []);
   assert.strictEqual(d.redenOnduidelijk, '');
+});
+
+test('parseDiagnose valt bij ontbrekende ernst terug op "onbekend" en houdt geldige ernst intact', () => {
+  assert.strictEqual(parseDiagnose('{"duidelijk": true, "schade_type": "Holzfäule", "zoektermen": []}').ernst, 'onbekend');
+  for (const e of ['licht', 'matig', 'ernstig']) {
+    const d = parseDiagnose(`{"duidelijk": true, "schade_type": "Holzfäule", "ernst": "${e}", "zoektermen": []}`);
+    assert.strictEqual(d.ernst, e);
+  }
 });
 
 test('buildRagQuery combineert zoektermen en schade_type', () => {
@@ -208,10 +223,15 @@ test('analyseFases: mislukte diagnose (null) gaat naar unclear, niet naar advies
   assert.deepStrictEqual(p.fases, ['foto', 'schade']);
 });
 
-test('analyseFases: product staat vóór niethout/unclear in de volgorde van checks', () => {
-  // is_hout false EN is_product true: product wint (net als de niet-streaming handler).
-  const p = analyseFases({ isProduct: true, isHout: false, duidelijk: false });
+test('analyseFases: bij een duidelijke foto wint product van niethout', () => {
+  // is_hout false EN is_product true, duidelijke foto: product wint (net als de handler).
+  const p = analyseFases({ isProduct: true, isHout: false, duidelijk: true });
   assert.strictEqual(p.route, 'product');
+});
+
+test('analyseFases: onduidelijke foto wint van product en van niethout (geen stellig oordeel op een slechte foto)', () => {
+  assert.strictEqual(analyseFases({ isProduct: true, isHout: false, duidelijk: false }).route, 'unclear');
+  assert.strictEqual(analyseFases({ isProduct: false, isHout: false, duidelijk: false }).route, 'unclear');
 });
 
 // Gelijkgetrokken met de NL-bot (20-07-2026). Deze bot liet een lege diagnose doorvallen
