@@ -198,3 +198,32 @@ test('basis-prompt is online-first voor verkooppunten en noemt geen dode kaart',
   assert.match(BASE_SYSTEM_PROMPT, /HolzLand MAHL/);
   assert.doesNotMatch(BASE_SYSTEM_PROMPT, /Verkaufsstellen-Karte auf eazy-fix\.de\/verkaufsstellen/);
 });
+
+// Port van eazyfix-bot 90c0dfd (feedback 72/74/79/80, binnendienst 03-08-2026):
+// de NL-bot verzon dat eine ausgehärtete Spachtelmasse in einer "arbeitenden
+// Fuge" herausgezogen wird. Falsch: die Epoxidprodukte sind dauerhaft elastisch.
+// Echte Ursache dort: falsches Produkt für die Tiefe (Spachtelmasse 0,5-2 cm;
+// flache Fugen 0-6 mm gehören zum Feinspachtel).
+test('beide Prompts verbieten die Behauptung, ein EAZYFIX-Produkt löse sich durch eine arbeitende Naht', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /löst sich eine EAZYFIX®-Reparatur nicht ab/);
+  assert.match(BASE_SYSTEM_PROMPT, /dauerhaft elastisch/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /EIGENE PRODUKTE LÖSEN SICH NICHT/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /dauerhaft elastisch/);
+});
+
+test('flache Nähte und Fugen (0-6 mm) routen zum Feinspachtel, nicht zur Spachtelmasse', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /flache Nähte, Fugen oder Risse bis 6 mm/);
+  assert.match(BASE_SYSTEM_PROMPT, /Nähte und Fugen zwischen Teilen, die arbeiten/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /Flache Nähte, Fugen und Risse \(0 bis 6 mm tief\)/);
+});
+
+test('Feinspachtel-Rat nennt immer die Vorbereitung (reinigen, anschleifen, staubfrei)', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /DIE VORBEREITUNG GEHÖRT IMMER DAZU/);
+  assert.match(BASE_SYSTEM_PROMPT, /staub- und fettfrei/);
+});
+
+test('Diagnose-Prompt erkennt Kunststofffenster und blockt den Nahaufnahme-Umweg', () => {
+  assert.match(IMAGE_DIAGNOSE_PROMPT, /KUNSTSTOFF-Fenster \(PVC\)/);
+  assert.match(IMAGE_DIAGNOSE_PROMPT, /verschweißten Eckverbindungen/);
+  assert.match(IMAGE_DIAGNOSE_PROMPT, /auch wenn keine Schadstelle sichtbar ist/);
+});
