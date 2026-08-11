@@ -227,3 +227,19 @@ test('Diagnose-Prompt erkennt Kunststofffenster und blockt den Nahaufnahme-Umweg
   assert.match(IMAGE_DIAGNOSE_PROMPT, /verschweißten Eckverbindungen/);
   assert.match(IMAGE_DIAGNOSE_PROMPT, /auch wenn keine Schadstelle sichtbar ist/);
 });
+
+// Feedback 83/84 eazyfix-bot NL (11-08-2026, Port e99def2): auf einem Foto einer
+// aufgegangenen Gehrungsverbindung in einer Fensterrahmen-Ecke empfahl der Bot
+// den Feinspachtel ("flache Naht, 0-6 mm"). Falsch: eine offene konstruktive
+// Verbindung ist die Spachtelmasse-Route. Die Website nennt die Spachtelmasse
+// "sehr gut zum Füllen von Rissen, Astlöchern und Fugen"; die Schichtdicke
+// erreicht man, indem die Verbindung zuerst großzügig ausgefräst wird.
+test('offene konstruktive Verbindungen routen zu Ausfräsen + Spachtelmasse, nicht zum Feinspachtel', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /aufgegangene konstruktive Verbindung/i);
+  assert.match(BASE_SYSTEM_PROMPT, /Gehrungs- oder Eckverbindung/);
+  assert.match(BASE_SYSTEM_PROMPT, /mindestens 0,5 cm/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /AUFGEGANGENE KONSTRUKTIVE VERBINDUNG/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /über beide Teile der Verbindung verteilt/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /mitten durch ein Teil, wo keine Verbindung hingehört/);
+  assert.match(IMAGE_DIAGNOSE_PROMPT, /"offene Verbindung"/);
+});
