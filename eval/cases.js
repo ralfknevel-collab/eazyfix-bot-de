@@ -26,6 +26,14 @@ module.exports = [
     judges: ['Die Antwort ist eine freundliche Begrüßung auf Deutsch, die fragt, womit der Bot helfen kann.'],
   },
   {
+    // Port NL Feedback 90 (26-08-2026, Innendienst): Fäule am tragenden Scharnier
+    // eines Tors ist eine normale Reparatur; nicht vom Innendienst abhängig machen.
+    name: 'Fäule am Scharnier eines Tors — direkter Reparaturweg, keine Innendienst-Bedingung',
+    messages: u('Hartholz-Gartentor, die Schwelle ist auf etwa 10 cm faul, direkt neben dem Scharnier, das das Gewicht des Tors trägt. Ich habe bis 8 cm tief ausgeräumt. Was mache ich jetzt Schritt für Schritt?'),
+    checks: [noEmDash, noMarkdown],
+    judges: ['Geprüft wird NUR dies: Der Bot macht seine Hilfe NICHT vom EAZYFIX-Innendienst abhängig, weil das Scharnier das Gewicht des Tors trägt. Er nennt selbst einen Reparaturweg mit EAZYFIX-Produkten (Ausfräsen, Holzimprägnierung, Premium Holzspachtelmasse und/oder ein Stück Holz einsetzen). Kontrollfragen, eine Fotobitte oder das Offenlassen mehrerer Optionen sind erlaubt. Ein Innendienst-Verweis darf höchstens als lose Zusatzsicherheit mitkommen, nicht als Bedingung oder Ersatzantwort.'],
+  },
+  {
     name: 'vage Holzfäule-Frage — erst nachfragen',
     messages: u('ich habe Holzfäule, was jetzt?'),
     checks: [['stellt eine Rückfrage', (r) => r.text.includes('?')], noMarkdown, noEmDash],

@@ -243,3 +243,19 @@ test('offene konstruktive Verbindungen routen zu Ausfräsen + Spachtelmasse, nic
   assert.match(IMAGE_ANALYSIS_PROMPT, /mitten durch ein Teil, wo keine Verbindung hingehört/);
   assert.match(IMAGE_DIAGNOSE_PROMPT, /"offene Verbindung"/);
 });
+
+// Port von eazyfix-bot NL, Feedback 90 (26-08-2026, Innendienst): bei tiefer Fäule
+// in der Schwelle eines Hartholz-Tors fragte der Bot, ob die Stelle am tragenden
+// Scharnier sitzt, und hängte daran einen Innendienst-Verweis. Falsch: Fäule am
+// Beschlag ist eine normale Reparatur, die direkt erklärt wird. Website (DE):
+// "Die Holzspachtelmasse kannst du wie Holz bearbeiten. Du kannst einfach
+// Schrauben und Nägel einbringen"; Teilaustausch bei größer als eine Faust.
+test('Fäule an Scharnier/Beschlag von Tor oder Tür wird direkt erklärt, nicht an den Innendienst', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /Scharnier, Schloss oder anderen Beschlag/);
+  assert.match(BASE_SYSTEM_PROMPT, /auch nicht, wenn dieser Beschlag das Gewicht trägt/);
+  assert.match(BASE_SYSTEM_PROMPT, /einfach wieder Schrauben einbringen/);
+  assert.match(BASE_SYSTEM_PROMPT, /tragende Bauteile \(Balken, Sparren/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /Scharnier, Schloss oder anderen Beschlag/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /auch nicht, wenn dieser Beschlag das Gewicht trägt/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /tragende Bauteile \(Balken, Sparren/);
+});
