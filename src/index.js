@@ -204,7 +204,7 @@ app.post('/api/analyze-image', async (req, res) => {
       : 'Auf dem Foto ist ein EAZYFIX® Produkt (Verpackung, Kartusche oder Etikett), kein Holzschaden. Sag kurz, welches Produkt du siehst, und frag, was der Nutzer dazu wissen möchte.';
     const response = await anthropic.messages.create({
       model: MODEL,
-      max_tokens: 2000,
+      max_tokens: 8000, // denk-tokens tellen mee in max_tokens (port RC-DE feedback #27)
       thinking: { type: 'adaptive' },
       system,
       messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: userText }] }],
@@ -303,7 +303,7 @@ app.post('/api/analyze-image', async (req, res) => {
       {
         model: MODEL,
         system,
-        maxTokens: 8000,
+        maxTokens: 16000, // niet-streamend: ruim maar onder de SDK-timeout (port RC-DE feedback #27)
         extra: { thinking: { type: 'adaptive' }, output_config: { effort: 'xhigh' } },
         onTool: (name, input) => console.log(`  tool: ${name}(${JSON.stringify(input)})`),
       }
@@ -441,7 +441,7 @@ app.post('/api/analyze-image/stream', async (req, res) => {
         : 'Auf dem Foto ist ein EAZYFIX® Produkt (Verpackung, Kartusche oder Etikett), kein Holzschaden. Sag kurz, welches Produkt du siehst, und frag, was der Nutzer dazu wissen möchte.';
       const resp = await anthropic.messages.create({
         model: MODEL,
-        max_tokens: 2000,
+        max_tokens: 8000, // denk-tokens tellen mee in max_tokens (port RC-DE feedback #27)
         thinking: { type: 'adaptive' },
         system,
         messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: userText }] }],
@@ -469,9 +469,12 @@ app.post('/api/analyze-image/stream', async (req, res) => {
 
     let convo = [...priorMessages, { role: 'user', content: [...imageBlocks, { type: 'text', text: promptText + hint }] }];
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      // Ruim budget: bij adaptief denken tellen de denk-tokens MEE in max_tokens; met
+      // 8000 op xhigh kapte het model bij de RC-DE-bot de zichtbare tekst af midden in
+      // een zin (stop_reason 'max_tokens', feedback DE #27, 25-08-2026).
       const stream = anthropic.messages.stream({
         model: MODEL,
-        max_tokens: 8000,
+        max_tokens: 32000,
         thinking: { type: 'adaptive' },
         output_config: { effort: 'xhigh' },
         system,
