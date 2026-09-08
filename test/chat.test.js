@@ -44,3 +44,13 @@ test('koop-/prijsvraag levert geen videokaart', () => {
   assert.deepEqual(videos, []);
   assert.ok(!system.some((b) => /VIDEOKARTE/.test(b.text)));
 });
+
+// Port van eazyfix-bot / repair-care-bot 5a9d74c (RC-feedback #164/#165): de
+// video-uitnodiging is een letterlijke DE-voorbeeldzin die het model ook onder een
+// Engels antwoord zou plakken. (Nog geen Duitse videobron, dus functie direct getest.)
+test('video-uitnodiging vraagt om de zin in de taal van het antwoord, met Engels voorbeeld', () => {
+  const { videoInviteNote } = require('../src/chat');
+  const note = videoInviteNote([{ title: 'Holzfäule reparieren' }]);
+  assert.match(note, /in der Sprache deiner Antwort/);
+  assert.match(note, /Have a look at the video below/);
+});

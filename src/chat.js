@@ -69,6 +69,7 @@ function videoInviteNote(videos) {
   return `UNTER DEINER ANTWORT ERSCHEINT EINE KLICKBARE VIDEOKARTE mit dem EAZYFIX-Video "${videos[0].title}". `
     + 'Schließe deine Antwort mit EINER kurzen, natürlichen Einladung ab, es anzusehen, '
     + 'zum Beispiel "Schau dir auch kurz das Video unten an, da siehst du es Schritt für Schritt." '
+    + 'Schreib diese Einladung in der Sprache deiner Antwort: antwortest du auf Englisch, dann zum Beispiel "Have a look at the video below, it shows you step by step." '
     + 'Füge SELBST KEINEN Link, keine URL und keine YouTube-Adresse in deinen Text ein (die Karte erledigt das). '
     + 'Nenne den Videotitel nicht wörtlich; verweise einfach auf "das Video unten".';
 }

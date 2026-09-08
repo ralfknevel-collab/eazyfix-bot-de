@@ -291,3 +291,21 @@ test('Anzahl Kartuschen rechnet der Bot selbst aus, auch auf eine Tennisball-Ang
   assert.match(IMAGE_ANALYSIS_PROMPT, /geteilt durch 150 ml pro Kartusche/);
   assert.match(IMAGE_ANALYSIS_PROMPT, /eine Kartusche pro Tennisball/);
 });
+
+// Port van eazyfix-bot / repair-care-bot 5a9d74c (RC-feedback #164/#165, 2026-09-08):
+// in een Engelstalig gesprek lekten vaktermen uit de kennis in het antwoord plus de
+// letterlijke video-uitnodiging. De oude regel zonderde alleen namen uit en het model
+// rekte die uitzondering op tot alle vakjargon. Beide prompts moeten nu expliciet
+// zeggen dat ALLE andere woorden mee vertaald worden, met Duitse tegenvoorbeelden,
+// en dat de video-zin meevertaalt.
+test('andere taal: vakjargon uit DE-kennis wordt mee vertaald, alleen product- en merknamen blijven staan (beide prompts)', () => {
+  for (const prompt of [BASE_SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT]) {
+    assert.match(prompt, /NUR Produkt- und Markennamen/);
+    assert.match(prompt, /alle anderen Wörter übersetzt du mit/i);
+    assert.match(prompt, /Fachbegriffe und Bauteilnamen aus dem deutschen Wissen/);
+    assert.match(prompt, /"wood filler"/);
+    assert.match(prompt, /"wood rot"/);
+    assert.match(prompt, /"window frame, door"/);
+    assert.match(prompt, /Video schreibst du in der Sprache deiner Antwort/);
+  }
+});
