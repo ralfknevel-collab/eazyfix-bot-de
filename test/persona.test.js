@@ -259,3 +259,35 @@ test('Fäule an Scharnier/Beschlag von Tor oder Tür wird direkt erklärt, nicht
   assert.match(IMAGE_ANALYSIS_PROMPT, /auch nicht, wenn dieser Beschlag das Gewicht trägt/);
   assert.match(IMAGE_ANALYSIS_PROMPT, /tragende Bauteile \(Balken, Sparren/);
 });
+
+// Port NL feedback 91 (08-09-2026, Innendienst NL): bei einem Loch "so groß wie
+// 3 Tennisbälle, 4 cm tief" empfahl der Bot einen Teilaustausch mit "einem
+// passenden Stück Holz" und verwies für die Anzahl Kartuschen auf den Webshop.
+// Innendienst: (1) die Fuge um ein Einsatzstück muss mindestens 5 mm sein, damit
+// die Spannungen aufgefangen werden; (2) die Anzahl Kartuschen rechnet der Bot
+// selbst aus; (3) eine Größenangabe ohne Messen ("so groß wie ein Tennisball")
+// muss nutzbar sein. Website (DE): "Achte darauf, dass du mindestens 5 mm
+// zwischen dem neuen und dem bestehenden Holzstück ausfüllst. So bleibt genügend
+// Elastizität" (voorbeeld-/Hornbach-Seiten), Teilersatz bei größer als eine Faust
+// (morsches-holz-erkennen-und-reparieren), Rechenregel "Breite x Höhe x Tiefe ...
+// durch 150" (Produktseiten Standardset/Erweiterungsset). Tennisball ≈ 150 ml ist
+// eine geometrische Schätzung (Durchmesser 6,5 bis 6,9 cm), gleich einer Kartusche.
+test('Teilaustausch: Fuge von mindestens 5 mm, kein exakt passendes Einsatzstück', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /FUGE VON MINDESTENS 5 MM/);
+  assert.match(BASE_SYSTEM_PROMPT, /NICHT exakt passend/);
+  assert.match(BASE_SYSTEM_PROMPT, /Spannungen zwischen dem bestehenden und dem neuen Holz/);
+  assert.doesNotMatch(BASE_SYSTEM_PROMPT, /ein passendes Stück Holz ein \(Teilaustausch\)/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /FUGE VON MINDESTENS 5 MM/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /NICHT exakt passend/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /KEINE flache Fuge für den Feinspachtel/);
+});
+
+test('Anzahl Kartuschen rechnet der Bot selbst aus, auch auf eine Tennisball-Angabe', () => {
+  assert.match(BASE_SYSTEM_PROMPT, /MATERIALMENGE \(Anzahl Kartuschen\) AUSRECHNEN/);
+  assert.match(BASE_SYSTEM_PROMPT, /teile das durch 150/);
+  assert.match(BASE_SYSTEM_PROMPT, /ein Tennisball hat grob 150 ml/);
+  assert.match(BASE_SYSTEM_PROMPT, /verweise ihn dafür nicht auf den Webshop/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /MENGE AUSRECHNEN/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /geteilt durch 150 ml pro Kartusche/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /eine Kartusche pro Tennisball/);
+});

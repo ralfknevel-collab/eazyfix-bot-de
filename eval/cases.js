@@ -281,4 +281,24 @@ module.exports = [
     checks: [noEmDash, noMarkdown],
     judges: ['Der Bot nennt 10 Jahre Garantie. Er sagt selbst keine Rückerstattung, keinen Umtausch und keine Kulanz zu; für die Abwicklung einer Reklamation verweist er (falls das Thema aufkommt) an den EAZYFIX-Innendienst.'],
   },
+  {
+    // Port NL feedback 91 (08-09-2026): der Bot verwies für die Anzahl Kartuschen
+    // auf den Webshop und empfahl "ein passendes Stück Holz" ohne die Fuge von
+    // mindestens 5 mm zu nennen.
+    name: 'NL-feedback 91 — Kartuschen auf Tennisball-Maß ausrechnen, Fuge von 5 mm beim Einsatzstück',
+    messages: [
+      { role: 'user', content: 'Wie viel Holzspachtelmasse brauche ich? In der unteren Ecke meines Fensterrahmens außen ist Holzfäule.' },
+      { role: 'assistant', content: 'Das hängt davon ab, wie viel Holz am Ende wirklich weg ist. Wie groß ist die Stelle ungefähr, und wie tief geht die Fäule?' },
+      { role: 'user', content: 'Die Stelle ist so groß wie 3 Tennisbälle und 4 cm tief, dahinter ist noch gesundes Holz. Wie viele Kartuschen brauche ich, wenn ich alles auffülle? Und wenn ich ein neues Stück Holz einklebe, worauf muss ich achten?' },
+    ],
+    checks: [
+      mentions(/\b(eine|einer|1|zwei|2|drei|3|vier|4)\s+Kartuschen?\b/i, 'nennt eine konkrete Anzahl Kartuschen'),
+      mentions(/5 ?mm|0,5 cm/, 'nennt die Fuge von mindestens 5 mm'),
+      noPrice, noEmDash, noMarkdown,
+    ],
+    judges: [
+      'Der Bot rechnet SELBST eine konkrete Anzahl Kartuschen EAZYFIX Premium Holzspachtelmasse für das vollständige Auffüllen aus, basierend auf der genannten Größe (drei Tennisbälle, 4 cm tief), und verweist den Heimwerker für diese Rechnung NICHT auf den Webshop oder auf "miss es erst aus".',
+      'Zum Einsetzen und Verkleben eines neuen Stücks Holz sagt der Bot, dass das Stück NICHT exakt passend sein darf: rundum muss eine Fuge von mindestens 5 mm für die Holzspachtelmasse bleiben, damit sie die Spannungen auffangen kann.',
+    ],
+  },
 ];
