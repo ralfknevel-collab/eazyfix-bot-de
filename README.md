@@ -32,6 +32,18 @@ telt de limiet per Cloudflare-adres in plaats van per bezoeker. Logica en tests:
 
 Fotodiagnose op effort `high` (instelbaar via `FOTO_EFFORT`; NL-meting 20-10-2026: xhigh 44 s per foto, high 25 s, zelfde diagnoses); markdown-vangnet en ontkenningsregel voor productkaartjes zijn geport van eazyfix-bot 176cc6c.
 
+## Bescherming tegen misbruik (aanvulling 20-10-2026)
+Dagplafonds bovenop de per-minuutlimieten: per bezoeker 60 berichten en 15 foto-analyses per dag,
+voor de hele bot 400 berichten en 60 foto-analyses per dag (omgevingsvariabelen `DAG_BERICHTEN_PER_BEZOEKER`,
+`DAG_FOTOS_PER_BEZOEKER`, `DAG_BERICHTEN_TOTAAL`, `DAG_FOTOS_TOTAAL`); bij 80% van een botplafond gaat een
+Telegram-alarm, `/health` toont de dagtellers. Een bericht is maximaal 4000 tekens (server-side, Duitse melding).
+Toegangsbewijs: de chatpagina krijgt bij het laden een tijdelijk bewijs (een uur, gebonden aan het bezoekersadres)
+dat als `x-web-token` meegaat; met `WEB_TOKEN_VERPLICHT=1` is het verplicht naast `APP_SECRET` (native app).
+Privacy: klantfoto's staan in de privé-bucket `chat-fotos` (gedeeld met NL); het logboek bewaart het opslagpad,
+geen openbare link. Bewaartermijn: gesprekken (`chats_eazyfix_de`) en foto's ouder dan `BEWAARTERMIJN_DAGEN`
+(standaard 90) worden dagelijks opgeruimd (`src/retentie.js`, handmatig `node scripts/opruimen.js`, tellen met
+`DRY_RUN=1`). Port van eazyfix-bot 752580a, a41ea98 en b934327.
+
 ## Endpoints
 - `GET /health` — status (geen sleutel nodig).
 - `POST /api/chat` — chat (JSON).

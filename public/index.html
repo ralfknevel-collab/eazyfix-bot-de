@@ -260,6 +260,9 @@
     // testfase. Moet gelijk zijn aan APP_SECRET op de server. Leeg maken om de
     // handmatige invoer weer te verplichten.
     const BAKED_APP_KEY = 'ef-test-7e69de2bea23';
+    // Tijdelijk toegangsbewijs, door de server ingevuld bij het laden van de pagina
+    // (een uur geldig, gebonden aan je adres). Zie src/abuse-guard.js.
+    const WEB_TOKEN = '__WEB_TOKEN__';
 
     // Preview van de gekozen foto tonen/verbergen (rij 8: foto zichtbaar vóór verzenden).
     let previewUrl = null;
@@ -358,6 +361,7 @@
       const h = { 'Content-Type': 'application/json' };
       const key = BAKED_APP_KEY;
       if (key) h['x-app-key'] = key;
+      if (WEB_TOKEN && !WEB_TOKEN.startsWith('__')) h['x-web-token'] = WEB_TOKEN;
       return h;
     }
 

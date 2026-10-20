@@ -176,3 +176,140 @@ test('trust proxy 2: een door de bezoeker zelf meegestuurde X-Forwarded-For telt
     assert.equal(JSON.parse(r.body).ip, '198.51.100.7');
   });
 });
+
+// --- berichtlengte en dagplafonds (port eazyfix-bot a41ea98, veiligheidscheck 20-10-2026)
+// Per-minuutlimieten begrenzen geen dagvolume: één script kon de hele dag 5 foto's per
+// minuut sturen. Daarom: plafond per bezoeker per dag en voor de hele bot per dag, met
+// Duitse melding in de du-vorm, en een alarm bij 80% van het botplafond.
+const {
+  MAX_MESSAGE_CHARS, MESSAGE_TOO_LONG, messageTooLong,
+  DAILY_LIMITS, DAILY_IP_MESSAGE, DAILY_IP_PHOTO, DAILY_GLOBAL, makeDailyCaps,
+} = require('../src/abuse-guard');
+
+test('berichtlengte: maximaal 4000 tekens per beurt, ook in contentblokken; Duitse melding', () => {
+  assert.equal(MAX_MESSAGE_CHARS, 4000);
+  assert.equal(messageTooLong([{ role: 'user', content: 'hallo' }]), false);
+  assert.equal(messageTooLong([{ role: 'user', content: 'x'.repeat(4000) }]), false);
+  assert.equal(messageTooLong([{ role: 'user', content: 'x'.repeat(4001) }]), true);
+  assert.equal(messageTooLong([{ role: 'user', content: [{ type: 'text', text: 'x'.repeat(5000) }] }]), true);
+  assert.equal(messageTooLong([{ role: 'user', content: 'x'.repeat(9000) }, { role: 'assistant', content: 'ok' }, { role: 'user', content: 'kurz' }]), true, 'ook oudere beurten tellen');
+  assert.equal(messageTooLong([]), false);
+  assert.match(MESSAGE_TOO_LONG, /4000/);
+  assert.match(MESSAGE_TOO_LONG, /Deine Nachricht/);
+  assert.doesNotMatch(MESSAGE_TOO_LONG, /—/);
+});
+
+test('dagplafonds: standaardwaarden en Duitse meldingen in du-vorm met de Duitse Innendienst', () => {
+  assert.deepEqual(DAILY_LIMITS, { perIpMessages: 60, perIpPhotos: 15, globalMessages: 400, globalPhotos: 60 });
+  for (const m of [DAILY_IP_MESSAGE, DAILY_IP_PHOTO, DAILY_GLOBAL]) {
+    assert.doesNotMatch(m, /—/);
+    assert.doesNotMatch(m, /\bSie\b|\bIhnen\b|\bIhr\b/, 'du-vorm, geen Sie');
+    assert.doesNotMatch(m, /\+31/, 'geen Nederlands nummer');
+    assert.doesNotMatch(m, /\beazyfix\b/, 'merknaam in hoofdletters met ®');
+  }
+  assert.match(DAILY_IP_MESSAGE, /heute/i);
+  assert.match(DAILY_IP_MESSAGE, /03222 1097923/);
+  assert.match(DAILY_GLOBAL, /morgen/i);
+  assert.match(DAILY_GLOBAL, /03222 1097923/);
+});
+
+test('dagplafond per bezoeker: na 60 berichten 429 met dagmelding; andere bezoeker blijft door; foto\'s tellen apart', async () => {
+  const caps = makeDailyCaps({ now: () => Date.parse('2026-10-21T10:00:00Z') });
+  await withApp((app) => {
+    app.set('trust proxy', 2);
+    app.use('/api/chat', caps.messageGuard);
+    app.use('/api/analyze-image', caps.photoGuard);
+    app.get('/api/chat/stream', (_req, res) => res.json({ ok: true }));
+    app.get('/api/analyze-image/stream', (_req, res) => res.json({ ok: true }));
+  }, async (port) => {
+    const a = { 'X-Forwarded-For': '198.51.100.7, 172.71.1.1' };
+    for (let i = 1; i <= 60; i++) assert.equal((await request(port, '/api/chat/stream', a)).status, 200, `bericht ${i}`);
+    const r61 = await request(port, '/api/chat/stream', a);
+    assert.equal(r61.status, 429);
+    assert.equal(JSON.parse(r61.body).error, DAILY_IP_MESSAGE);
+    assert.equal((await request(port, '/api/analyze-image/stream', a)).status, 200, 'foto-plafond staat los van berichten');
+    const b = { 'X-Forwarded-For': '198.51.100.8, 172.71.1.1' };
+    assert.equal((await request(port, '/api/chat/stream', b)).status, 200, 'andere bezoeker heeft eigen dagteller');
+    for (let i = 2; i <= 15; i++) assert.equal((await request(port, '/api/analyze-image/stream', a)).status, 200, `foto ${i}`);
+    const f16 = await request(port, '/api/analyze-image/stream', a);
+    assert.equal(f16.status, 429);
+    assert.equal(JSON.parse(f16.body).error, DAILY_IP_PHOTO);
+  });
+});
+
+test('dagplafond voor de hele bot: alarm bij 80%, 429 met drukte-melding daarboven, nieuwe dag begint op nul', async () => {
+  let clock = Date.parse('2026-10-21T10:00:00Z');
+  const alerts = [];
+  const caps = makeDailyCaps({ now: () => clock, limits: { globalPhotos: 10, perIpPhotos: 100 }, onAlert: (a) => alerts.push(a) });
+  await withApp((app) => {
+    app.set('trust proxy', 2);
+    app.use('/api/analyze-image', caps.photoGuard);
+    app.get('/api/analyze-image', (_req, res) => res.json({ ok: true }));
+  }, async (port) => {
+    for (let i = 1; i <= 10; i++) {
+      const r = await request(port, '/api/analyze-image', { 'X-Forwarded-For': `198.51.100.${i}, 172.71.1.1` });
+      assert.equal(r.status, 200, `foto ${i} (verschillende bezoekers)`);
+    }
+    assert.equal(alerts.length, 1, 'één alarm bij 80%');
+    assert.equal(alerts[0].kind, 'photos');
+    assert.equal(alerts[0].count, 8);
+    const r11 = await request(port, '/api/analyze-image', { 'X-Forwarded-For': '198.51.100.99, 172.71.1.1' });
+    assert.equal(r11.status, 429);
+    assert.equal(JSON.parse(r11.body).error, DAILY_GLOBAL);
+    assert.deepEqual(caps.status().vandaag, { berichten: 0, fotos: 10 });
+    clock = Date.parse('2026-10-22T00:00:01Z'); // nieuwe dag
+    const next = await request(port, '/api/analyze-image', { 'X-Forwarded-For': '198.51.100.99, 172.71.1.1' });
+    assert.equal(next.status, 200, 'teller staat op nul op de nieuwe dag');
+    assert.equal(caps.status().dag, '2026-10-22');
+  });
+});
+
+// --- toegangsbewijs voor de chatpagina (port eazyfix-bot b934327) ------------------
+// De sleutel in de chatpagina is openbaar. Een tijdelijk toegangsbewijs (HMAC van
+// tijdstip en bezoekersadres, 1 uur geldig) dat de pagina bij het laden krijgt, maakt
+// rechtstreeks aanroepen vanaf een script lastiger. Afdwingen alleen met
+// WEB_TOKEN_VERPLICHT=1, zodat de native app eerst zijn eigen sleutel kan krijgen.
+const { makeWebTokens, chatPage } = require('../src/abuse-guard');
+
+test('toegangsbewijs: geldig voor hetzelfde adres binnen een uur, ongeldig voor ander adres, na een uur of bij geknoei', () => {
+  let clock = Date.parse('2026-10-21T10:00:00Z');
+  const tokens = makeWebTokens({ secret: 'test-geheim', now: () => clock });
+  const t = tokens.issue('198.51.100.7');
+  assert.match(t, /^\d+\.[A-Za-z0-9_-]+$/, 'tijdstip.handtekening');
+  assert.equal(tokens.verify(t, '198.51.100.7'), true);
+  assert.equal(tokens.verify(t, '198.51.100.8'), false, 'ander adres');
+  assert.equal(tokens.verify(t.slice(0, -2) + 'xx', '198.51.100.7'), false, 'geknoei');
+  assert.equal(tokens.verify('', '198.51.100.7'), false);
+  assert.equal(tokens.verify(undefined, '198.51.100.7'), false);
+  clock += 59 * 60 * 1000;
+  assert.equal(tokens.verify(t, '198.51.100.7'), true, 'na 59 minuten nog geldig');
+  clock += 2 * 60 * 1000;
+  assert.equal(tokens.verify(t, '198.51.100.7'), false, 'na een uur verlopen');
+  const ander = makeWebTokens({ secret: 'ander-geheim', now: () => clock });
+  assert.equal(ander.verify(tokens.issue('198.51.100.7'), '198.51.100.7'), false, 'ander geheim');
+});
+
+test('toegangsbewijs: zonder geheim in de omgeving een willekeurig geheim per proces', () => {
+  const a = makeWebTokens({});
+  const b = makeWebTokens({});
+  const t = a.issue('1.2.3.4');
+  assert.equal(a.verify(t, '1.2.3.4'), true);
+  assert.equal(b.verify(t, '1.2.3.4'), false);
+});
+
+test('chatpagina: de server vult __WEB_TOKEN__ in met een geldig bewijs voor de bezoeker, zonder cache', async () => {
+  const tokens = makeWebTokens({ secret: 'test-geheim' });
+  const pub = require('node:path').join(__dirname, '..', 'public');
+  await withApp((app) => {
+    app.set('trust proxy', 2);
+    app.get('/', chatPage(pub, tokens));
+  }, async (port) => {
+    const r = await request(port, '/', { 'X-Forwarded-For': '198.51.100.7, 172.71.1.1' });
+    assert.equal(r.status, 200);
+    assert.equal(r.headers['cache-control'], 'no-store');
+    const m = /const WEB_TOKEN = '([^']+)'/.exec(r.body);
+    assert.ok(m, 'WEB_TOKEN staat in de pagina');
+    assert.notEqual(m[1], '__WEB_TOKEN__', 'placeholder is vervangen');
+    assert.equal(tokens.verify(m[1], '198.51.100.7'), true, 'bewijs hoort bij het bezoekersadres');
+  });
+});

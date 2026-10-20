@@ -1,9 +1,10 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('node:path');
 const cors = require('cors');
-const { parseAllowedOrigins, corsOptions, makeLimiters } = require('./abuse-guard');
+const { parseAllowedOrigins, corsOptions, makeLimiters, chatPage, makeWebTokens, makeDailyCaps, dailyLimitsFromEnv, messageTooLong, MESSAGE_TOO_LONG } = require('./abuse-guard');
 const { BASE_SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT } = require('./persona');
-const { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages } = require('./feedback');
+const { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages, sendTelegramText } = require('./feedback');
 const { stripTags } = require('./parse');
 const { CHAT_TOOLS, runTool } = require('./tools');
 const { runChat, runWithTools, buildChatContext } = require('./chat');
@@ -132,6 +133,19 @@ const { apiLimiter, imageLimiter } = makeLimiters();
 app.use('/api/', apiLimiter);
 app.use('/api/analyze-image', imageLimiter);
 
+// Dagplafonds (per bezoeker en voor de hele bot), met Telegram-alarm bij 80% van het
+// botplafond. Berichten en foto's tellen apart. Zie src/abuse-guard.js.
+const dailyCaps = makeDailyCaps({
+  limits: dailyLimitsFromEnv(),
+  onAlert: ({ kind, count, cap, day }) => {
+    const wat = kind === 'photos' ? 'foto-analyses' : 'berichten';
+    console.warn(`Dagplafond ${wat}: ${count} van ${cap} op ${day}`);
+    sendTelegramText(`EAZYFIX-bot DE: ${count} van ${cap} ${wat} vandaag (${day}). Bij ${cap} gaat de bot voor vandaag dicht.`).catch(() => {});
+  },
+});
+app.use('/api/chat', dailyCaps.messageGuard);
+app.use('/api/analyze-image', dailyCaps.photoGuard);
+
 // Request logging
 app.use((req, _res, next) => {
   console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
@@ -140,7 +154,15 @@ app.use((req, _res, next) => {
 
 // Health check — bewust vóór de auth-middleware, zodat je bereikbaarheid
 // simpel kunt testen (bijv. in de browser op je telefoon).
-app.get('/health', (_, res) => res.json({ ok: true, model: MODEL, fotoEffort: PHOTO_EFFORT.effort }));
+app.get('/health', (_, res) => res.json({ ok: true, model: MODEL, fotoEffort: PHOTO_EFFORT.effort, ...dailyCaps.status() }));
+
+// Toegangsbewijs voor de chatpagina (zie src/abuse-guard.js). Afdwingen alleen met
+// WEB_TOKEN_VERPLICHT=1; de native app gebruikt APP_SECRET.
+const webTokens = makeWebTokens();
+const WEB_TOKEN_VERPLICHT = process.env.WEB_TOKEN_VERPLICHT === '1';
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+app.get('/', chatPage(PUBLIC_DIR, webTokens));
+app.get('/index.html', chatPage(PUBLIC_DIR, webTokens));
 
 // Favicon: stilletjes afhandelen vóór de auth-middleware, anders geeft de
 // auto-request van browsers/clients een storende 401 in de console.
@@ -150,12 +172,20 @@ app.get('/favicon.ico', (_, res) => res.status(204).end());
 // de pagina zelf zonder sleutel laadt (de API-calls sturen de sleutel mee).
 app.use(express.static('public'));
 
-// Simple auth middleware (alleen actief als APP_SECRET gezet is)
+// Toegang tot /api: de native app met APP_SECRET (x-app-key), de chatpagina met een
+// geldig toegangsbewijs (x-web-token). Zolang WEB_TOKEN_VERPLICHT niet aan staat geldt
+// alleen de oude regel (APP_SECRET, als die gezet is) en wordt een ontbrekend bewijs
+// alleen geteld in het logboek.
 app.use((req, res, next) => {
   const appSecret = process.env.APP_SECRET;
-  if (appSecret && req.headers['x-app-key'] !== appSecret) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  const metSleutel = Boolean(appSecret) && req.headers['x-app-key'] === appSecret;
+  const metBewijs = webTokens.verify(req.headers['x-web-token'], req.ip);
+  if (WEB_TOKEN_VERPLICHT) {
+    if (metSleutel || metBewijs) return next();
+    return res.status(401).json({ error: 'Lade die Seite neu und versuch es noch einmal.' });
   }
+  if (appSecret && !metSleutel) return res.status(401).json({ error: 'Unauthorized' });
+  if (!metBewijs && !metSleutel) console.log(`  (zonder toegangsbewijs: ${req.method} ${req.path})`);
   next();
 });
 
@@ -569,6 +599,7 @@ app.post('/api/chat', async (req, res) => {
       return res.status(400).json({ error: 'Ungültiges Nachrichtenformat' });
     }
   }
+  if (messageTooLong(messages)) return res.status(400).json({ error: MESSAGE_TOO_LONG });
 
   try {
     const convo = messages.map(m => ({ role: m.role, content: toAnthropicContent(m.content) }));
@@ -600,6 +631,7 @@ app.post('/api/chat/stream', async (req, res) => {
       return res.status(400).json({ error: 'Ungültiges Nachrichtenformat' });
     }
   }
+  if (messageTooLong(messages)) return res.status(400).json({ error: MESSAGE_TOO_LONG });
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -727,11 +759,23 @@ if (!process.env.ANTHROPIC_API_KEY) {
   process.exit(1);
 }
 
+// Bewaartermijn: gesprekken en foto's ouder dan BEWAARTERMIJN_DAGEN (standaard 90)
+// dagelijks opruimen; eerste ronde een minuut na de start. Zie src/retentie.js.
+if (feedbackEnabled()) {
+  const { opruimen } = require('./retentie');
+  const ronde = () => opruimen()
+    .then((r) => console.log(`Opruiming (${r.days} dagen): ${r.gesprekken} gesprekken en ${r.fotos} foto's verwijderd`))
+    .catch((e) => console.error('Opruiming mislukt:', e.message));
+  setTimeout(ronde, 60 * 1000).unref();
+  setInterval(ronde, 24 * 60 * 60 * 1000).unref();
+}
+
 const server = app.listen(PORT, () => {
   console.log(`EAZYFIX API draait op http://localhost:${PORT}`);
   console.log(`Model:       ${MODEL}`);
   console.log(`Anthropic key: ${process.env.ANTHROPIC_API_KEY ? '✓ set' : '✗ missing'}`);
   console.log(`App secret:    ${process.env.APP_SECRET ? '✓ set' : '○ disabled'}`);
+  console.log(`Web-token:     ${WEB_TOKEN_VERPLICHT ? '✓ verplicht' : '○ alleen uitgeven (WEB_TOKEN_VERPLICHT=1 om af te dwingen)'}`);
   console.log(`Telegram:      ${process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID ? '✓ set' : '○ disabled'}`);
   startKeepAlive();
 });

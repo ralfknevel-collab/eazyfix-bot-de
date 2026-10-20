@@ -25,6 +25,25 @@ function buildFeedbackMessage(row, botName) {
 // Stuurt de melding naar Telegram. Faalt stil (mag de feedback-opslag nooit
 // breken). Doet niets als de Telegram-config ontbreekt. Vereist
 // TELEGRAM_BOT_TOKEN en TELEGRAM_CHAT_ID.
+// Vrije tekst naar het Telegram-kanaal (ook voor alarmen, zoals een dagplafond).
+// Stil als Telegram niet geconfigureerd is; gooit nooit.
+async function sendTelegramText(text) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return;
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) console.error('Telegram-bericht mislukt:', res.status, await res.text());
+  } catch (e) {
+    console.error('Telegram-bericht mislukt:', e.message);
+  }
+}
+
 async function notifyTelegram(row, botName = BOT_NAME) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -119,26 +138,40 @@ async function logChat({ conversation_id, question, answer, image_urls }) {
   }
 }
 
-// Naam van de openbare storage-bucket voor ingestuurde chat-foto's.
+// Storage-bucket voor ingestuurde chat-foto's, gedeeld met de NL-bot. Sinds 20-10-2026
+// PRIVÉ (veiligheidscheck): klantfoto's van huizen en kozijnen horen niet achter een
+// eeuwig geldige openbare link. In het logboek bewaren we het opslagpad
+// (bucket/map/bestand); bekijken kan via het Supabase-dashboard of een tijdelijke link
+// (signedPhotoUrl). Opruimen: src/retentie.js. Port van eazyfix-bot b934327.
 const CHAT_BUCKET = 'chat-fotos';
 const EXT_BY_MIME = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/webp': 'webp' };
 
-// Upload base64-foto's naar Supabase Storage en geef de publieke URLs terug.
+function supabaseBase() {
+  return String(process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+}
+
+// Opslagpad van één foto: bucket/gespreksmap/tijdstempel-volgnummer.ext. De mapnaam
+// wordt ontdaan van alles buiten letters, cijfers, punt, streepje (geen padtrucs).
+function photoObjectPath({ conversation_id, stamp, index, mimeType }) {
+  const folder = String(conversation_id || 'foto').replace(/[^a-zA-Z0-9._-]/g, '_');
+  const ext = EXT_BY_MIME[mimeType] || 'jpg';
+  return `${CHAT_BUCKET}/${folder}/${stamp}-${index}.${ext}`;
+}
+
+// Upload base64-foto's naar Supabase Storage en geef de opslagpaden terug.
 // Faalt per foto stil (een mislukte upload mag de analyse/log nooit breken):
 // bij een fout wordt die foto simpelweg overgeslagen. Geeft [] terug als er
 // niets is geüpload.
 async function uploadChatImages({ conversation_id, images }) {
   if (!Array.isArray(images) || images.length === 0) return [];
-  const base = process.env.SUPABASE_URL.replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
-  const folder = (conversation_id || 'foto').replace(/[^a-zA-Z0-9._-]/g, '_');
+  const base = supabaseBase();
   const stamp = Date.now();
-  const urls = [];
+  const paths = [];
   for (let i = 0; i < images.length; i++) {
     const img = images[i];
-    const ext = EXT_BY_MIME[img.mimeType] || 'jpg';
-    const path = `${folder}/${stamp}-${i}.${ext}`;
+    const objectPath = photoObjectPath({ conversation_id, stamp, index: i, mimeType: img.mimeType });
     try {
-      const res = await fetch(`${base}/storage/v1/object/${CHAT_BUCKET}/${path}`, {
+      const res = await fetch(`${base}/storage/v1/object/${objectPath}`, {
         method: 'POST',
         headers: {
           'Content-Type': img.mimeType,
@@ -148,15 +181,32 @@ async function uploadChatImages({ conversation_id, images }) {
         body: Buffer.from(img.base64, 'base64'),
       });
       if (!res.ok) {
-        console.error(`Foto-upload ${path} mislukt:`, res.status, await res.text());
+        console.error(`Foto-upload ${objectPath} mislukt:`, res.status, await res.text());
         continue;
       }
-      urls.push(`${base}/storage/v1/object/public/${CHAT_BUCKET}/${path}`);
+      paths.push(objectPath);
     } catch (e) {
-      console.error(`Foto-upload ${path} mislukt:`, e.message);
+      console.error(`Foto-upload ${objectPath} mislukt:`, e.message);
     }
   }
-  return urls;
+  return paths;
 }
 
-module.exports = { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages, VALID_RATINGS, buildFeedbackMessage, notifyTelegram };
+// Tijdelijke link naar een privéfoto (standaard 1 uur), voor wie hem even moet zien.
+async function signedPhotoUrl(objectPath, expiresInSeconds = 3600) {
+  const base = supabaseBase();
+  const res = await fetch(`${base}/storage/v1/object/sign/${objectPath}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: process.env.SUPABASE_SERVICE_KEY,
+      Authorization: `Bearer ${process.env.SUPABASE_SERVICE_KEY}`,
+    },
+    body: JSON.stringify({ expiresIn: expiresInSeconds }),
+  });
+  if (!res.ok) throw new Error(`Supabase sign ${res.status}: ${await res.text()}`);
+  const { signedURL } = await res.json();
+  return `${base}/storage/v1${signedURL}`;
+}
+
+module.exports = { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages, photoObjectPath, signedPhotoUrl, CHAT_BUCKET, VALID_RATINGS, buildFeedbackMessage, notifyTelegram, sendTelegramText };
