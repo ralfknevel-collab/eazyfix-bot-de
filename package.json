@@ -18,7 +18,6 @@
     "@anthropic-ai/sdk": "^0.37.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
-    "expo": "^57.0.2",
     "express": "^4.21.0",
     "express-rate-limit": "^8.7.1"
   }
