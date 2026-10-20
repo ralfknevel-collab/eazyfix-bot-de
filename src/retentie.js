@@ -54,7 +54,9 @@ async function opruimenFotos(cutoff, { dryRun = false } = {}) {
   const folders = (await listObjects('')).filter((o) => !o.id); // mappen hebben geen id
   const oud = [];
   for (const f of folders) {
-    const files = await listObjects(f.name);
+    // Inhoud van een map opvragen vereist de prefix MET slash; zonder slash geeft de
+    // storage-API één lege mapregel terug en geen bestanden (gemeten 20-10-2026, NL b1ceb2a).
+    const files = await listObjects(f.name.replace(/\/+$/, '') + '/');
     for (const file of files) {
       if (file.id && file.created_at && file.created_at < cutoff) oud.push(`${f.name}/${file.name}`);
     }
