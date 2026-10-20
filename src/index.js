@@ -18,7 +18,7 @@ const MAX_TOOL_ROUNDS = 4;
 const app = express();
 const PORT = process.env.PORT || 3001;
 // Model en clientinstellingen (Opus 5.5, denkstanden, vangnet bij weigering): src/model.js.
-const { MODEL, createClient, REQUEST_DEFAULTS, CHAT_EFFORT, REFUSAL_TEXT, isRefusal } = require('./model');
+const { MODEL, createClient, REQUEST_DEFAULTS, CHAT_EFFORT, PHOTO_EFFORT, REFUSAL_TEXT, isRefusal, stripMarkdown } = require('./model');
 
 // maxRetries: SDK doet automatisch exponentiële backoff bij tijdelijke fouten
 // (429 rate limit, 500/503, en 529 "overloaded"). Bij een drukke Anthropic-server
@@ -140,7 +140,7 @@ app.use((req, _res, next) => {
 
 // Health check — bewust vóór de auth-middleware, zodat je bereikbaarheid
 // simpel kunt testen (bijv. in de browser op je telefoon).
-app.get('/health', (_, res) => res.json({ ok: true, model: MODEL }));
+app.get('/health', (_, res) => res.json({ ok: true, model: MODEL, fotoEffort: PHOTO_EFFORT.effort }));
 
 // Favicon: stilletjes afhandelen vóór de auth-middleware, anders geeft de
 // auto-request van browsers/clients een storende 401 in de console.
@@ -327,14 +327,15 @@ app.post('/api/analyze-image', async (req, res) => {
         model: MODEL,
         system,
         maxTokens: 16000, // niet-streamend: ruim maar onder de SDK-timeout (port RC-DE feedback #27)
-        extra: { output_config: { effort: 'xhigh' } }, // fotodiagnose: hoogste denkstand (Opus 5.5 denkt adaptief)
+        extra: { output_config: PHOTO_EFFORT }, // fotodiagnose: standaard high, zie src/model.js (FOTO_EFFORT)
         onTool: (name, input) => console.log(`  tool: ${name}(${JSON.stringify(input)})`),
       }
     );
 
     // Machine-tags (FLOW / PRODUCTS) strippen en uitlezen. Vangt zowel de nette
     // trailing-regels als de gelekte parenthese-vorm "(flow: … · producten: …)".
-    const { text, flow, productIds } = stripTags(raw);
+    const { text: getagd, flow, productIds } = stripTags(raw);
+    const text = stripMarkdown(getagd); // vangnet, zie src/model.js
 
     persistPhoto(text);
     res.json({ content: text, flow, productIds, products: productsInText(text), usage });
@@ -500,7 +501,7 @@ app.post('/api/analyze-image/stream', async (req, res) => {
       const stream = anthropic.messages.stream({
         model: MODEL,
         max_tokens: 32000,
-        output_config: { effort: 'xhigh' }, // fotodiagnose: hoogste denkstand (Opus 5.5 denkt adaptief)
+        output_config: PHOTO_EFFORT, // fotodiagnose: standaard high, zie src/model.js (FOTO_EFFORT)
         ...REQUEST_DEFAULTS,
         system,
         tools: CHAT_TOOLS,
@@ -532,7 +533,8 @@ app.post('/api/analyze-image/stream', async (req, res) => {
     // Defensief tegen tag-lek (PRODUCTS:/FLOW:), zelfde aanpak als /api/chat/stream:
     // deze regels horen NOOIT zichtbaar te blijven. Strip ze pas als de volledige
     // tekst binnen is en corrigeer de client met een reset plus de schone tekst.
-    const { text: cleaned, flow, productIds } = stripTags(volledig);
+    const { text: getagd, flow, productIds } = stripTags(volledig);
+    const cleaned = stripMarkdown(getagd); // vangnet tegen vet/opsommingstekens, zie src/model.js
     if (cleaned !== volledig) {
       send({ reset: true });
       send({ text: cleaned });
@@ -672,7 +674,7 @@ app.post('/api/chat/stream', async (req, res) => {
     // in de zichtbare tekst zetten (PRODUCTS:/FLOW: of de gelekte parenthese-vorm),
     // dan strippen we die uit de volledige tekst en corrigeren we de client met
     // een reset + schone tekst. Triggert alleen als er echt iets te strippen valt.
-    const cleaned = stripTags(fullText).text;
+    const cleaned = stripMarkdown(stripTags(fullText).text); // vangnet, zie src/model.js
     if (cleaned !== fullText) {
       res.write(`data: ${JSON.stringify({ reset: true })}\n\n`);
       res.write(`data: ${JSON.stringify({ text: cleaned })}\n\n`);

@@ -31,12 +31,30 @@ const NEEDS_VERSTERKER = new Set(['premium-holzspachtelmasse']);
 // nodig heeft. Worden er meerdere producten genoemd (opties/vergelijking), dan
 // nog geen link. Bij een product dat voorbehandelen vereist komt de
 // Houtversterker er als companion bij.
+// Staat er direct vóór de productnaam een ontkenning ("kein EAZYFIX® Premium Holz
+// Feinspachtel", "nicht den Fräser"), dan is dat geen advies maar een afrader
+// (port eazyfix-bot 176cc6c, fotovergelijking 20-10-2026).
+const NEGATION_BEFORE = /\b(kein|keine|keinen|keinem|keiner|nicht|nie|niemals|ohne)\s+(?:der\s+|die\s+|das\s+|den\s+|dem\s+|ein\s+|eine\s+|einen\s+)?(?:EAZYFIX®?\s+)?$/i;
+function negatedAt(text, index) {
+  return NEGATION_BEFORE.test(text.slice(Math.max(0, index - 30), index));
+}
+
+// Eerste niet-ontkende treffer van een regel in de tekst, of null.
+function firstPositiveMatch(re, text) {
+  const g = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
+  let m;
+  while ((m = g.exec(text))) {
+    if (!negatedAt(text, m.index)) return m;
+  }
+  return null;
+}
+
 function productsInText(text) {
   if (!text) return [];
   const seen = new Set();
   const hits = [];
   for (const [re, slug] of RULES) {
-    const m = re.exec(text);
+    const m = firstPositiveMatch(re, text);
     if (!m || seen.has(slug)) continue;
     const p = bySlug.get(slug);
     if (!p) continue;

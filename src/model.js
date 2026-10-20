@@ -46,7 +46,31 @@ function isRefusal(response) {
   return Boolean(response && response.stop_reason === 'refusal');
 }
 
+// Denkstand van de fotodiagnose (pass 2, wat de klusser echt krijgt). Standaard
+// 'high': gemeten 20-10-2026 (NL-bot, 8 foto's) gaf Opus 5.5 op xhigh een mediaan van
+// 44 s per foto en op high 25 s (gelijk aan Opus 4.8) met dezelfde diagnoses. Via
+// FOTO_EFFORT (low|medium|high|xhigh|max) aan te passen zonder code te wijzigen.
+const PHOTO_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
+function resolvePhotoEffort(env = process.env) {
+  const v = String(env.FOTO_EFFORT || '').trim().toLowerCase();
+  return { effort: PHOTO_EFFORTS.includes(v) ? v : 'high' };
+}
+const PHOTO_EFFORT = resolvePhotoEffort();
+
+// Vangnet tegen markdown in het antwoord: de persona verbiedt het, maar Opus 5.5 zette
+// in de NL-meting in 1 van 8 foto-antwoorden toch vet en opsommingstekens. Widget en
+// app tonen tekst letterlijk. Verwijdert kopjes (#), opsommingstekens (- of * aan het
+// begin), vet (**x**) en cursief (*x*); inhoud, regeleinden en nummering blijven.
+function stripMarkdown(text) {
+  return String(text || '')
+    .replace(/^#{1,6}[ \t]+/gm, '')
+    .replace(/^[ \t]*[-*][ \t]+/gm, '') // alleen spaties, geen regeleinden: lege regels blijven
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/(^|[^*])\*([^*\n]+?)\*(?!\*)/g, '$1$2');
+}
+
 module.exports = {
   DEFAULT_MODEL, MODEL, resolveModel, createClient,
   FALLBACK_BETA, REQUEST_DEFAULTS, CHAT_EFFORT, REFUSAL_TEXT, isRefusal,
+  PHOTO_EFFORT, resolvePhotoEffort, stripMarkdown,
 };

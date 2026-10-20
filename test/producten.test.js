@@ -36,3 +36,19 @@ test('leeg/ongeldig → lege lijst', () => {
   assert.deepEqual(productsInText(''), []);
   assert.deepEqual(productsInText(null), []);
 });
+
+// Port van eazyfix-bot (fotovergelijking 20-10-2026): het AFGERADEN product kreeg het
+// kaartje als de productnaam in een ontkenning stond. Een ontkenning direct vóór de
+// productnaam telt niet als advies.
+test('ontkenning direct vóór de productnaam telt niet; het geadviseerde product krijgt het kaartje', () => {
+  const r = productsInText('Nimm hier keinen EAZYFIX® Premium Holz Feinspachtel, sondern EAZYFIX® Premium Holzspachtelmasse.');
+  assert.equal(r.length, 2);
+  assert.match(r[0].name, /Holzspachtelmasse/);
+  assert.match(r[1].name, /Holzimprägnierung/);
+  const r2 = productsInText('Bei Fäule hilft kein Feinspachtel. Fräse das weiche Holz mit dem EAZYFIX® Holzfäule-Fräser weg.');
+  assert.equal(r2.length, 1);
+  assert.match(r2[0].name, /Fräser/);
+  const ok = productsInText('Für die Risse im gesunden Holz passt EAZYFIX® Premium Holz Feinspachtel.');
+  assert.equal(ok.length, 1);
+  assert.match(ok[0].name, /Feinspachtel/);
+});

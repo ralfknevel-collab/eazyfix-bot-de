@@ -69,3 +69,20 @@ test('weigering door de veiligheidsfilter geeft een nette Duitse zin in du-vorm,
   assert.doesNotMatch(REFUSAL_TEXT, /—|–/, 'geen gedachtestreepje');
   assert.doesNotMatch(REFUSAL_TEXT, /\bSie\b|\bIhnen\b|\bIhre?\b/, 'du-vorm zoals de persona, geen Sie');
 });
+
+// Port van eazyfix-bot 176cc6c: fotodiagnose op 'high' (gemeten: xhigh 44 s per foto,
+// high 25 s, zelfde diagnoses) en een vangnet tegen markdown in het antwoord.
+const { resolvePhotoEffort, stripMarkdown } = require('../src/model');
+
+test('fotodiagnose: standaard high; FOTO_EFFORT overschrijft; onbekende waarde valt terug op high', () => {
+  assert.deepEqual(resolvePhotoEffort({}), { effort: 'high' });
+  assert.deepEqual(resolvePhotoEffort({ FOTO_EFFORT: 'xhigh' }), { effort: 'xhigh' });
+  assert.deepEqual(resolvePhotoEffort({ FOTO_EFFORT: 'turbo' }), { effort: 'high' });
+});
+
+test('stripMarkdown: fett, kursiv en opsommingstekens weg, tekst en regels blijven; schone tekst onveranderd', () => {
+  const vuil = 'Auf deinem Foto sehe ich **schwere Holzfäule** in der Ecke.\n\n- **Fäule entfernen:** säge sie weg.\n- **Feuchte messen:** unter 18%.\n### Kopf\n1. Fräse mit dem *Fräser* durch.';
+  assert.equal(stripMarkdown(vuil), 'Auf deinem Foto sehe ich schwere Holzfäule in der Ecke.\n\nFäule entfernen: säge sie weg.\nFeuchte messen: unter 18%.\nKopf\n1. Fräse mit dem Fräser durch.');
+  const schoon = 'Mische 2:1 und lass es 4 Stunden aushärten. Rechne 10 x 8 x 5 cm = 400 ml, also 3 Kartuschen.';
+  assert.equal(stripMarkdown(schoon), schoon);
+});

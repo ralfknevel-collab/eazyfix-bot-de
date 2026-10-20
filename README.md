@@ -30,6 +30,8 @@ geen Origin en blijft werken. Achter Cloudflare + Render staat `trust proxy 2`, 
 telt de limiet per Cloudflare-adres in plaats van per bezoeker. Logica en tests:
 `src/abuse-guard.js`, `test/abuse-guard.test.js`. Port van eazyfix-bot (cf9a663).
 
+Fotodiagnose op effort `high` (instelbaar via `FOTO_EFFORT`; NL-meting 20-10-2026: xhigh 44 s per foto, high 25 s, zelfde diagnoses); markdown-vangnet en ontkenningsregel voor productkaartjes zijn geport van eazyfix-bot 176cc6c.
+
 ## Endpoints
 - `GET /health` — status (geen sleutel nodig).
 - `POST /api/chat` — chat (JSON).
