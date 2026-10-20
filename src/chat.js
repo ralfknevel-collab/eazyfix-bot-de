@@ -2,7 +2,7 @@
 // Gebruikt door de /api/chat-endpoint én door de eval-harnas (eval/run.js),
 // zodat tests precies dezelfde bot-pijplijn raken als productie.
 
-const Anthropic = require('@anthropic-ai/sdk');
+const { MODEL, createClient, REQUEST_DEFAULTS, CHAT_EFFORT, REFUSAL_TEXT, isRefusal } = require('./model');
 const { BASE_SYSTEM_PROMPT } = require('./persona');
 const { CHAT_TOOLS, runTool } = require('./tools');
 const { searchContext, relevantVideos } = require('./kennis');
@@ -20,30 +20,33 @@ function lastUserText(messages) {
   return '';
 }
 
-const MODEL = process.env.MODEL || 'claude-opus-4-8';
 const MAX_TOOL_ROUNDS = 4;
 
 let client;
 function anthropic() {
-  if (!client) client = new Anthropic.default({ apiKey: process.env.ANTHROPIC_API_KEY });
+  if (!client) client = createClient();
   return client;
 }
 
 // Algemene tool-use-lus. Lost tool-aanroepen op tot het model klaar is.
-// opts: { system, model, tools, maxTokens, extra, onTool }. Geeft
-// { text, content, toolCalls, usage } terug.
+// opts: { system, model, tools, maxTokens, extra, onTool, client }. Geeft
+// { text, content, toolCalls, usage, refused } terug. Standaard denkstand van de
+// tekstchat is CHAT_EFFORT; opts.extra (fotoflow) mag die overschrijven.
 async function runWithTools(messages, opts = {}) {
   let convo = messages.slice();
   const toolCalls = [];
   let response;
+  const api = opts.client || anthropic();
 
   for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-    response = await anthropic().messages.create({
+    response = await api.messages.create({
       model: opts.model || MODEL,
       max_tokens: opts.maxTokens || 8000,
       system: opts.system,
       tools: opts.tools || CHAT_TOOLS,
       messages: convo,
+      output_config: CHAT_EFFORT,
+      ...REQUEST_DEFAULTS,
       ...(opts.extra || {}),
     });
     if (response.stop_reason !== 'tool_use') break;
@@ -59,8 +62,13 @@ async function runWithTools(messages, opts = {}) {
     convo = [...convo, { role: 'assistant', content: response.content }, { role: 'user', content: results }];
   }
 
+  // Weigering door de veiligheidsfilter (ook na het server-side vangnet): nette
+  // zin in plaats van een lege bubbel. Inhoud lezen op type, nooit op positie.
+  if (isRefusal(response)) {
+    return { text: REFUSAL_TEXT, content: response.content, toolCalls, usage: response.usage, refused: true };
+  }
   const textBlock = response.content.find((b) => b.type === 'text');
-  return { text: textBlock ? textBlock.text : '', content: response.content, toolCalls, usage: response.usage };
+  return { text: textBlock ? textBlock.text : '', content: response.content, toolCalls, usage: response.usage, refused: false };
 }
 
 // Instructie voor het model: onder het antwoord verschijnt een videokaartje,

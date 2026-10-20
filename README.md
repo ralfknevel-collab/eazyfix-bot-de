@@ -13,7 +13,22 @@ endpoints die de EAZYFIX-app (en later de website) gebruiken.
 - `ANTHROPIC_API_KEY` (verplicht) — sleutel voor de AI.
 - `APP_SECRET` (optioneel) — als gezet, eisen alle /api-calls de header `x-app-key`.
 - `PORT` (optioneel) — luisterpoort; hostingplatforms zetten dit zelf.
-- `MODEL` (optioneel) — standaard `claude-opus-4-8`.
+- `MODEL` (optioneel) — standaard `claude-opus-5-5` (sinds 20-10-2026, daarvoor Opus 4.8).
+  Denkstanden en het vangnet bij een weigering staan in `src/model.js`: tekstchat denkt
+  kort (effort `low`), fotodiagnose op `xhigh`; weigert de veiligheidsfilter een vraag, dan
+  probeert Anthropic hem server-side op een ander model (`fallbacks: 'default'`) en anders
+  krijgt de Heimwerker een nette zin in plaats van een lege bubbel. Tests: `test/model.test.js`.
+- `ALLOWED_ORIGIN` (optioneel) — komma-gescheiden lijst van websites die de API vanuit de
+  browser mogen aanroepen; standaard de Render-host, `https://www.eazy-fix.de` en
+  `https://eazy-fix.de`. localhost mag altijd.
+
+## Bescherming tegen misbruik
+Alle `/api/*`-routes zijn begrensd op ~20 aanvragen per minuut per bezoeker (IP), de
+foto-analyse op 5 per minuut (melding als chatbubbel). Browsers mogen de API alleen
+aanroepen vanaf de origins in `ALLOWED_ORIGIN` (herkomstcontrole); de native app stuurt
+geen Origin en blijft werken. Achter Cloudflare + Render staat `trust proxy 2`, anders
+telt de limiet per Cloudflare-adres in plaats van per bezoeker. Logica en tests:
+`src/abuse-guard.js`, `test/abuse-guard.test.js`. Port van eazyfix-bot (cf9a663).
 
 ## Endpoints
 - `GET /health` — status (geen sleutel nodig).

@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const Anthropic = require('@anthropic-ai/sdk');
+const { parseAllowedOrigins, corsOptions, makeLimiters } = require('./abuse-guard');
 const { BASE_SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT } = require('./persona');
 const { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages } = require('./feedback');
 const { stripTags } = require('./parse');
@@ -17,12 +17,13 @@ const MAX_TOOL_ROUNDS = 4;
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const MODEL = process.env.MODEL || 'claude-opus-4-8';
+// Model en clientinstellingen (Opus 5.5, denkstanden, vangnet bij weigering): src/model.js.
+const { MODEL, createClient, REQUEST_DEFAULTS, CHAT_EFFORT, REFUSAL_TEXT, isRefusal } = require('./model');
 
 // maxRetries: SDK doet automatisch exponentiële backoff bij tijdelijke fouten
 // (429 rate limit, 500/503, en 529 "overloaded"). Bij een drukke Anthropic-server
 // proberen we het dus stil een paar keer opnieuw vóór we opgeven.
-const anthropic = new Anthropic.default({ apiKey: process.env.ANTHROPIC_API_KEY, maxRetries: 4 });
+const anthropic = createClient({ maxRetries: 4 });
 
 // Vertaal een Anthropic/SDK-fout naar een korte, vriendelijke NL-melding voor de
 // klusser. NOOIT de rauwe API-JSON of err.message tonen (dat lekte voorheen als
@@ -108,8 +109,28 @@ function sanitizePriorText(messages) {
   return out.slice(-MAX_TURNS);
 }
 
-app.use(cors({ origin: '*' }));
+// Achter Cloudflare + Render zijn er twee proxy-hops: X-Forwarded-For = "<bezoeker>,
+// <Cloudflare-IP>", socket = Render-proxy. Twee hops vertrouwen maakt req.ip de
+// bezoeker, zodat de limiet per bezoeker telt. Met 1 hop was req.ip het per aanvraag
+// wisselende Cloudflare-IP en deed de limiet niets (gemeten op de RC-bot, 12-10-2026).
+// Guard-tests: test/abuse-guard.test.js, "trust proxy 2".
+app.set('trust proxy', 2);
+
+// Herkomstcontrole: alleen de eigen origin(s) mogen de API vanuit de browser aanroepen.
+// Instelbaar via ALLOWED_ORIGIN (komma-gescheiden lijst); standaard de Render-host en
+// eazy-fix.de. localhost blijft toegestaan voor lokaal ontwikkelen; aanroepen zonder
+// Origin-header (curl, de native app) hebben geen CORS nodig en blijven werken.
+// Zie src/abuse-guard.js.
+const allowedOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGIN);
+app.use(cors(corsOptions(allowedOrigins)));
 app.use(express.json({ limit: '10mb' }));
+
+// Limiet op aanvragen per IP: ~20 per minuut op de hele API, 5 per minuut op de
+// foto-analyse (tot 3 modelcalls per foto, veruit het duurst). De melding verschijnt
+// als chatbubbel: public/index.html toont d.error bij status 429.
+const { apiLimiter, imageLimiter } = makeLimiters();
+app.use('/api/', apiLimiter);
+app.use('/api/analyze-image', imageLimiter);
 
 // Request logging
 app.use((req, _res, next) => {
@@ -205,7 +226,8 @@ app.post('/api/analyze-image', async (req, res) => {
     const response = await anthropic.messages.create({
       model: MODEL,
       max_tokens: 8000, // denk-tokens tellen mee in max_tokens (port RC-DE feedback #27)
-      thinking: { type: 'adaptive' },
+      output_config: { effort: 'medium' }, // Opus 5.5 denkt altijd adaptief; stand expliciet
+      ...REQUEST_DEFAULTS,
       system,
       messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: userText }] }],
     });
@@ -240,6 +262,7 @@ app.post('/api/analyze-image', async (req, res) => {
         model: MODEL,
         max_tokens: 1024,
         output_config: { effort: 'low' },
+        ...REQUEST_DEFAULTS,
         system: IMAGE_DIAGNOSE_PROMPT,
         messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: buildDiagnosePrompt({ caption }) }] }],
       });
@@ -304,7 +327,7 @@ app.post('/api/analyze-image', async (req, res) => {
         model: MODEL,
         system,
         maxTokens: 16000, // niet-streamend: ruim maar onder de SDK-timeout (port RC-DE feedback #27)
-        extra: { thinking: { type: 'adaptive' }, output_config: { effort: 'xhigh' } },
+        extra: { output_config: { effort: 'xhigh' } }, // fotodiagnose: hoogste denkstand (Opus 5.5 denkt adaptief)
         onTool: (name, input) => console.log(`  tool: ${name}(${JSON.stringify(input)})`),
       }
     );
@@ -408,6 +431,7 @@ app.post('/api/analyze-image/stream', async (req, res) => {
         model: MODEL,
         max_tokens: 1024,
         output_config: { effort: 'low' },
+        ...REQUEST_DEFAULTS,
         system: IMAGE_DIAGNOSE_PROMPT,
         messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: buildDiagnosePrompt({ caption }) }] }],
       }, { signal: abort.signal });
@@ -442,7 +466,8 @@ app.post('/api/analyze-image/stream', async (req, res) => {
       const resp = await anthropic.messages.create({
         model: MODEL,
         max_tokens: 8000, // denk-tokens tellen mee in max_tokens (port RC-DE feedback #27)
-        thinking: { type: 'adaptive' },
+        output_config: { effort: 'medium' }, // Opus 5.5 denkt altijd adaptief; stand expliciet
+        ...REQUEST_DEFAULTS,
         system,
         messages: [{ role: 'user', content: [...imageBlocks, { type: 'text', text: userText }] }],
       }, { signal: abort.signal });
@@ -475,8 +500,8 @@ app.post('/api/analyze-image/stream', async (req, res) => {
       const stream = anthropic.messages.stream({
         model: MODEL,
         max_tokens: 32000,
-        thinking: { type: 'adaptive' },
-        output_config: { effort: 'xhigh' },
+        output_config: { effort: 'xhigh' }, // fotodiagnose: hoogste denkstand (Opus 5.5 denkt adaptief)
+        ...REQUEST_DEFAULTS,
         system,
         tools: CHAT_TOOLS,
         messages: convo,
@@ -602,6 +627,8 @@ app.post('/api/chat/stream', async (req, res) => {
         system,
         tools: CHAT_TOOLS,
         messages: convo,
+        output_config: CHAT_EFFORT, // zelfde denkstand als runWithTools (src/model.js)
+        ...REQUEST_DEFAULTS,
       });
 
       let roundText = '';
@@ -613,6 +640,14 @@ app.post('/api/chat/stream', async (req, res) => {
       }
 
       const final = await stream.finalMessage();
+      if (isRefusal(final)) {
+        // Weigering door de veiligheidsfilter (ook na het server-side vangnet):
+        // nette zin in plaats van een lege bubbel; zelfde tekst als runWithTools.
+        if (roundText) res.write(`data: ${JSON.stringify({ reset: true })}\n\n`);
+        res.write(`data: ${JSON.stringify({ text: REFUSAL_TEXT })}\n\n`);
+        fullText = REFUSAL_TEXT;
+        break;
+      }
       if (final.stop_reason !== 'tool_use') {
         // Echte antwoord-ronde: dit is de tekst die blijft staan.
         fullText = roundText;

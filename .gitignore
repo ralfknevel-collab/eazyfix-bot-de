@@ -1,3 +1,9 @@
 node_modules/
 .env
 .DS_Store
+
+# Rommel van browser-tests (Playwright MCP)
+.playwright-mcp/
+
+# Observatielog van de task-observer skill, geen projectcode
+skill-observations/
