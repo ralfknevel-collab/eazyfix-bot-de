@@ -93,6 +93,9 @@
        datum-scheiding hierboven. Links onder bot-berichten, rechts onder
        eigen berichten. margin-left bij bot komt overeen met avatarbreedte
        (30px) + rij-gap (9px), zodat de tekst netjes onder de bubbel begint. */
+    /* Regels direct onder elkaar (vragen, losse opsomming) krijgen wat lucht, zodat een
+       vraag die over twee regels loopt niet in de volgende overloopt (port eazyfix-bot 20c1c43). */
+    .msg .lsp { display: block; height: 7px; }
     .msg-meta { font-size: 11px; color: var(--muted); margin-top: 8px; }
     .msg-meta-bot { text-align: left; margin-left: 39px; }
     .msg-meta-user { text-align: right; }
@@ -440,6 +443,24 @@
     // Maak elke genoemde productnaam in het antwoord klikbaar als groene chip.
     // Alleen de EERSTE vermelding per product wordt een link (rustiger). Werkt
     // op het tekst-node van de bot-bubbel; HTML wordt veilig ge-escaped.
+    // Na het afronden van een antwoord: een enkele regelovergang (twee regels direct onder
+    // elkaar) wordt een klein tussenruimtetje, een lege regel blijft een gewone witregel.
+    // Werkt op de tekstknopen van de bubbel zelf, na de linkify-stappen.
+    function regelRuimte(answerEl) {
+      answerEl.normalize();
+      Array.from(answerEl.childNodes).forEach((n) => {
+        if (n.nodeType !== 3 || n.nodeValue.indexOf('\n') < 0) return;
+        const delen = n.nodeValue.split(/(\n+)/);
+        if (!delen.some((d) => d === '\n')) return;
+        const frag = document.createDocumentFragment();
+        for (const d of delen) {
+          if (d === '\n') { const s = document.createElement('span'); s.className = 'lsp'; frag.appendChild(s); }
+          else if (d) frag.appendChild(document.createTextNode(d));
+        }
+        answerEl.replaceChild(frag, n);
+      });
+    }
+
     function linkifyProducts(answerEl) {
       let textNode = null;
       answerEl.childNodes.forEach(n => { if (n.nodeType === 3 && !textNode) textNode = n; });
@@ -690,7 +711,7 @@
           }
           scrollLog();
         }
-        if (acc) { history.push({ role: 'assistant', content: acc }); addFeedbackRow(text, out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); renderVideos(out, videos); }
+        if (acc) { history.push({ role: 'assistant', content: acc }); addFeedbackRow(text, out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out); renderVideos(out, videos); }
       } catch (e) {
         out.closest('.row').className = 'row row-bot err';
         out.textContent = 'Keine Verbindung. Prüfe dein Internet und versuch es erneut.';
@@ -812,14 +833,14 @@
         if (klaarData) {
           // Foto-beurt in de geschiedenis bewaren zodat een vervolgfoto of -vraag
           // doorgaat op deze schade i.p.v. los te beginnen. Bijschrift meenemen.
-          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out);
+          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
           history.push({ role: 'user', content: caption ? '[Foto vom Schaden gesendet] ' + caption : '[Foto vom Schaden gesendet]' });
           history.push({ role: 'assistant', content: acc });
           addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
         } else {
           // Er kwam wel tekst binnen, maar nooit een {done}-event: mogelijk afgekapt.
           out.textContent = acc + '\n\n(Die Verbindung ist unterbrochen; das ist die Antwort bis hierhin.)';
-          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out);
+          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
           addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
         }
       } catch (e) {
@@ -827,7 +848,7 @@
         // terug op de oude niet-streaming endpoint zodat de klusser altijd antwoord krijgt.
         if (gestreamd && acc) {
           out.textContent = acc + '\n\n(Die Verbindung ist unterbrochen; das ist die Antwort bis hierhin.)';
-          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out);
+          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
           addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
           return;
         }
@@ -843,7 +864,7 @@
           history.push({ role: 'user', content: caption ? '[Foto vom Schaden gesendet] ' + caption : '[Foto vom Schaden gesendet]' });
           history.push({ role: 'assistant', content: data.content });
           addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
-          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out);
+          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
         } catch (e2) {
           out.closest('.row').className = 'row row-bot err'; out.textContent = 'Fehler: ' + e2.message;
         }

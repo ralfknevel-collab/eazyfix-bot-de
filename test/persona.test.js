@@ -354,3 +354,19 @@ test('Fehlermeldungen für Besucher enthalten keinen Gedankenstrich', () => {
   assert.ok(meldungen.length >= 5);
   for (const m of meldungen) assert.doesNotMatch(m, /[—–]/, m);
 });
+
+// Port eazyfix-bot 20c1c43 (Besluit Ralf 10-11-2026): kurze erste Rückfragen und
+// Zwischenraum zwischen Zeilen im Chat.
+test('erste Rückfragen: höchstens drei kurze Fragen, je eine pro Zeile', () => {
+  const r = BASE_SYSTEM_PROMPT.split('\n').filter((x) => x.startsWith('- FORM DER ERSTEN RÜCKFRAGEN:'));
+  assert.equal(r.length, 1);
+  assert.match(r[0], /höchstens DREI Fragen, jede in einer eigenen Zeile und jede EINE kurze Frage/);
+  assert.match(r[0], /Hänge keine zweite Frage/);
+});
+
+test('Chatseite: Zeilen direkt untereinander bekommen nach dem Abschluss Zwischenraum', () => {
+  const html = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  assert.match(html, /\.msg \.lsp \{ display: block; height: 7px; \}/);
+  assert.match(html, /function regelRuimte\(answerEl\)/);
+  assert.equal(html.split('linkifyEmails(out); regelRuimte(out);').length - 1, 5);
+});
