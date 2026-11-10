@@ -323,3 +323,14 @@ test('Fertigspachtel: Trocknungszeit steht fest im Chat-Prompt', () => {
   assert.match(r[0], /verweise dafür NICHT an den Innendienst/);
   assert.match(r[0], /gelten NUR für den EAZYFIX® Premium Fertigspachtel/);
 });
+
+// Port eazyfix-bot 6c1a93a (review 10-11-2026): de regels stonden "- " toe, het
+// servervangnet stripMarkdown haalt streepjes weg, waardoor het antwoord aan het eind
+// werd vervangen. De regel verbiedt het teken nu zelf.
+test('Format: keine Aufzählungszeichen, nur eine Anleitung darf nummeriert sein', () => {
+  const r = BASE_SYSTEM_PROMPT.split('\n').filter((x) => x.startsWith('- Schreib Fließtext OHNE Aufzählungszeichen.'));
+  assert.equal(r.length, 1);
+  assert.match(r[0], /Beginne eine Zeile NIE mit einem Strich, einem Sternchen oder einem Punkt/);
+  assert.match(r[0], /NUR eine Anleitung, bei der die Reihenfolge der Schritte wichtig ist/);
+  assert.doesNotMatch(BASE_SYSTEM_PROMPT, /Für Aufzählungen darfst du "- "/);
+});
