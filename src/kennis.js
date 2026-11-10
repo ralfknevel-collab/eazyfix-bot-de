@@ -352,23 +352,76 @@ function ytThumb(url) {
   return m ? `https://i.ytimg.com/vi/${m[1]}/mqdefault.jpg` : '';
 }
 
-// Maak een kort fragment rond de eerste (synoniem-)treffer.
-// Zoekt het eerste woord waarvan de stam een van de zoekstammen prefix-matcht.
+// Port eazyfix-bot d4793f2.
+// Maak een kort fragment uit de pagina. Tot 10-11-2026 was dat 500 tekens rond het
+// EERSTE woord dat overeenkwam. Bij een productvraag is dat de productnaam bovenaan,
+// dus de bot zag altijd alleen het begin van een pagina van duizenden tekens en nooit
+// de specificaties of het antwoord verderop (gemeten in de Duitse bot: bij 2 van 12 feitvragen kwam
+// het feit mee). Nu kiest het fragment de plek waar de meeste verschillende zoekwoorden bij
+// elkaar staan; een woord dat op de pagina zeldzaam is (zoals "verwerkingstijd") weegt
+// zwaarder dan een woord dat overal staat (zoals de productnaam).
 function excerpt(text, stems, len = 500) {
   const set = new Set(stems);
-  let pos = -1;
+  const hits = []; // { pos, key }
   const re = /[a-zà-ÿ0-9]+/gi;
   let m;
   while ((m = re.exec(text))) {
-    const s = stem(m[0]);
-    let hit = set.has(s);
-    if (!hit && s.length >= 4) for (const q of set) if (q.length >= 4 && (q.startsWith(s) || s.startsWith(q))) { hit = true; break; }
-    if (hit) { pos = m.index; break; }
+    const st = stem(m[0]);
+    let key = set.has(st) ? st : null;
+    if (!key && st.length >= 4) for (const q of set) if (q.length >= 4 && (q.startsWith(st) || st.startsWith(q))) { key = q; break; }
+    if (key) hits.push({ pos: m.index, key });
   }
-  if (pos < 0) pos = 0;
+  let pos = 0;
+  if (hits.length) {
+    const freq = new Map();
+    for (const h of hits) freq.set(h.key, (freq.get(h.key) || 0) + 1);
+    // Beste venster: hoogste score, bij gelijke score het eerste. Het fragment begint
+    // daarna vlak vóór het zeldzaamste zoekwoord uit dat venster, zodat het antwoord dat
+    // op het trefwoord volgt niet wordt afgekapt. Staat er maar één zoekwoord op de
+    // pagina, dan blijft het bij de eerste treffer (begin van de pagina).
+    let best = -1;
+    pos = hits[0].pos;
+    for (let i = 0; i < hits.length; i++) {
+      const from = Math.max(0, hits[i].pos - 120), to = from + len;
+      const seen = new Set();
+      let score = 0, rare = hits[i];
+      for (let j = i; j < hits.length && hits[j].pos < to; j++) {
+        if (freq.get(hits[j].key) < freq.get(rare.key)) rare = hits[j];
+        if (seen.has(hits[j].key)) continue;
+        seen.add(hits[j].key);
+        score += 1 + 1 / freq.get(hits[j].key);
+      }
+      if (seen.size < 2 && freq.size > 1) continue; // venster met één zoekwoord verliest van elk rijker venster
+      if (score > best + 1e-9) { best = score; pos = rare.pos; }
+    }
+    if (freq.size < 2 || best < 0) pos = hits[0].pos;
+  }
   const start = Math.max(0, pos - 120);
   const slice = text.slice(start, start + len).trim();
   return (start > 0 ? '… ' : '') + slice + (text.length > start + len ? ' …' : '');
+}
+
+// Specificaties van een productpagina: het blok regels "Label: waarde" dat het
+// ophaalprogramma van de specificatietabel maakt (scripts/scrub.js, joinSpecs). Die
+// gaan bij een product altijd mee, los van waar het fragment valt.
+const SPEC_LINE = /^[A-ZÀ-Ý][^:\n]{1,32}: \S.{0,160}$/;
+function specs(text, max = 1300) {
+  const lines = String(text || '').split('\n');
+  const blocks = [];
+  let cur = [];
+  const sluit = () => { if (cur.length >= 2) blocks.push(cur); cur = []; };
+  for (const l of lines) {
+    if (SPEC_LINE.test(l) && (l.length <= 110 || !/[.?!]\s+[A-ZÀ-Ý]/.test(l))) cur.push(l); // geen lange lopende zinnen
+    else sluit();
+  }
+  sluit();
+  // Een pagina heeft soms twee tabellen (eigenschappen en technische gegevens): alle
+  // blokken van minstens twee regels tellen, mits er samen minstens drie regels zijn.
+  const all = [...new Set(blocks.flat())];
+  if (all.length < 3) return '';
+  let out = '';
+  for (const l of all) { if ((out + l).length > max) break; out += (out ? '\n' : '') + l; }
+  return out;
 }
 
 // Merknaam in zichtbare context altijd EAZYFIX. De lookahead spaart URLs/domeinen
@@ -379,7 +432,8 @@ function normalizeBrand(s) {
 
 function formatEntry(p, ts) {
   const label = { product: 'Produkt', blog: 'Blog', pagina: 'Seite', video: 'Video' }[p.type] || 'Seite';
-  return `[${label}] ${normalizeBrand(p.title)}\n${normalizeBrand(excerpt(p.text, ts))}\n(${p.url})`;
+  const sp = p.type === 'product' ? specs(p.text) : '';
+  return `[${label}] ${normalizeBrand(p.title)}\n${normalizeBrand(excerpt(p.text, ts))}` + (sp ? `\nTechnische Daten und Eigenschaften dieses Produkts:\n${normalizeBrand(sp)}` : '') + `\n(${p.url})`;
 }
 
 const KENNIS_TOOL = {
@@ -448,4 +502,4 @@ function searchContext(query, limit = 3) {
     found.map((p) => formatEntry(p, stems)).join('\n\n');
 }
 
-module.exports = { search, scoreAll, confidentSearch, classifyIntent, searchContext, relevantVideos, cleanVideoTitle, runKennisTool, KENNIS_TOOL, DATA };
+module.exports = { excerpt, specs, search, scoreAll, confidentSearch, classifyIntent, searchContext, relevantVideos, cleanVideoTitle, runKennisTool, KENNIS_TOOL, DATA };

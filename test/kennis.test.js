@@ -280,3 +280,23 @@ test('kennisbank: geen afgeschermd e-mailadres, sterrenscore of namen van medewe
   assert.doesNotMatch(alles, /als Leiter von Repair Care Home/);
   assert.doesNotMatch(alles, /%20\w+@/);
 });
+
+// Port eazyfix-bot d4793f2 (review 10-11-2026): het fragment was 500 tekens rond het
+// eerste zoekwoord, bij een productvraag dus het begin van de pagina. Gemeten op 12
+// feitvragen: 2 keer kwam het feit mee, na de wijziging 12 keer.
+test('zoeker: fragment valt waar de meeste zoekwoorden staan', () => {
+  const { excerpt } = require('../src/kennis');
+  const tekst = 'Fertigspachtel ist ein Spachtel für die Wand. '.repeat(40) + 'Willst du den Fertigspachtel schleifen? Warte dann einen Tag mit dem Schleifen. ' + 'Fertigspachtel haftet gut auf Stein. '.repeat(40);
+  assert.match(excerpt(tekst, ['fertigspachtel', 'schleif']), /Warte dann einen Tag/);
+  assert.equal(excerpt('kurzer Text ohne Treffer', ['xyz']), 'kurzer Text ohne Treffer');
+});
+
+test('zoeker: bij een product gaan de technische gegevens altijd mee', () => {
+  const { searchContext, runKennisTool } = require('../src/kennis');
+  for (const fn of [(q) => searchContext(q), (q) => runKennisTool({ onderwerp: q })]) {
+    const c = fn('Wie lange ist die Verarbeitungszeit vom Premium Fertigspachtel?');
+    assert.match(c, /Technische Daten und Eigenschaften dieses Produkts:/);
+    assert.match(c, /Verarbeitungszeit: 10 . 15 min/);
+    assert.match(c, /Überstreichbar: Nach 2 Stunden/);
+  }
+});
