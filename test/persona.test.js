@@ -334,3 +334,23 @@ test('Format: keine Aufzählungszeichen, nur eine Anleitung darf nummeriert sein
   assert.match(r[0], /NUR eine Anleitung, bei der die Reihenfolge der Schritte wichtig ist/);
   assert.doesNotMatch(BASE_SYSTEM_PROMPT, /Für Aufzählungen darfst du "- "/);
 });
+
+// Port eazyfix-bot e27380f en e6b0942 (review 10-11-2026): Widersprüche in Regeln und
+// Meldungen, und eine vage erste Frage bekommt nur Rückfragen.
+test('Regeln widersprechen sich nicht: nasses Holz, Dremel, vage erste Frage', () => {
+  assert.doesNotMatch(BASE_SYSTEM_PROMPT, /Zu nass\? 24 Stunden trocknen\./);
+  assert.match(BASE_SYSTEM_PROMPT, /^4\. Feuchtegehalt mit dem Holzfeuchtemessgerät messen: unter 18 %\. Zu nass\? Erst trocknen lassen, bis das Messgerät unter 18 % anzeigt\.$/m);
+  const fraeser = BASE_SYSTEM_PROMPT.split('\n').filter((x) => x.startsWith('- Holzfäule Fräser:'));
+  assert.equal(fraeser.length, 1);
+  assert.match(fraeser[0], /Das ist die EINZIGE Ausnahme von der Regel zu anderen Marken/);
+  const vage = BASE_SYSTEM_PROMPT.split('\n').filter((x) => x.startsWith('- VAGE ERSTE FRAGE:'));
+  assert.equal(vage.length, 1);
+  assert.match(vage[0], /Nenne dann noch KEINE Produkte, KEINE Schritte und KEINE Vorgehensweise/);
+});
+
+test('Fehlermeldungen für Besucher enthalten keinen Gedankenstrich', () => {
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'src', 'index.js'), 'utf8');
+  const meldungen = [...src.matchAll(/(?:return|error:)\s*'([^'\n]{20,})'/g)].map((m) => m[1]);
+  assert.ok(meldungen.length >= 5);
+  for (const m of meldungen) assert.doesNotMatch(m, /[—–]/, m);
+});

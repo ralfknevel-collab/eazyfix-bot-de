@@ -40,7 +40,7 @@ function friendlyError(err) {
   const status = err && err.status;
   if (status === 429) return 'Es ist gerade sehr viel los. Warte eine halbe Minute und versuch es erneut.';
   if (status === 529 || status === 503 || status === 500) {
-    return 'Der Assistent ist gerade überlastet. Versuch es in einer Minute noch einmal — deine Frage ist nicht verloren.';
+    return 'Der Assistent ist gerade überlastet. Versuch es in einer Minute noch einmal. Deine Frage ist nicht verloren.';
   }
   return 'Da ist gerade etwas schiefgelaufen. Versuch es gleich erneut, oder ruf den Innendienst an unter 03222 1097923.';
 }
@@ -392,7 +392,7 @@ app.post('/api/analyze-image', async (req, res) => {
     // Niet de server stuk: laat de app om een betere foto vragen.
     if (err.status === 400) {
       res.locals.modelGebruikt = true; // het model is aangeroepen: blijft meetellen voor het dagplafond
-      return res.status(400).json({ error: 'Foto unbrauchbar — schick ein schärferes Foto bei gutem Tageslicht.' });
+      return res.status(400).json({ error: 'Dieses Foto kann ich nicht verwenden. Schick bitte ein schärferes Foto bei gutem Tageslicht.' });
     }
     if (err.status === 429) return res.status(429).json({ error: friendlyError(err) });
     res.status(500).json({ error: friendlyError(err) });
