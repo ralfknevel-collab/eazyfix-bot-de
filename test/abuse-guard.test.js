@@ -469,3 +469,26 @@ test('review: beoordelingen hebben een eigen dagplafond, ook als noodstop', asyn
   const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'src', 'index.js'), 'utf8');
   assert.match(src, /app\.use\('\/api\/feedback', dailyCaps\.feedbackGuard\);/);
 });
+
+// Port eazyfix-bot 6bf3328 (review 10-11-2026): statuspagina en afbreken.
+test('review: statuspagina toont openbaar alleen ok; details alleen met de juiste sleutel', async () => {
+  const { healthRoute } = require('../src/abuse-guard');
+  const details = () => ({ model: 'x', vandaag: { berichten: 3 } });
+  await withApp((app) => {
+    app.get('/health', healthRoute(details, { HEALTH_KEY: 'geheim-123' }));
+    app.get('/health-zonder', healthRoute(details, {}));
+  }, async (port) => {
+    assert.deepEqual(JSON.parse((await request(port, '/health')).body), { ok: true });
+    assert.deepEqual(JSON.parse((await request(port, '/health', { 'x-health-key': 'fout' })).body), { ok: true });
+    assert.deepEqual(JSON.parse((await request(port, '/health', { 'x-health-key': 'geheim-123' })).body), { ok: true, model: 'x', vandaag: { berichten: 3 } });
+    assert.deepEqual(JSON.parse((await request(port, '/health-zonder', { 'x-health-key': '' })).body), { ok: true }, 'geen sleutel ingesteld: niemand ziet details');
+    assert.deepEqual(JSON.parse((await request(port, '/health-zonder', { 'x-health-key': 'undefined' })).body), { ok: true });
+  });
+});
+
+test('review: chatstroom stopt de modelaanvraag als de bezoeker weg is', () => {
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'src', 'index.js'), 'utf8');
+  assert.match(src, /res\.on\('close', \(\) => \{ if \(!res\.writableEnded\) abort\.abort\(\); \}\);/);
+  assert.match(src, /\.\.\.REQUEST_DEFAULTS,\n      \}, \{ signal: abort\.signal \}\);/);
+  assert.match(src, /app\.get\('\/health', healthRoute\(/);
+});

@@ -354,7 +354,28 @@ function chatPage(publicDir, tokens) {
   };
 }
 
+// --- statuspagina -----------------------------------------------------------------
+// /health is openbaar (Render en de keep-alive gebruiken hem), maar toonde ook model,
+// dagtellers, limieten en de uitkomst van de opruiming. Dat helpt een aanvaller meten
+// hoe ver hij van een plafond zit. Openbaar is nu alleen { ok: true }; de details
+// komen mee met de kop x-health-key (omgevingsvariabele HEALTH_KEY). Zonder ingestelde
+// sleutel zijn de details voor niemand zichtbaar. Port eazyfix-bot 6bf3328.
+function healthRoute(details, env = process.env) {
+  return (req, res) => {
+    const key = env.HEALTH_KEY;
+    const given = req.headers['x-health-key'];
+    let ok = false;
+    if (key && typeof given === 'string') {
+      const a = Buffer.from(given), b = Buffer.from(key);
+      ok = a.length === b.length && crypto.timingSafeEqual(a, b);
+    }
+    res.set('Cache-Control', 'no-store');
+    res.json(ok ? { ok: true, ...details() } : { ok: true });
+  };
+}
+
 module.exports = {
+  healthRoute,
   MAX_MESSAGE_CHARS, MESSAGE_TOO_LONG, messageTooLong,
   CHAT_LIMITS, limitConversation, newChatImages, ipKey,
   catchAsync, catchAsyncRoutes, errorHandler, BAD_REQUEST, TOO_LARGE, SERVER_ERROR,

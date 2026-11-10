@@ -3,7 +3,7 @@ const express = require('express');
 const path = require('node:path');
 const cors = require('cors');
 const { parseAllowedOrigins, corsOptions, makeLimiters, chatPage, makeWebTokens, makeDailyCaps, dailyLimitsFromEnv, messageTooLong, MESSAGE_TOO_LONG,
-        limitConversation, newChatImages, catchAsyncRoutes, errorHandler } = require('./abuse-guard');
+        limitConversation, newChatImages, catchAsyncRoutes, errorHandler, healthRoute } = require('./abuse-guard');
 const { BASE_SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT } = require('./persona');
 const { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages, sendTelegramText } = require('./feedback');
 const { stripTags } = require('./parse');
@@ -169,7 +169,8 @@ app.use((req, _res, next) => {
 
 // Health check — bewust vóór de auth-middleware, zodat je bereikbaarheid
 // simpel kunt testen (bijv. in de browser op je telefoon).
-app.get('/health', (_, res) => res.json({ ok: true, model: MODEL, fotoEffort: PHOTO_EFFORT.effort, ...dailyCaps.status() }));
+// Openbaar alleen { ok: true }; details met de kop x-health-key (zie src/abuse-guard.js).
+app.get('/health', healthRoute(() => ({ model: MODEL, fotoEffort: PHOTO_EFFORT.effort, ...dailyCaps.status() })));
 
 // Toegangsbewijs voor de chatpagina (zie src/abuse-guard.js). Afdwingen alleen met
 // WEB_TOKEN_VERPLICHT=1; de native app gebruikt APP_SECRET.
@@ -670,6 +671,11 @@ app.post('/api/chat/stream', async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
+  // Sluit de bezoeker de pagina, dan stopt ook de aanvraag bij het model (anders
+  // rekent het model door voor een antwoord dat niemand meer leest). Port NL 6bf3328.
+  const abort = new AbortController();
+  res.on('close', () => { if (!res.writableEnded) abort.abort(); });
+
   try {
     let convo = gesprek.map(m => ({ role: m.role, content: toAnthropicContent(m.content) }));
     let fullText = '';
@@ -696,7 +702,7 @@ app.post('/api/chat/stream', async (req, res) => {
         messages: convo,
         output_config: CHAT_EFFORT, // zelfde denkstand als runWithTools (src/model.js)
         ...REQUEST_DEFAULTS,
-      });
+      }, { signal: abort.signal });
 
       let roundText = '';
       for await (const event of stream) {
@@ -765,6 +771,7 @@ app.post('/api/chat/stream', async (req, res) => {
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (err) {
+    if (abort.signal.aborted) { console.log('  chat afgebroken: bezoeker is weg'); return res.end(); }
     console.error('Stream error:', err.message);
     res.write(`data: ${JSON.stringify({ error: friendlyError(err) })}\n\n`);
     res.end();
