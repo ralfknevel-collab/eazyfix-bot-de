@@ -370,3 +370,10 @@ test('Chatseite: Zeilen direkt untereinander bekommen nach dem Abschluss Zwische
   assert.match(html, /function regelRuimte\(answerEl\)/);
   assert.equal(html.split('linkifyEmails(out); regelRuimte(out);').length - 1, 5);
 });
+
+// Port eazyfix-bot (Ralf 11-11-2026): keine Ankündigung der Rückfragen.
+test('vage erste Frage: keine Ankündigung der Fragen', () => {
+  const r = BASE_SYSTEM_PROMPT.split('\n').filter((x) => x.startsWith('- VAGE ERSTE FRAGE:'));
+  assert.equal(r.length, 1);
+  assert.match(r[0], /Kündige deine Fragen NICHT an/);
+});
