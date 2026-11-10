@@ -313,3 +313,131 @@ test('chatpagina: de server vult __WEB_TOKEN__ in met een geldig bewijs voor de 
     assert.equal(tokens.verify(m[1], '198.51.100.7'), true, 'bewijs hoort bij het bezoekersadres');
   });
 });
+
+// --- Review 10-11-2026: vier beveiligingspunten (port eazyfix-bot 7526fea) -----------------------------------
+const {
+  limitConversation, newChatImages, ipKey, CHAT_LIMITS,
+  catchAsyncRoutes, errorHandler, BAD_REQUEST, SERVER_ERROR,
+} = require('../src/abuse-guard');
+
+function post(port, pad, body, headers = {}) {
+  return fetch(`http://127.0.0.1:${port}${pad}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...headers },
+    body: typeof body === 'string' ? body : JSON.stringify(body),
+  }).then(async (r) => ({ status: r.status, body: await r.text() }));
+}
+
+// Punt 1: {"messages":[null]} liet het proces stoppen (TypeError in een async route,
+// Express 4 vangt die niet op). Na de herstart stonden alle dagtellers op nul.
+test('review p1: fout in een async route geeft een nette 500 en de server blijft draaien', async () => {
+  const gelogd = [];
+  await withApp((app) => {
+    catchAsyncRoutes(app);
+    app.use(express.json());
+    app.post('/api/chat', async (req, res) => { res.json({ rol: req.body.messages[0].role }); });
+    app.get('/api/leeft', (_req, res) => res.json({ ok: true }));
+    app.use(errorHandler((m) => gelogd.push(m)));
+  }, async (port) => {
+    const r = await post(port, '/api/chat', { messages: [null] });
+    assert.equal(r.status, 500);
+    assert.equal(JSON.parse(r.body).error, SERVER_ERROR);
+    assert.doesNotMatch(r.body, /TypeError|at .*\.js/);
+    assert.equal(gelogd.length, 1);
+    assert.equal((await request(port, '/api/leeft')).status, 200, 'server draait nog');
+    const kapot = await post(port, '/api/chat', '{"messages":[');
+    assert.equal(kapot.status, 400);
+    assert.equal(JSON.parse(kapot.body).error, BAD_REQUEST);
+  });
+});
+
+test('review p1+p2: chatroutes controleren elk bericht op null en nemen geen model uit de aanvraag over', () => {
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'src', 'index.js'), 'utf8');
+  assert.equal(src.split("if (!m || typeof m !== 'object' || !['user', 'assistant'].includes(m.role)").length - 1, 2);
+  assert.match(src, /catchAsyncRoutes\(express\(\)\)/);
+  assert.match(src, /process\.on\('unhandledRejection'/);
+  assert.match(src, /app\.use\(errorHandler\(\)\);\s+const server = app\.listen/);
+  assert.doesNotMatch(src, /req\.body\.model|model: model|\bmodel,\s*$/m);
+  assert.doesNotMatch(src, /const \{[^}]*\bmodel\b[^}]*\} = req\.body/);
+});
+
+// Punt 3: 4000 tekens gold per beurt; het aantal beurten en foto's was onbegrensd.
+test('review p3: gesprek wordt ingekort tot de laatste beurten, tekens en foto\'s', () => {
+  const lang = [];
+  for (let i = 0; i < 100; i++) lang.push({ role: i % 2 ? 'assistant' : 'user', content: `beurt ${i}` });
+  lang.push({ role: 'user', content: 'laatste vraag' });
+  const kort = limitConversation(lang);
+  assert.ok(kort.length <= CHAT_LIMITS.maxMessages);
+  assert.equal(kort[0].role, 'user');
+  assert.equal(kort[kort.length - 1].content, 'laatste vraag');
+
+  const dik = [];
+  for (let i = 0; i < 40; i++) dik.push({ role: i % 2 ? 'assistant' : 'user', content: 'x'.repeat(4000) });
+  const totaal = limitConversation(dik).reduce((n, m) => n + m.content.length, 0);
+  assert.ok(totaal <= CHAT_LIMITS.maxChars, `totaal ${totaal}`);
+
+  const img = { type: 'image', base64: 'AAAA', mimeType: 'image/jpeg' };
+  const fotos = [];
+  for (let i = 0; i < 6; i++) {
+    fotos.push({ role: 'user', content: [img, img, img, img, img] });
+    fotos.push({ role: 'assistant', content: 'ok' });
+  }
+  fotos.push({ role: 'user', content: [img, { type: 'text', text: 'en deze?' }] });
+  const uit = limitConversation(fotos);
+  const aantal = uit.reduce((n, m) => n + (Array.isArray(m.content) ? m.content.filter((b) => b.type === 'image').length : 0), 0);
+  assert.equal(aantal, CHAT_LIMITS.maxImages);
+  assert.deepEqual(uit[uit.length - 1].content, fotos[fotos.length - 1].content, 'nieuwste foto blijft staan');
+  assert.ok(uit.every((m) => typeof m.content === 'string' ? m.content.length > 0 : m.content.length > 0), 'geen lege beurten');
+  assert.equal(newChatImages(fotos), 1);
+  assert.equal(newChatImages(lang), 0);
+  assert.equal(limitConversation([{ role: 'user', content: 'hoi' }]).length, 1, 'kort gesprek blijft ongemoeid');
+});
+
+test('review p3: foto\'s in het chatkanaal tellen mee voor het fotoplafond', () => {
+  const caps = makeDailyCaps({ now: () => Date.parse('2026-11-10T10:00:00Z'), limits: { perIpPhotos: 2, globalPhotos: 3 } });
+  const a = { ip: '198.51.100.7' };
+  assert.equal(caps.countChatPhotos(a), null);
+  assert.equal(caps.countChatPhotos(a), null);
+  assert.equal(caps.countChatPhotos(a), DAILY_IP_PHOTO);
+  assert.equal(caps.countChatPhotos({ ip: '198.51.100.8' }), null);
+  assert.equal(caps.countChatPhotos({ ip: '198.51.100.9' }), DAILY_GLOBAL);
+  assert.equal(caps.status().vandaag.fotos, 3);
+});
+
+// Punt 4: het dagplafond telde ook aanvragen die de server zelf afwees. Negen adressen
+// met elk 60 onzin-aanvragen zetten de bot voor iedereen op pauze.
+test('review p4: door de server afgewezen aanvragen (400/401) tellen niet mee voor het dagplafond', async () => {
+  const caps = makeDailyCaps({ now: () => Date.parse('2026-11-10T10:00:00Z'), limits: { perIpMessages: 3, globalMessages: 5 } });
+  await withApp((app) => {
+    app.set('trust proxy', 2);
+    app.use(express.json());
+    app.use('/api/chat', caps.messageGuard);
+    app.post('/api/chat', (req, res) => {
+      if (req.body.soort === 'ongeldig') return res.status(400).json({ error: 'Ungültiges Nachrichtenformat' });
+      if (req.body.soort === 'geen-toegang') return res.status(401).json({ error: 'Unauthorized' });
+      if (req.body.soort === 'model-400') { res.locals.modelGebruikt = true; return res.status(400).json({ error: 'Foto onbruikbaar' }); }
+      res.json({ ok: true });
+    });
+  }, async (port) => {
+    const a = { 'X-Forwarded-For': '198.51.100.7, 172.71.1.1' };
+    for (let i = 0; i < 20; i++) assert.equal((await post(port, '/api/chat', { soort: i % 2 ? 'ongeldig' : 'geen-toegang' }, a)).status, i % 2 ? 400 : 401);
+    assert.equal(caps.status().vandaag.berichten, 0, 'afgewezen aanvragen tellen niet');
+    assert.equal((await post(port, '/api/chat', { soort: 'goed' }, a)).status, 200);
+    assert.equal((await post(port, '/api/chat', { soort: 'model-400' }, a)).status, 400);
+    assert.equal(caps.status().vandaag.berichten, 2, 'geldige aanvraag en modelfout tellen wel');
+    assert.equal((await post(port, '/api/chat', { soort: 'goed' }, a)).status, 200);
+    assert.equal((await post(port, '/api/chat', { soort: 'goed' }, a)).status, 429, 'plafond per bezoeker werkt nog');
+  });
+});
+
+test('review p4: IPv6 telt per blok (/64), IPv4 per adres', () => {
+  assert.equal(ipKey('198.51.100.7'), '198.51.100.7');
+  assert.equal(ipKey('::ffff:198.51.100.7'), '198.51.100.7');
+  assert.equal(ipKey('2001:db8:1:2:aaaa:bbbb:cccc:dddd'), ipKey('2001:0db8:0001:0002::1'));
+  assert.notEqual(ipKey('2001:db8:1:2::1'), ipKey('2001:db8:1:3::1'));
+  assert.equal(ipKey('2001:db8::1'), '2001:db8:0:0::/64');
+  assert.equal(ipKey(undefined), 'onbekend');
+  const caps = makeDailyCaps({ now: () => Date.parse('2026-11-10T10:00:00Z'), limits: { perIpPhotos: 1 } });
+  assert.equal(caps.countChatPhotos({ ip: '2001:db8:1:2::1' }), null);
+  assert.equal(caps.countChatPhotos({ ip: '2001:db8:1:2:ffff::9' }), DAILY_IP_PHOTO, 'ander adres uit hetzelfde blok deelt de teller');
+});

@@ -87,6 +87,119 @@ function messageTooLong(messages, max = MAX_MESSAGE_CHARS) {
   return messages.some((m) => m && textLength(m.content) > max);
 }
 
+// --- omvang van een gesprek ----------------------------------------------------------
+// De grens van 4000 tekens geldt per beurt. Zonder grens op het aantal beurten kon een
+// script alsnog megabytes per aanvraag naar het model sturen, en de tool-lus stuurt die
+// tot vier keer opnieuw. Daarom kort de server het gesprek in tot de laatste beurten.
+// Inkorten in plaats van weigeren: een lang, echt gesprek blijft gewoon werken en
+// verliest alleen de oudste beurten. Foto's in het chatkanaal (de app stuurt ze mee in
+// de geschiedenis): alleen de nieuwste blijven staan.
+const CHAT_LIMITS = { maxMessages: 40, maxChars: 60000, maxImages: 10 };
+
+function countImages(content) {
+  return Array.isArray(content) ? content.filter((b) => b && b.type === 'image').length : 0;
+}
+
+// Geeft een ingekorte kopie terug; het laatste bericht blijft altijd staan.
+function limitConversation(messages, limits = CHAT_LIMITS) {
+  let list = messages.slice(-limits.maxMessages);
+  // Foto's: van nieuw naar oud tellen, alles boven de grens vervalt.
+  let images = 0;
+  const kept = [];
+  for (let i = list.length - 1; i >= 0; i--) {
+    const m = list[i];
+    if (!Array.isArray(m.content) || countImages(m.content) === 0) { kept.unshift(m); continue; }
+    const blocks = [];
+    for (let j = m.content.length - 1; j >= 0; j--) {
+      const b = m.content[j];
+      if (b.type !== 'image') { blocks.unshift(b); continue; }
+      if (images < limits.maxImages) { images++; blocks.unshift(b); }
+    }
+    kept.unshift({ ...m, content: blocks.length ? blocks : '[foto]' });
+  }
+  list = kept;
+  let total = list.reduce((n, m) => n + textLength(m.content), 0);
+  while (list.length > 1 && total > limits.maxChars) { total -= textLength(list[0].content); list.shift(); }
+  // Een gesprek begint bij het model altijd met een beurt van de gebruiker.
+  while (list.length > 1 && list[0].role !== 'user') list.shift();
+  return list;
+}
+
+// Nieuwe foto's in dit chatbericht (alleen de laatste beurt van de gebruiker telt als
+// nieuw; oudere foto's zijn al eerder geteld toen ze werden verstuurd).
+function newChatImages(messages) {
+  const last = messages[messages.length - 1];
+  return last && last.role === 'user' ? countImages(last.content) : 0;
+}
+
+// --- bezoekersadres -----------------------------------------------------------------
+// Een IPv6-aansluiting krijgt een heel blok adressen (/64). Tellen op het losse adres
+// laat één bezoeker het dagplafond omzeilen door steeds een ander adres uit zijn eigen
+// blok te gebruiken. Daarom telt bij IPv6 het blok, bij IPv4 het adres zelf.
+function ipKey(ip) {
+  const s = String(ip || 'onbekend');
+  if (!s.includes(':')) return s;
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(s);
+  if (mapped) return mapped[1];
+  let parts;
+  if (s.includes('::')) {
+    const [head, tail] = s.split('::');
+    const h = head ? head.split(':') : [];
+    const t = tail ? tail.split(':') : [];
+    parts = [...h, ...Array(Math.max(0, 8 - h.length - t.length)).fill('0'), ...t];
+  } else {
+    parts = s.split(':');
+  }
+  return parts.slice(0, 4).map((x) => x.toLowerCase().replace(/^0+(?=.)/, '')).join(':') + '::/64';
+}
+
+// --- vangnet voor fouten in routes ---------------------------------------------------
+// Express 4 vangt een fout in een async route niet op: zonder vangnet stopt het hele
+// proces (Node beëindigt bij een onafgehandelde afwijzing) en staan na de herstart alle
+// dagtellers op nul. catchAsync geeft zo'n fout door aan de fout-afhandeling.
+function catchAsync(handler) {
+  if (typeof handler !== 'function' || handler.length > 3) return handler;
+  return function gevangen(req, res, next) {
+    try {
+      const r = handler(req, res, next);
+      if (r && typeof r.catch === 'function') r.catch(next);
+    } catch (e) { next(e); }
+  };
+}
+
+// Laat app.get en app.post elke route automatisch door catchAsync lopen.
+function catchAsyncRoutes(app) {
+  for (const method of ['get', 'post']) {
+    const original = app[method].bind(app);
+    app[method] = (path, ...handlers) => original(path, ...handlers.map(catchAsync));
+  }
+  return app;
+}
+
+// Port van eazyfix-bot (NL) 7526fea; meldingen in de du-vorm van de Duitse persona.
+const BAD_REQUEST = 'Ungültige Anfrage.';
+const TOO_LARGE = 'Die Anfrage ist zu groß. Schick bitte weniger oder kleinere Fotos.';
+const SERVER_ERROR = 'Da ist gerade etwas schiefgelaufen. Versuch es gleich erneut, oder ruf den Innendienst an unter 03222 1097923.';
+
+// Laatste middleware: nette JSON-melding, nooit een stacktrace naar de bezoeker.
+function errorHandler(log = console.error) {
+  // eslint-disable-next-line no-unused-vars
+  return (err, req, res, _next) => {
+    const status = err && (err.status === 400 || err.status === 413) ? err.status : 500;
+    if (status === 500) log(`Onverwachte fout in ${req.method} ${req.path}: ${err && err.message}`);
+    const error = status === 400 ? BAD_REQUEST : status === 413 ? TOO_LARGE : SERVER_ERROR;
+    if (res.headersSent) {
+      // Lopende datastroom: melding als laatste gebeurtenis, dan netjes sluiten.
+      try {
+        if (String(res.getHeader('Content-Type') || '').includes('text/event-stream')) res.write(`data: ${JSON.stringify({ error })}\n\n`);
+        res.end();
+      } catch {}
+      return;
+    }
+    res.status(status).json({ error });
+  };
+}
+
 // --- dagplafonds ------------------------------------------------------------------
 // Per-minuutlimieten begrenzen geen dagvolume: één script vanaf één adres kon de hele
 // dag 5 foto's per minuut sturen (ruim 7.000 analyses, bijna 1.000 euro). Daarom:
@@ -94,6 +207,11 @@ function messageTooLong(messages, max = MAX_MESSAGE_CHARS) {
 // hele bot per dag, met nette melding (429) en een alarm bij 80% van het botplafond.
 // Tellers staan in het geheugen van het proces en beginnen elke dag (UTC) op nul; na
 // een herstart ook. Overschrijfbaar via omgevingsvariabelen (zie dailyLimitsFromEnv).
+// Een aanvraag die de server zelf afwijst voordat het model iets doet (ongeldige
+// invoer, geen toegang) telt niet mee: de teller wordt dan teruggezet. Anders kan een
+// buitenstaander het plafond van de hele bot volmaken met onzin-aanvragen die niets
+// kosten. Geteld wordt per IPv4-adres of per IPv6-blok (zie ipKey). Port NL 7526fea.
+const NOT_COUNTED = new Set([400, 401, 403, 404, 413, 415]);
 const DAILY_LIMITS = { perIpMessages: 60, perIpPhotos: 15, globalMessages: 400, globalPhotos: 60 };
 const DAILY_IP_MESSAGE = 'Du hast für heute die maximale Zahl an Fragen an den Assistenten erreicht. Morgen geht es weiter; bei einer dringenden Frage hilft dir der EAZYFIX® Innendienst unter 03222 1097923.';
 const DAILY_IP_PHOTO = 'Du hast für heute die maximale Zahl an Fotoanalysen erreicht. Morgen kannst du wieder Fotos schicken; eine Frage tippen geht weiterhin.';
@@ -131,24 +249,50 @@ function makeDailyCaps(opts = {}) {
     return (req, res, next) => {
       roll();
       if (global[kind] >= limits[globalCap]) return res.status(429).json({ error: DAILY_GLOBAL });
-      const ip = req.ip || 'onbekend';
+      const ip = ipKey(req.ip);
       const rec = perIp.get(ip) || { messages: 0, photos: 0 };
       if (rec[kind] >= limits[ipCap]) return res.status(429).json({ error: ipMessage });
-      rec[kind] += 1;
-      perIp.set(ip, rec);
-      global[kind] += 1;
-      const cap = limits[globalCap];
-      if (!alerted.has(kind) && global[kind] >= Math.ceil(cap * 0.8)) {
-        alerted.add(kind);
-        try { onAlert({ kind, count: global[kind], cap, day }); } catch {}
-      }
+      add(kind, ip, rec);
+      // Door de server zelf afgewezen vóór het model iets deed: niet meetellen.
+      // res.locals.modelGebruikt zet een route die na een modelaanroep toch 400 geeft.
+      const counted = global;
+      res.on('finish', () => {
+        if (!NOT_COUNTED.has(res.statusCode) || res.locals.modelGebruikt) return;
+        rec[kind] = Math.max(0, rec[kind] - 1);
+        counted[kind] = Math.max(0, counted[kind] - 1);
+      });
       next();
     };
+  }
+
+  function add(kind, ip, rec) {
+    const globalCap = kind === 'photos' ? 'globalPhotos' : 'globalMessages';
+    rec[kind] += 1;
+    perIp.set(ip, rec);
+    global[kind] += 1;
+    const cap = limits[globalCap];
+    if (!alerted.has(kind) && global[kind] >= Math.ceil(cap * 0.8)) {
+      alerted.add(kind);
+      try { onAlert({ kind, count: global[kind], cap, day }); } catch {}
+    }
+  }
+
+  // Foto's die via het chatkanaal binnenkomen tellen mee voor het fotoplafond.
+  // Geeft null terug als het mag, anders de melding voor de bezoeker.
+  function countChatPhotos(req) {
+    roll();
+    if (global.photos >= limits.globalPhotos) return DAILY_GLOBAL;
+    const ip = ipKey(req.ip);
+    const rec = perIp.get(ip) || { messages: 0, photos: 0 };
+    if (rec.photos >= limits.perIpPhotos) return DAILY_IP_PHOTO;
+    add('photos', ip, rec);
+    return null;
   }
 
   return {
     messageGuard: guard('messages'),
     photoGuard: guard('photos'),
+    countChatPhotos,
     status() { roll(); return { dag: day, vandaag: { berichten: global.messages, fotos: global.photos }, limieten: { ...limits } }; },
   };
 }
@@ -199,6 +343,8 @@ function chatPage(publicDir, tokens) {
 
 module.exports = {
   MAX_MESSAGE_CHARS, MESSAGE_TOO_LONG, messageTooLong,
+  CHAT_LIMITS, limitConversation, newChatImages, ipKey,
+  catchAsync, catchAsyncRoutes, errorHandler, BAD_REQUEST, TOO_LARGE, SERVER_ERROR,
   DAILY_LIMITS, DAILY_IP_MESSAGE, DAILY_IP_PHOTO, DAILY_GLOBAL, dailyLimitsFromEnv, makeDailyCaps,
   makeWebTokens, chatPage, WEB_TOKEN_TTL_MS,
   DEFAULT_ORIGINS,

@@ -2,7 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const path = require('node:path');
 const cors = require('cors');
-const { parseAllowedOrigins, corsOptions, makeLimiters, chatPage, makeWebTokens, makeDailyCaps, dailyLimitsFromEnv, messageTooLong, MESSAGE_TOO_LONG } = require('./abuse-guard');
+const { parseAllowedOrigins, corsOptions, makeLimiters, chatPage, makeWebTokens, makeDailyCaps, dailyLimitsFromEnv, messageTooLong, MESSAGE_TOO_LONG,
+        limitConversation, newChatImages, catchAsyncRoutes, errorHandler } = require('./abuse-guard');
 const { BASE_SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT } = require('./persona');
 const { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages, sendTelegramText } = require('./feedback');
 const { stripTags } = require('./parse');
@@ -16,7 +17,12 @@ const { startKeepAlive } = require('./keepalive');
 
 const MAX_TOOL_ROUNDS = 4;
 
-const app = express();
+// Vangnet: een fout in een async route gaat naar de fout-afhandeling onderaan in plaats
+// van het hele proces te stoppen (zie src/abuse-guard.js, catchAsync). Port NL 7526fea.
+const app = catchAsyncRoutes(express());
+process.on('unhandledRejection', (reden) => {
+  console.error('Onafgehandelde fout (proces blijft draaien):', reden && reden.message ? reden.message : reden);
+});
 const PORT = process.env.PORT || 3001;
 // Model en clientinstellingen (Opus 5.5, denkstanden, vangnet bij weigering): src/model.js.
 const { MODEL, createClient, REQUEST_DEFAULTS, CHAT_EFFORT, PHOTO_EFFORT, REFUSAL_TEXT, isRefusal, stripMarkdown } = require('./model');
@@ -375,6 +381,7 @@ app.post('/api/analyze-image', async (req, res) => {
     // Anthropic 400 = foto onbruikbaar (te klein, corrupt, niet te decoderen).
     // Niet de server stuk: laat de app om een betere foto vragen.
     if (err.status === 400) {
+      res.locals.modelGebruikt = true; // het model is aangeroepen: blijft meetellen voor het dagplafond
       return res.status(400).json({ error: 'Foto unbrauchbar — schick ein schärferes Foto bei gutem Tageslicht.' });
     }
     if (err.status === 429) return res.status(429).json({ error: friendlyError(err) });
@@ -589,22 +596,29 @@ app.post('/api/analyze-image/stream', async (req, res) => {
 
 // POST /api/chat — non-streaming
 app.post('/api/chat', async (req, res) => {
-  const { messages, model, geo } = req.body;
+  // Het model kiest de server; een `model` in de aanvraag wordt genegeerd.
+  const { messages, geo } = req.body;
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages-Array erforderlich' });
   }
   for (const m of messages) {
-    if (!['user', 'assistant'].includes(m.role) || !validateContent(m.content)) {
+    if (!m || typeof m !== 'object' || !['user', 'assistant'].includes(m.role) || !validateContent(m.content)) {
       return res.status(400).json({ error: 'Ungültiges Nachrichtenformat' });
     }
   }
   if (messageTooLong(messages)) return res.status(400).json({ error: MESSAGE_TOO_LONG });
+  // Nieuwe foto's in het chatkanaal tellen mee voor het fotoplafond van de dag.
+  if (newChatImages(messages) > 0) {
+    const vol = dailyCaps.countChatPhotos(req);
+    if (vol) return res.status(429).json({ error: vol });
+  }
+  // Alleen de laatste beurten gaan naar het model (grens op omvang en kosten).
+  const gesprek = limitConversation(messages);
 
   try {
-    const convo = messages.map(m => ({ role: m.role, content: toAnthropicContent(m.content) }));
+    const convo = gesprek.map(m => ({ role: m.role, content: toAnthropicContent(m.content) }));
     const { text, usage, videos } = await runChat(convo, {
-      model,
       geo,
       onTool: (name, input) => console.log(`  tool: ${name}(${JSON.stringify(input)})`),
     });
@@ -619,7 +633,8 @@ app.post('/api/chat', async (req, res) => {
 
 // POST /api/chat/stream — streaming (SSE)
 app.post('/api/chat/stream', async (req, res) => {
-  const { messages, model, conversationId, geo } = req.body;
+  // Het model kiest de server; een `model` in de aanvraag wordt genegeerd.
+  const { messages, conversationId, geo } = req.body;
 
   // Volledige validatie vóór de SSE-headers, zodat ongeldige invoer net als
   // /api/chat een echte HTTP 400 krijgt (en niet een 200 met SSE-fout).
@@ -627,18 +642,25 @@ app.post('/api/chat/stream', async (req, res) => {
     return res.status(400).json({ error: 'messages-Array erforderlich' });
   }
   for (const m of messages) {
-    if (!['user', 'assistant'].includes(m.role) || !validateContent(m.content)) {
+    if (!m || typeof m !== 'object' || !['user', 'assistant'].includes(m.role) || !validateContent(m.content)) {
       return res.status(400).json({ error: 'Ungültiges Nachrichtenformat' });
     }
   }
   if (messageTooLong(messages)) return res.status(400).json({ error: MESSAGE_TOO_LONG });
+  // Nieuwe foto's in het chatkanaal tellen mee voor het fotoplafond van de dag.
+  if (newChatImages(messages) > 0) {
+    const vol = dailyCaps.countChatPhotos(req);
+    if (vol) return res.status(429).json({ error: vol });
+  }
+  // Alleen de laatste beurten gaan naar het model (grens op omvang en kosten).
+  const gesprek = limitConversation(messages);
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
   try {
-    let convo = messages.map(m => ({ role: m.role, content: toAnthropicContent(m.content) }));
+    let convo = gesprek.map(m => ({ role: m.role, content: toAnthropicContent(m.content) }));
     let fullText = '';
 
     // Tekst van het laatste user-bericht (voor kennis-injectie en videolinks).
@@ -656,7 +678,7 @@ app.post('/api/chat/stream', async (req, res) => {
     // alleen de tekst van de laatste (niet-tool) ronde blijft staan.
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       const stream = anthropic.messages.stream({
-        model: model || MODEL,
+        model: MODEL,
         max_tokens: 8000,
         system,
         tools: CHAT_TOOLS,
@@ -769,6 +791,9 @@ if (feedbackEnabled()) {
   setTimeout(ronde, 60 * 1000).unref();
   setInterval(ronde, 24 * 60 * 60 * 1000).unref();
 }
+
+// Laatste middleware: nette melding bij een onverwachte fout (ook kapotte JSON).
+app.use(errorHandler());
 
 const server = app.listen(PORT, () => {
   console.log(`EAZYFIX API draait op http://localhost:${PORT}`);
