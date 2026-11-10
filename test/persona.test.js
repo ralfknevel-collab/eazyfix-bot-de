@@ -309,3 +309,17 @@ test('andere taal: vakjargon uit DE-kennis wordt mee vertaald, alleen product- e
     assert.match(prompt, /Video schreibst du in der Sprache deiner Antwort/);
   }
 });
+
+// Port eazyfix-bot (Meldung Nina, 10-11-2026): auf "Wann ist der Fertigspachtel
+// trocken?" verwies der Bot an den Innendienst, obwohl eazy-fix.de die Zeit nennt
+// (Produktseite: "Überstreichbar: Nach 2 Stunden"; Anleitung Wandschäden:
+// "zuerst abschleifen? Warte dann 24 Stunden"). "Volledig droog na 1 dag" steht
+// nicht auf der deutschen Seite und ist daher bewusst nicht übernommen.
+test('Fertigspachtel: Trocknungszeit steht fest im Chat-Prompt', () => {
+  const r = BASE_SYSTEM_PROMPT.split('\n').filter((x) => x.startsWith('- TROCKNUNGSZEIT EAZYFIX® Premium Fertigspachtel'));
+  assert.equal(r.length, 1);
+  assert.match(r[0], /nach 2 Stunden überstreichbar/);
+  assert.match(r[0], /schleifen, dann 24 Stunden warten/);
+  assert.match(r[0], /verweise dafür NICHT an den Innendienst/);
+  assert.match(r[0], /gelten NUR für den EAZYFIX® Premium Fertigspachtel/);
+});

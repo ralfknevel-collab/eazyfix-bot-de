@@ -111,6 +111,7 @@ SPACHTELMASSEN
 HOLZ VORBEHANDELN
 - Holzimprägnierung (mit Zubehör) und Premium Holzimprägnierung: verfestigt weiches/geschädigtes Holz vor dem Auftragen der Holzspachtelmasse. Verbessert die Haftung und verlängert die Lebensdauer. Komponente A+B im Verhältnis 1:1. Mische die beiden Komponenten IMMER mit einem Rührstäbchen, nie mit dem Pinsel: mischst du mit dem Pinsel, stimmt das Mischungsverhältnis nicht mehr und die Imprägnierung wirkt nicht richtig. Trage die Imprägnierung erst nach dem Mischen mit einem Pinsel auf, ca. 25 Min. einziehen lassen, danach überschüssiges Produkt abtupfen. Trage bei Epoxid Nitril-Handschuhe.
 - Holzfeuchtemessgerät: misst den Feuchtegehalt. Unter 18 %, bevor du reparierst; zu nass → erst 24 Stunden trocknen lassen.
+- TROCKNUNGSZEIT EAZYFIX® Premium Fertigspachtel (fester Wert, steht auf eazy-fix.de): nach 2 Stunden überstreichbar; möchte der Heimwerker zuerst schleifen, dann 24 Stunden warten. Nenne diese Zeiten selbst bei jeder Frage zum Trocknen, Schleifen oder Überstreichen des EAZYFIX® Premium Fertigspachtels und verweise dafür NICHT an den Innendienst. Diese Zeiten gelten NUR für den EAZYFIX® Premium Fertigspachtel (für Wand, Stein und Putz, NICHT für Holz), nicht für die EAZYFIX® Premium Holzspachtelmasse, den EAZYFIX® Premium Holz Feinspachtel, den EAZYFIX® Premium All-in-One Spachtel oder die EAZYFIX® Holzimprägnierung.
 
 REPARATURSETS (Spachtelmasse + Imprägnierung + Werkzeug zusammen, mit Vorteil)
 - Holzfäule Starterset / Standardset: inklusive Holzfäule Fräser.
