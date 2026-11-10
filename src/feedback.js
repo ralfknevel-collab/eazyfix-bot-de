@@ -66,12 +66,20 @@ async function notifyTelegram(row, botName = BOT_NAME) {
 }
 
 // Pure validatie. Geeft { ok: true, value } of { ok: false, error }.
+// Lengtegrenzen (port eazyfix-bot 00afcf6): te lange tekst wordt afgekapt in plaats van
+// geweigerd, zodat een beoordeling van een lang antwoord gewoon aankomt.
+const MAX_FB_VRAAG = 4000;
+const MAX_FB_ANTWOORD = 20000;
+const MAX_FB_OPMERKING = 1000;
+const MAX_FB_GESPREK_ID = 80;
+
 function validateFeedback(body) {
   if (!body || typeof body !== 'object') return { ok: false, error: 'body vereist' };
   const { conversationId, question, answer, rating, comment } = body;
   if (typeof conversationId !== 'string' || conversationId.trim() === '') {
     return { ok: false, error: 'conversationId vereist' };
   }
+  if (conversationId.length > MAX_FB_GESPREK_ID) return { ok: false, error: 'conversationId te lang' };
   if (typeof answer !== 'string' || answer.trim() === '') {
     return { ok: false, error: 'answer vereist' };
   }
@@ -82,10 +90,10 @@ function validateFeedback(body) {
     ok: true,
     value: {
       conversation_id: conversationId,
-      question: typeof question === 'string' ? question : '',
-      answer,
+      question: typeof question === 'string' ? question.slice(0, MAX_FB_VRAAG) : '',
+      answer: answer.slice(0, MAX_FB_ANTWOORD),
       rating,
-      comment: typeof comment === 'string' && comment.trim() !== '' ? comment : null,
+      comment: typeof comment === 'string' && comment.trim() !== '' ? comment.slice(0, MAX_FB_OPMERKING) : null,
     },
   };
 }

@@ -158,6 +158,8 @@ const dailyCaps = makeDailyCaps({
 });
 app.use('/api/chat', dailyCaps.messageGuard);
 app.use('/api/analyze-image', dailyCaps.photoGuard);
+// Beoordelingen schrijven naar de database: eigen dagplafond.
+app.use('/api/feedback', dailyCaps.feedbackGuard);
 
 // Request logging
 app.use((req, _res, next) => {

@@ -212,7 +212,16 @@ function errorHandler(log = console.error) {
 // buitenstaander het plafond van de hele bot volmaken met onzin-aanvragen die niets
 // kosten. Geteld wordt per IPv4-adres of per IPv6-blok (zie ipKey). Port NL 7526fea.
 const NOT_COUNTED = new Set([400, 401, 403, 404, 413, 415]);
-const DAILY_LIMITS = { perIpMessages: 60, perIpPhotos: 15, globalMessages: 400, globalPhotos: 60 };
+// Beoordelingen schrijven naar de database en hebben daarom een eigen plafond: zonder
+// grens kon een script de tabel volschrijven, en de noodstop raakte deze route niet.
+// Port eazyfix-bot 00afcf6 (de Duitse bot heeft geen formulier, dus alleen beoordelingen).
+const DAILY_LIMITS = { perIpMessages: 60, perIpPhotos: 15, globalMessages: 400, globalPhotos: 60, perIpFeedback: 60, globalFeedback: 400 };
+const DAILY_IP_FEEDBACK = 'Du hast für heute die maximale Zahl an Bewertungen abgegeben. Danke für deine Hilfe.';
+const KINDS = {
+  messages: { global: 'globalMessages', ip: 'perIpMessages' },
+  photos: { global: 'globalPhotos', ip: 'perIpPhotos' },
+  feedback: { global: 'globalFeedback', ip: 'perIpFeedback' },
+};
 const DAILY_IP_MESSAGE = 'Du hast für heute die maximale Zahl an Fragen an den Assistenten erreicht. Morgen geht es weiter; bei einer dringenden Frage hilft dir der EAZYFIX® Innendienst unter 03222 1097923.';
 const DAILY_IP_PHOTO = 'Du hast für heute die maximale Zahl an Fotoanalysen erreicht. Morgen kannst du wieder Fotos schicken; eine Frage tippen geht weiterhin.';
 const DAILY_GLOBAL = 'Der Assistent hat heute viel zu tun und macht eine Pause. Versuch es morgen noch einmal oder ruf den EAZYFIX® Innendienst an unter 03222 1097923.';
@@ -224,6 +233,8 @@ function dailyLimitsFromEnv(env = process.env) {
     perIpPhotos: num('DAG_FOTOS_PER_BEZOEKER', DAILY_LIMITS.perIpPhotos),
     globalMessages: num('DAG_BERICHTEN_TOTAAL', DAILY_LIMITS.globalMessages),
     globalPhotos: num('DAG_FOTOS_TOTAAL', DAILY_LIMITS.globalPhotos),
+    perIpFeedback: num('DAG_BEOORDELINGEN_PER_BEZOEKER', DAILY_LIMITS.perIpFeedback),
+    globalFeedback: num('DAG_BEOORDELINGEN_TOTAAL', DAILY_LIMITS.globalFeedback),
   };
 }
 
@@ -233,24 +244,25 @@ function makeDailyCaps(opts = {}) {
   const now = opts.now || (() => Date.now());
   const onAlert = opts.onAlert || (() => {});
   let day = null;
-  let global = { messages: 0, photos: 0 };
+  const leeg = () => ({ messages: 0, photos: 0, feedback: 0 });
+  let global = leeg();
   let perIp = new Map();
   const alerted = new Set();
 
   function roll() {
     const d = new Date(now()).toISOString().slice(0, 10);
-    if (d !== day) { day = d; global = { messages: 0, photos: 0 }; perIp = new Map(); alerted.clear(); }
+    if (d !== day) { day = d; global = leeg(); perIp = new Map(); alerted.clear(); }
   }
 
   function guard(kind) {
-    const globalCap = kind === 'photos' ? 'globalPhotos' : 'globalMessages';
-    const ipCap = kind === 'photos' ? 'perIpPhotos' : 'perIpMessages';
-    const ipMessage = kind === 'photos' ? DAILY_IP_PHOTO : DAILY_IP_MESSAGE;
+    const globalCap = KINDS[kind].global;
+    const ipCap = KINDS[kind].ip;
+    const ipMessage = { messages: DAILY_IP_MESSAGE, photos: DAILY_IP_PHOTO, feedback: DAILY_IP_FEEDBACK }[kind];
     return (req, res, next) => {
       roll();
       if (global[kind] >= limits[globalCap]) return res.status(429).json({ error: DAILY_GLOBAL });
       const ip = ipKey(req.ip);
-      const rec = perIp.get(ip) || { messages: 0, photos: 0 };
+      const rec = perIp.get(ip) || leeg();
       if (rec[kind] >= limits[ipCap]) return res.status(429).json({ error: ipMessage });
       add(kind, ip, rec);
       // Door de server zelf afgewezen vóór het model iets deed: niet meetellen.
@@ -266,7 +278,7 @@ function makeDailyCaps(opts = {}) {
   }
 
   function add(kind, ip, rec) {
-    const globalCap = kind === 'photos' ? 'globalPhotos' : 'globalMessages';
+    const globalCap = KINDS[kind].global;
     rec[kind] += 1;
     perIp.set(ip, rec);
     global[kind] += 1;
@@ -283,7 +295,7 @@ function makeDailyCaps(opts = {}) {
     roll();
     if (global.photos >= limits.globalPhotos) return DAILY_GLOBAL;
     const ip = ipKey(req.ip);
-    const rec = perIp.get(ip) || { messages: 0, photos: 0 };
+    const rec = perIp.get(ip) || leeg();
     if (rec.photos >= limits.perIpPhotos) return DAILY_IP_PHOTO;
     add('photos', ip, rec);
     return null;
@@ -292,8 +304,9 @@ function makeDailyCaps(opts = {}) {
   return {
     messageGuard: guard('messages'),
     photoGuard: guard('photos'),
+    feedbackGuard: guard('feedback'),
     countChatPhotos,
-    status() { roll(); return { dag: day, vandaag: { berichten: global.messages, fotos: global.photos }, limieten: { ...limits } }; },
+    status() { roll(); return { dag: day, vandaag: { berichten: global.messages, fotos: global.photos, beoordelingen: global.feedback }, limieten: { ...limits } }; },
   };
 }
 
@@ -345,7 +358,7 @@ module.exports = {
   MAX_MESSAGE_CHARS, MESSAGE_TOO_LONG, messageTooLong,
   CHAT_LIMITS, limitConversation, newChatImages, ipKey,
   catchAsync, catchAsyncRoutes, errorHandler, BAD_REQUEST, TOO_LARGE, SERVER_ERROR,
-  DAILY_LIMITS, DAILY_IP_MESSAGE, DAILY_IP_PHOTO, DAILY_GLOBAL, dailyLimitsFromEnv, makeDailyCaps,
+  DAILY_LIMITS, DAILY_IP_MESSAGE, DAILY_IP_PHOTO, DAILY_IP_FEEDBACK, DAILY_GLOBAL, dailyLimitsFromEnv, makeDailyCaps,
   makeWebTokens, chatPage, WEB_TOKEN_TTL_MS,
   DEFAULT_ORIGINS,
   parseAllowedOrigins,

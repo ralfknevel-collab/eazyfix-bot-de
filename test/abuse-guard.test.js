@@ -200,7 +200,7 @@ test('berichtlengte: maximaal 4000 tekens per beurt, ook in contentblokken; Duit
 });
 
 test('dagplafonds: standaardwaarden en Duitse meldingen in du-vorm met de Duitse Innendienst', () => {
-  assert.deepEqual(DAILY_LIMITS, { perIpMessages: 60, perIpPhotos: 15, globalMessages: 400, globalPhotos: 60 });
+  assert.deepEqual(DAILY_LIMITS, { perIpMessages: 60, perIpPhotos: 15, globalMessages: 400, globalPhotos: 60, perIpFeedback: 60, globalFeedback: 400 });
   for (const m of [DAILY_IP_MESSAGE, DAILY_IP_PHOTO, DAILY_GLOBAL]) {
     assert.doesNotMatch(m, /—/);
     assert.doesNotMatch(m, /\bSie\b|\bIhnen\b|\bIhr\b/, 'du-vorm, geen Sie');
@@ -256,7 +256,7 @@ test('dagplafond voor de hele bot: alarm bij 80%, 429 met drukte-melding daarbov
     const r11 = await request(port, '/api/analyze-image', { 'X-Forwarded-For': '198.51.100.99, 172.71.1.1' });
     assert.equal(r11.status, 429);
     assert.equal(JSON.parse(r11.body).error, DAILY_GLOBAL);
-    assert.deepEqual(caps.status().vandaag, { berichten: 0, fotos: 10 });
+    assert.deepEqual(caps.status().vandaag, { berichten: 0, fotos: 10, beoordelingen: 0 });
     clock = Date.parse('2026-10-22T00:00:01Z'); // nieuwe dag
     const next = await request(port, '/api/analyze-image', { 'X-Forwarded-For': '198.51.100.99, 172.71.1.1' });
     assert.equal(next.status, 200, 'teller staat op nul op de nieuwe dag');
@@ -440,4 +440,32 @@ test('review p4: IPv6 telt per blok (/64), IPv4 per adres', () => {
   const caps = makeDailyCaps({ now: () => Date.parse('2026-11-10T10:00:00Z'), limits: { perIpPhotos: 1 } });
   assert.equal(caps.countChatPhotos({ ip: '2001:db8:1:2::1' }), null);
   assert.equal(caps.countChatPhotos({ ip: '2001:db8:1:2:ffff::9' }), DAILY_IP_PHOTO, 'ander adres uit hetzelfde blok deelt de teller');
+});
+
+// Port eazyfix-bot 00afcf6 (review 10-11-2026): beoordelingen hadden geen dagplafond.
+test('review: beoordelingen hebben een eigen dagplafond, ook als noodstop', async () => {
+  const { DAILY_IP_FEEDBACK, dailyLimitsFromEnv } = require('../src/abuse-guard');
+  assert.doesNotMatch(DAILY_IP_FEEDBACK, /—|\bSie\b/);
+  const lim = dailyLimitsFromEnv({ DAG_BEOORDELINGEN_PER_BEZOEKER: '2' });
+  assert.equal(lim.perIpFeedback, 2);
+  assert.equal(dailyLimitsFromEnv({ DAG_BEOORDELINGEN_TOTAAL: '1' }).globalFeedback, 1);
+  const caps = makeDailyCaps({ now: () => Date.parse('2026-11-10T10:00:00Z'), limits: lim });
+  await withApp((app) => {
+    app.set('trust proxy', 2);
+    app.use(express.json());
+    app.use('/api/feedback', caps.feedbackGuard);
+    app.post('/api/feedback', (req, res) => (req.body.rating ? res.json({ ok: true }) : res.status(400).json({ error: 'rating' })));
+  }, async (port) => {
+    const a = { 'X-Forwarded-For': '198.51.100.7, 172.71.1.1' }, b = { 'X-Forwarded-For': '198.51.100.8, 172.71.1.1' };
+    assert.equal((await post(port, '/api/feedback', {}, a)).status, 400, 'ongeldige beoordeling telt niet');
+    assert.equal((await post(port, '/api/feedback', { rating: 'up' }, a)).status, 200);
+    assert.equal((await post(port, '/api/feedback', { rating: 'up' }, a)).status, 200);
+    const f3 = await post(port, '/api/feedback', { rating: 'up' }, a);
+    assert.equal(f3.status, 429);
+    assert.equal(JSON.parse(f3.body).error, DAILY_IP_FEEDBACK);
+    assert.equal((await post(port, '/api/feedback', { rating: 'up' }, b)).status, 200);
+    assert.deepEqual(caps.status().vandaag, { berichten: 0, fotos: 0, beoordelingen: 3 });
+  });
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'src', 'index.js'), 'utf8');
+  assert.match(src, /app\.use\('\/api\/feedback', dailyCaps\.feedbackGuard\);/);
 });

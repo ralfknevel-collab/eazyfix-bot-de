@@ -56,3 +56,15 @@ test('bewaartermijn: standaard 90 dagen, BEWAARTERMIJN_DAGEN overschrijft, grens
   assert.equal(cutoffIso(90, Date.parse('2026-10-21T00:00:00Z')), '2026-07-23T00:00:00.000Z');
   assert.equal(CHATS_TABLE, 'chats_eazyfix_de');
 });
+
+// Port eazyfix-bot 00afcf6 (review 10-11-2026): een beoordeling had geen lengtegrens.
+test('beoordeling: te lange velden worden afgekapt, te lange gesprekscode geweigerd', () => {
+  const r = validateFeedback({ conversationId: 'c-1', question: 'v'.repeat(9000), answer: 'a'.repeat(50000), rating: 'down', comment: 'o'.repeat(5000) });
+  assert.equal(r.ok, true);
+  assert.equal(r.value.question.length, 4000);
+  assert.equal(r.value.answer.length, 20000);
+  assert.equal(r.value.comment.length, 1000);
+  assert.equal(validateFeedback({ conversationId: 'x'.repeat(81), answer: 'a', rating: 'up' }).ok, false);
+  const kort = validateFeedback({ conversationId: 'c-1', question: 'vraag', answer: 'antwoord', rating: 'up', comment: 'top' });
+  assert.deepEqual(kort.value, { conversation_id: 'c-1', question: 'vraag', answer: 'antwoord', rating: 'up', comment: 'top' });
+});
