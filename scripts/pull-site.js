@@ -5,10 +5,11 @@
 
 const fs = require('fs');
 const path = require('path');
-const { scrubText, normalizeBrand, isListingJunk, dedupeByUrl, EXCLUDE_PAGE } = require('./scrub');
+const { scrubText, prepareHtml, normalizeBrand, isListingJunk, dedupeByUrl, EXCLUDE_PAGE } = require('./scrub');
 
 const BASE = 'https://www.eazy-fix.de';
-const TARGET = path.join(__dirname, '..', 'src', 'kennis.json');
+// KENNIS_OUT: schrijf naar een ander bestand, om oud en nieuw te vergelijken vóór het vervangen.
+const TARGET = process.env.KENNIS_OUT || path.join(__dirname, '..', 'src', 'kennis.json');
 const CONCURRENCY = 6;
 
 const ENT = { amp: '&', lt: '<', gt: '>', quot: '"', '#039': "'", '#39': "'", nbsp: ' ', eacute: 'é', euro: '' };
@@ -25,6 +26,8 @@ function cleanText(html) {
   // Alleen de body.
   const body = h.match(/<body[\s\S]*?<\/body>/i);
   if (body) h = body[0];
+  // Afgeschermde e-mailadressen herstellen (zie scripts/scrub.js).
+  h = prepareHtml(h);
   // Ruis-blokken verwijderen.
   h = h
     .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -98,7 +101,7 @@ async function mapPool(items, fn) {
   const contentPages = pages.filter((u) => !/\/wp-content\//i.test(u) && !EXCLUDE_PAGE.test(u));
 
   const jobs = [
-    ...products.map((url) => ({ type: 'product', url })),
+    ...products.filter((u) => !EXCLUDE_PAGE.test(u)).map((url) => ({ type: 'product', url })), // ook Amazon-varianten (-fba) uitsluiten
     ...contentPages.map((url) => ({ type: 'pagina', url })),
     ...posts.map((url) => ({ type: 'blog', url })),
   ];

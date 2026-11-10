@@ -253,3 +253,30 @@ test('pakket-, zending-, omruil- en reclamatievragen gaan naar de doorverwijzing
 test('how-to-signaal wint van het servicewoord', () => {
   assert.equal(classifyIntent('wie lange muss die Reparatur trocknen bevor ich sie überstreiche'), 'content');
 });
+
+// Port eazyfix-bot 3539c46 (review 10-11-2026): afgeschermde e-mailadressen stonden 30
+// keer als "[email protected]" in de kennis; de pagina met namen van medewerkers
+// (/uber-eazyfix/, zonder umlaut in het adres) viel buiten de uitsluiting.
+test('ophalen: e-mailadres hersteld, sterrenscore weg, teampagina uitgesloten', () => {
+  const { prepareHtml, decodeCfEmail, scrubText, EXCLUDE_PAGE } = require('../scripts/scrub');
+  const enc = (t) => '1a' + [...t].map((c) => (c.charCodeAt(0) ^ 0x1a).toString(16).padStart(2, '0')).join('');
+  assert.equal(decodeCfEmail(enc('desupport@eazy-fix.com')), 'desupport@eazy-fix.com');
+  assert.equal(decodeCfEmail(enc('%20desupport@eazy-fix.com')), 'desupport@eazy-fix.com');
+  assert.equal(decodeCfEmail('zz'), '');
+  const html = `<p>Schick ein Foto an <a href="/cdn-cgi/l/email-protection#${enc('desupport@eazy-fix.com')}"><span class="__cf_email__" data-cfemail="${enc('desupport@eazy-fix.com')}">[email&#160;protected]</span></a>.</p>`;
+  const uit = prepareHtml(html);
+  assert.match(uit, /an desupport@eazy-fix\.com\./);
+  assert.doesNotMatch(uit, /email-protection|cfemail/);
+  assert.equal(scrubText('Gutes Produkt\nBewertet mit 5 von 5\nVerarbeitung bei 5 bis 35 Grad'), 'Gutes Produkt\nVerarbeitung bei 5 bis 35 Grad');
+  assert.ok(EXCLUDE_PAGE.test('https://www.eazy-fix.de/uber-eazyfix/'));
+  assert.ok(EXCLUDE_PAGE.test('https://www.eazy-fix.de/live/'));
+  assert.ok(!EXCLUDE_PAGE.test('https://www.eazy-fix.de/product/premium-holzspachtelmasse/'));
+});
+
+test('kennisbank: geen afgeschermd e-mailadres, sterrenscore of namen van medewerkers', () => {
+  const alles = require('../src/kennis.json').map((p) => p.text).join('\n');
+  assert.doesNotMatch(alles, /\[email\s*protected\]/i);
+  assert.doesNotMatch(alles, /Bewertet mit \d/);
+  assert.doesNotMatch(alles, /als Leiter von Repair Care Home/);
+  assert.doesNotMatch(alles, /%20\w+@/);
+});

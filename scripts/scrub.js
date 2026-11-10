@@ -28,7 +28,7 @@ const DEPTH_CM_TYPO = /\b(\d{1,2}\s*(?:und|bis|tot|-|–)\s*\d{1,2})\s*cm(\s+tie
 // trainings-aanmeldingen, gedateerde live-events, de shop-listing en de
 // verkooppunten-overzichtspagina (daar is de find_verkooppunt-tool voor). De bot
 // verwijst voor deze onderwerpen naar de binnendienst.
-const EXCLUDE_PAGE = /\/kundendienst\/|\/agb\b|\/widerruf|\/datenschutz|\/impressum|\/versand|\/zahlung|\/kontakt\/?$|\/(ü|ue)ber-(uns|eazyfix)\/?$|\/stellenangebote?\/?$|\/newsletter[^/]*\/?$|\/(ü|ue)ber-(uns|eazyfix)\/?$|\/verkaufsstellen\/?$|\/shop\/?$|-fba\/?$/i;
+const EXCLUDE_PAGE = /\/kundendienst\/|\/agb\b|\/widerruf|\/datenschutz|\/impressum|\/versand|\/zahlung|\/kontakt\/?$|\/(ü|ue|u)ber-(uns|eazyfix)\/?$|\/stellenangebote?\/?$|\/newsletter[^/]*\/?$|\/(ü|ue)ber-(uns|eazyfix)\/?$|\/verkaufsstellen\/?$|\/shop\/?$|-fba\/?$|\/live\/?$/i;
 
 // Slecht gescrapete entries waarvan de titel een kale listing-/navigatielabel is
 // (bv. "Shop") i.p.v. een echte product-/paginanaam — die dragen geen bruikbare
@@ -79,6 +79,34 @@ function dropPromo(line) {
     .trim();
 }
 
+// --- HTML voorbewerken (port eazyfix-bot 3539c46, review 10-11-2026) ---------------
+// Cloudflare schermt e-mailadressen af; in de tekst stond 30 keer "[email protected]".
+// De Duitse site is nog de oude opzet: de specificaties hebben daar al een label en er
+// is geen reviewblok, dus alleen het e-mailadres en de sterrenscore worden aangepakt.
+// Cloudflare-afscherming: eerste byte is de sleutel, de rest is het adres (XOR).
+function decodeCfEmail(hex) {
+  if (!/^([0-9a-f]{2}){2,}$/i.test(hex)) return '';
+  const key = parseInt(hex.slice(0, 2), 16);
+  let out = '';
+  for (let i = 2; i < hex.length; i += 2) out += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16) ^ key);
+  // In een mailto-link staat soms een gecodeerde spatie (%20) voor het adres.
+  out = out.replace(/^(%20|\s)+/i, "").replace(/\?.*$/, "");
+  return /^[^\s@<>]+@[^\s@<>]+\.[a-z]{2,}$/i.test(out) ? out : '';
+}
+
+function restoreEmails(html) {
+  return String(html || '')
+    .replace(/<a\b[^>]*href="\/cdn-cgi\/l\/email-protection#([0-9a-f]+)"[^>]*>[\s\S]*?<\/a>/gi, (m, hex) => decodeCfEmail(hex) || m)
+    .replace(/<(a|span)\b[^>]*data-cfemail="([0-9a-f]+)"[^>]*>[\s\S]*?<\/\1>/gi, (m, tag, hex) => decodeCfEmail(hex) || m);
+}
+
+function prepareHtml(html) {
+  return restoreEmails(html);
+}
+
+// Sterrenscore van productkaartjes ("Bewertet mit 5 von 5") is geen kennis.
+const RATING_LINE = /Bewertet mit \d[\d,.]* von \d/i;
+
 function scrubText(text) {
   let t = String(text || '');
   // Reparatiediepte cm→mm typefout corrigeren.
@@ -86,10 +114,10 @@ function scrubText(text) {
   // Merknaam normaliseren naar EAZYFIX.
   t = normalizeBrand(t);
   // Promo-/prijszinnen verwijderen (zins-niveau, zie dropPromo).
-  t = t.split('\n').map(dropPromo).filter((l) => l.length > 0).join('\n');
+  t = t.split('\n').map(dropPromo).filter((l) => l.length > 0 && !RATING_LINE.test(l)).join('\n');
   // Resterende losse bedragen inline knippen.
   for (const re of PRICE_INLINE) t = t.replace(re, ' ');
   return t.replace(/[ \t]+/g, ' ').replace(/ ?\n ?/g, '\n').replace(/\n{2,}/g, '\n').trim();
 }
 
-module.exports = { scrubText, fixDepthUnits, normalizeBrand, isListingJunk, dedupeByUrl, PROMO_LINE, PRICE_INLINE, DEPTH_CM_TYPO, EXCLUDE_PAGE, LISTING_TITLE, BRAND_VARIANT };
+module.exports = { prepareHtml, decodeCfEmail, restoreEmails, RATING_LINE, scrubText, fixDepthUnits, normalizeBrand, isListingJunk, dedupeByUrl, PROMO_LINE, PRICE_INLINE, DEPTH_CM_TYPO, EXCLUDE_PAGE, LISTING_TITLE, BRAND_VARIANT };
