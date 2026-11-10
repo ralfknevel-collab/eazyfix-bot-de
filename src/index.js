@@ -8,7 +8,7 @@ const { BASE_SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT } = req
 const { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages, sendTelegramText } = require('./feedback');
 const { stripTags } = require('./parse');
 const { CHAT_TOOLS, runTool } = require('./tools');
-const { runChat, runWithTools, buildChatContext } = require('./chat');
+const { roundGeo, runChat, runWithTools, buildChatContext } = require('./chat');
 const { productsInText } = require('./producten');
 const { searchContext } = require('./kennis');
 const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt,
@@ -43,6 +43,13 @@ function friendlyError(err) {
     return 'Der Assistent ist gerade überlastet. Versuch es in einer Minute noch einmal — deine Frage ist nicht verloren.';
   }
   return 'Da ist gerade etwas schiefgelaufen. Versuch es gleich erneut, oder ruf den Innendienst an unter 03222 1097923.';
+}
+
+// Logregel per tool-aanroep. Bij het weer en de winkelzoeker staat de locatie van de
+// bezoeker in de invoer (coördinaten, postcode, plaats); die komt niet in het logboek.
+const TOOLS_MET_LOCATIE = new Set(['weather_lookup', 'find_verkooppunt']);
+function logTool(name, input) {
+  console.log(TOOLS_MET_LOCATIE.has(name) ? `  tool: ${name}` : `  tool: ${name}(${JSON.stringify(input)})`);
 }
 
 const VALID_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -364,7 +371,7 @@ app.post('/api/analyze-image', async (req, res) => {
         system,
         maxTokens: 16000, // niet-streamend: ruim maar onder de SDK-timeout (port RC-DE feedback #27)
         extra: { output_config: PHOTO_EFFORT }, // fotodiagnose: standaard high, zie src/model.js (FOTO_EFFORT)
-        onTool: (name, input) => console.log(`  tool: ${name}(${JSON.stringify(input)})`),
+        onTool: logTool,
       }
     );
 
@@ -560,7 +567,7 @@ app.post('/api/analyze-image/stream', async (req, res) => {
         final.content
           .filter((b) => b.type === 'tool_use')
           .map(async (b) => {
-            console.log(`  tool: ${b.name}(${JSON.stringify(b.input)})`);
+            logTool(b.name, b.input);
             return { type: 'tool_result', tool_use_id: b.id, content: await runTool(b.name, b.input, {}) };
           })
       );
@@ -597,7 +604,8 @@ app.post('/api/analyze-image/stream', async (req, res) => {
 // POST /api/chat — non-streaming
 app.post('/api/chat', async (req, res) => {
   // Het model kiest de server; een `model` in de aanvraag wordt genegeerd.
-  const { messages, geo } = req.body;
+  const { messages } = req.body;
+  const geo = roundGeo(req.body.geo); // afgerond op ongeveer een kilometer
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages-Array erforderlich' });
@@ -620,7 +628,7 @@ app.post('/api/chat', async (req, res) => {
     const convo = gesprek.map(m => ({ role: m.role, content: toAnthropicContent(m.content) }));
     const { text, usage, videos } = await runChat(convo, {
       geo,
-      onTool: (name, input) => console.log(`  tool: ${name}(${JSON.stringify(input)})`),
+      onTool: logTool,
     });
     res.json({ content: text, products: productsInText(text), videos: videos || [], usage });
   } catch (err) {
@@ -634,7 +642,8 @@ app.post('/api/chat', async (req, res) => {
 // POST /api/chat/stream — streaming (SSE)
 app.post('/api/chat/stream', async (req, res) => {
   // Het model kiest de server; een `model` in de aanvraag wordt genegeerd.
-  const { messages, conversationId, geo } = req.body;
+  const { messages, conversationId } = req.body;
+  const geo = roundGeo(req.body.geo); // afgerond op ongeveer een kilometer
 
   // Volledige validatie vóór de SSE-headers, zodat ongeldige invoer net als
   // /api/chat een echte HTTP 400 krijgt (en niet een 200 met SSE-fout).
@@ -717,7 +726,7 @@ app.post('/api/chat/stream', async (req, res) => {
         final.content
           .filter(b => b.type === 'tool_use')
           .map(async b => {
-            console.log(`  tool: ${b.name}(${JSON.stringify(b.input)})`);
+            logTool(b.name, b.input);
             return { type: 'tool_result', tool_use_id: b.id, content: await runTool(b.name, b.input, { geo }) };
           })
       );

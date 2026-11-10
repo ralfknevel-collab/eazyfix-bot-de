@@ -241,20 +241,21 @@ async function viaOpenMeteo({ plaats, postcode, lat, lon }) {
 // vriendelijke melding gaat direct terug, zonder omweg.
 async function lookup({ plaats, postcode, lat, lon } = {}) {
   const key = process.env.WEATHERAPI_KEY;
-  const ctx = `plaats=${plaats || ''} postcode=${postcode || ''} lat=${lat ?? ''} lon=${lon ?? ''}`;
+  // Geen locatie in het logboek: alleen welke dienst faalde en met welke fout.
+  const melding = (e) => `${e.name}${e instanceof LocationNotFoundError ? '' : ': ' + e.message}`;
   if (key) {
     try {
       return await viaWeatherApi({ plaats, postcode, lat, lon, key });
     } catch (e) {
       if (e instanceof LocationNotFoundError) return e.message;
-      console.error(`[weather] WeatherAPI faalde (${ctx}): ${e.name}: ${e.message}, val terug op Open-Meteo`);
+      console.error(`[weather] WeatherAPI faalde: ${melding(e)}, val terug op Open-Meteo`);
     }
   }
   try {
     return await viaOpenMeteo({ plaats, postcode, lat, lon });
   } catch (e) {
     if (e instanceof LocationNotFoundError) return e.message;
-    console.error(`[weather] lookup faalde via Open-Meteo (${ctx}): ${e.name}: ${e.message}`);
+    console.error(`[weather] lookup faalde via Open-Meteo: ${melding(e)}`);
     // Geen e.message in de tool-output: die is Engels ("HTTP 400", "fetch
     // failed") en zou in het Duitse antwoord lekken. Details staan in de log.
     return 'Wetterdaten momentan nicht verfügbar. Berate auf Basis der allgemeinen Regeln.';
@@ -285,6 +286,11 @@ function runWeatherTool(input = {}, ctx = {}) {
       geo && Number.isFinite(Number(geo.lat)) && Number.isFinite(Number(geo.lon))) {
     inp.lat = Number(geo.lat);
     inp.lon = Number(geo.lon);
+  }
+  // Coördinaten gaan afgerond op twee decimalen (ongeveer een kilometer) naar de weerdienst.
+  if (Number.isFinite(Number(inp.lat)) && Number.isFinite(Number(inp.lon)) && inp.lat !== null && inp.lon !== null) {
+    inp.lat = Math.round(Number(inp.lat) * 100) / 100;
+    inp.lon = Math.round(Number(inp.lon) * 100) / 100;
   }
   return lookup(inp);
 }

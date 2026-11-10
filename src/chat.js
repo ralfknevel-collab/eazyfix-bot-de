@@ -82,10 +82,24 @@ function videoInviteNote(videos) {
     + 'Nenne den Videotitel nicht wörtlich; verweise einfach auf "das Video unten".';
 }
 
+// Gedeelde browserlocatie controleren en afronden op twee decimalen (ongeveer een
+// kilometer). Voor het weer is dat ruim genoeg, en een huisadres is er niet meer uit
+// af te leiden. Alles wat de server met de locatie doet (prompt, weerdienst) gebruikt
+// deze afgeronde waarde; de precieze coördinaten van de browser gaan nergens heen.
+// Geeft null bij ontbrekende of onmogelijke waarden. Port eazyfix-bot 5530fbf.
+function roundGeo(geo) {
+  if (!geo || typeof geo !== 'object') return null;
+  if (geo.lat === null || geo.lon === null || geo.lat === '' || geo.lon === '') return null;
+  const lat = Number(geo.lat), lon = Number(geo.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  return { lat: Math.round(lat * 100) / 100, lon: Math.round(lon * 100) / 100 };
+}
+
 // Locatiehint voor weather_lookup uit gedeelde coördinaten (of '' als onbekend).
 function geoNote(geo) {
-  if (!geo || !Number.isFinite(Number(geo.lat)) || !Number.isFinite(Number(geo.lon))) return '';
-  return `\nGETEILTER STANDORT DES HEIMWERKERS: Breitengrad ${Number(geo.lat).toFixed(4)}, Längengrad ${Number(geo.lon).toFixed(4)}. Nutze diese lat/lon bei weather_lookup; frag dann nicht nach Ort oder Postleitzahl.`;
+  const g = roundGeo(geo);
+  if (!g) return '';
+  return `\nGETEILTER STANDORT DES HEIMWERKERS (gerundet): Breitengrad ${g.lat}, Längengrad ${g.lon}. Nutze diese lat/lon bei weather_lookup; frag dann nicht nach Ort oder Postleitzahl.`;
 }
 
 // Bouw de system-context (persona + kennis + video-uitnodiging + geo) en kies de
@@ -115,4 +129,4 @@ async function runChat(messages, opts = {}) {
   return { ...result, videos };
 }
 
-module.exports = { runChat, runWithTools, buildChatContext, geoNote, videoInviteNote };
+module.exports = { runChat, runWithTools, buildChatContext, geoNote, roundGeo, videoInviteNote };

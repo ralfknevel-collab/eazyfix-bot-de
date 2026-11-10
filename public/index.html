@@ -306,16 +306,28 @@
     const history = []; // { role, content }
     let conversationId = 'c-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
 
-    // Browser-locatie (voor weather_lookup). Best-effort: vraag eenmalig, sla op
-    // als toegestaan. Bij weigeren/niet-beschikbaar wordt 'm niet meegestuurd;
-    // de bot vraagt dan zelf om plaats of postcode.
+    // Browser-locatie (voor weather_lookup). Niet meer bij het openen van de chat:
+    // de browser vraagt pas om de locatie als de bezoeker iets over het weer vraagt,
+    // en dan één keer per bezoek. De locatie gaat afgerond op twee decimalen (ongeveer
+    // een kilometer) naar de server. Bij weigeren of niet beschikbaar vraagt de bot
+    // zelf om plaats of postcode. Port eazyfix-bot 5530fbf.
     let geo = null;
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => { geo = { lat: pos.coords.latitude, lon: pos.coords.longitude }; },
-        () => { geo = null; },
-        { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
-      );
+    let geoGevraagd = false;
+    const WEER_RE = /\b(weer|weers\w*|regen\w*|vries\w*|vorst|temperatuur|vandaag|morgen|weekend|weather|rain\w*|today|tomorrow|wetter\w*|regnet|heute|frost|friert|temperatur|wochenende)\b/i;
+    function vraagLocatieBijWeervraag(text) {
+      if (geo || geoGevraagd || !navigator.geolocation || !WEER_RE.test(text)) return Promise.resolve();
+      geoGevraagd = true;
+      return new Promise((klaar) => {
+        const stop = setTimeout(klaar, 8000); // geen antwoord op de browservraag: gewoon verder
+        const rond = (n) => Math.round(n * 100) / 100;
+        try {
+          navigator.geolocation.getCurrentPosition(
+            pos => { geo = { lat: rond(pos.coords.latitude), lon: rond(pos.coords.longitude) }; clearTimeout(stop); klaar(); },
+            () => { geo = null; clearTimeout(stop); klaar(); },
+            { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
+          );
+        } catch (e) { clearTimeout(stop); klaar(); }
+      });
     }
 
     function scrollLog() { log.scrollTop = log.scrollHeight; }
@@ -642,6 +654,7 @@
       bubble('user', text);
       const out = bubble('bot', '…');
       try {
+        await vraagLocatieBijWeervraag(text);
         const resp = await apiFetch('/api/chat/stream', {
           method: 'POST',
           body: JSON.stringify({ messages: history, conversationId, geo }),

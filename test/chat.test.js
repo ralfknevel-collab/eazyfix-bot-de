@@ -54,3 +54,35 @@ test('video-uitnodiging vraagt om de zin in de taal van het antwoord, met Engels
   assert.match(note, /in der Sprache deiner Antwort/);
   assert.match(note, /Have a look at the video below/);
 });
+
+// Port eazyfix-bot 5530fbf (review 10-11-2026): de locatie ging op vier decimalen (ongeveer 10 meter) naar het
+// model en de weerdienst en stond in het logboek. Nu afgerond op ongeveer een kilometer.
+test('locatie: afgerond op twee decimalen, onmogelijke waarden vervallen', () => {
+  const { roundGeo } = require('../src/chat');
+  assert.deepEqual(roundGeo({ lat: 51.688312, lon: 5.303961 }), { lat: 51.69, lon: 5.3 });
+  assert.deepEqual(roundGeo({ lat: '51.688312', lon: '5.303961' }), { lat: 51.69, lon: 5.3 });
+  for (const fout of [null, undefined, 'x', {}, { lat: null, lon: 5 }, { lat: 'x', lon: 5 }, { lat: 91, lon: 5 }, { lat: 52, lon: 181 }, { lat: '', lon: '' }]) {
+    assert.equal(roundGeo(fout), null);
+  }
+  const note = geoNote({ lat: 51.688312, lon: 5.303961 });
+  assert.match(note, /Breitengrad 51\.69, Längengrad 5\.3\./);
+  assert.doesNotMatch(note, /51\.688|5\.3039/);
+});
+
+test('locatie: weerdienst krijgt afgeronde coördinaten en het logboek geen locatie', async () => {
+  const fs = require('node:fs'), path = require('node:path');
+  const weather = fs.readFileSync(path.join(__dirname, '..', 'src', 'weather.js'), 'utf8');
+  assert.doesNotMatch(weather, /postcode=|lat=|lon=|plaats=/);
+  assert.match(weather, /inp\.lat = Math\.round\(Number\(inp\.lat\) \* 100\) \/ 100;/);
+  const index = fs.readFileSync(path.join(__dirname, '..', 'src', 'index.js'), 'utf8');
+  assert.doesNotMatch(index, /console\.log\(`  tool: \$\{(b\.)?name\}\(\$\{JSON\.stringify\((b\.)?input\)\}\)`\)[,;]/);
+  assert.equal(index.split('const geo = roundGeo(req.body.geo);').length - 1, 2);
+  assert.doesNotMatch(index, /const \{[^}]*\bgeo\b[^}]*\} = req\.body/);
+});
+
+test('locatie: de chatpagina vraagt niet meer om de locatie bij het openen', () => {
+  const html = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  assert.equal(html.split('getCurrentPosition(').length - 1, 1, 'één plek, binnen vraagLocatieBijWeervraag');
+  assert.match(html, /function vraagLocatieBijWeervraag\(text\) \{\s+if \(geo \|\| geoGevraagd \|\| !navigator\.geolocation \|\| !WEER_RE\.test\(text\)\) return Promise\.resolve\(\);/);
+  assert.match(html, /await vraagLocatieBijWeervraag\(text\);\s+const resp = await apiFetch\('\/api\/chat\/stream'/);
+});
