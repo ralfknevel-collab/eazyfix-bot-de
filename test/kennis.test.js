@@ -131,9 +131,22 @@ test('geen video bij koop-/prijsvraag zonder hoe-doe-ik-intentie', () => {
   assert.deepEqual(relevantVideos('wo kann ich den Feinspachtel kaufen'), []);
 });
 
-test('geen Duitse videobron: instructievraag levert (nog) geen videokaart', () => {
-  // Er is geen Duitse videobron; Nederlandse titels matchen niet op Duitse termen.
-  assert.deepEqual(relevantVideos('wie repariere ich Holzfäule im Fensterrahmen'), []);
+// Review 11-11-2026: Duitse video's van @eazyfix-de, passend bij object, techniek en route.
+test('Duitse video\'s: juiste video bij object, techniek en route; geen Nederlandse of All-in-One', () => {
+  const titel = (q, n = 2) => relevantVideos(q, { limit: n }).map((v) => v.title).join(' | ');
+  assert.match(titel('wie repariere ich Holzfäule im Fensterrahmen'), /Fensterrahmen/);
+  assert.match(titel('Holzfäule an der Haustür reparieren, wie geht das?'), /Tür/);
+  assert.match(titel('Zaunpfosten faul reparieren wie'), /Garten/);
+  assert.match(titel('Wie mische ich die Holzspachtelmasse?', 1), /mischen/i);
+  assert.match(titel('Kratzer im Holzboden reparieren wie?'), /Holzboden/);
+  assert.doesNotMatch(titel('Kleine Kratzer in der Tür mit Feinspachtel füllen, wie?'), /Holzfäule/, 'krassen: geen houtrotvideo');
+  assert.doesNotMatch(titel('Holzfäule an der Haustür reparieren, wie geht das?'), /Fein\s*Spachtel/i, 'houtrot: geen Feinspachtel-video');
+  assert.deepEqual(relevantVideos('Was kostet die Holzspachtelmasse?'), [], 'geen hoe-vraag, geen video');
+  const videos = require('../src/kennis-video.json');
+  assert.ok(videos.length >= 20);
+  for (const v of videos) {
+    assert.doesNotMatch(v.title + ' ' + v.text, /houtrot|houtversterker|plamuur|all[\s-]?in[\s-]?one/i, v.title);
+  }
 });
 
 test('klacht over de video zelf onderdrukt een nieuwe videokaart', () => {

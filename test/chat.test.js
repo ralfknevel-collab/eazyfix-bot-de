@@ -30,12 +30,11 @@ test('geoNote geeft lege string bij ontbrekende of ongeldige coördinaten', () =
   assert.match(geoNote({ lat: 52, lon: 5 }), /Breitengrad 52/);
 });
 
-test('geen Duitse videobron: video-intentie levert geen videokaart, geo blijft laatste', () => {
+test('video-intentie levert een Duitse videokaart, geo blijft laatste', () => {
   const { system, videos } = buildChatContext('wie repariere ich Holzfäule im Fensterrahmen', { geo: { lat: 52, lon: 5 } });
-  // Er is (nog) geen Duitse videobron, dus geen videokaart en geen video-blok.
-  assert.deepEqual(videos, []);
-  assert.ok(!system.some((b) => /KLICKBARE VIDEOKARTE/.test(b.text)));
-  assert.ok(system.some((b) => /ERSCHEINT KEINE VIDEOKARTE/.test(b.text)), 'zegt expliciet: geen video');
+  assert.ok(videos.length >= 1);
+  assert.match(videos[0].url, /youtube\.com\/watch\?v=/);
+  assert.ok(system.some((b) => /KLICKBARE VIDEOKARTE/.test(b.text)));
   // Geo-hint hoort als laatste blok te staan.
   assert.match(system[system.length - 1].text, /GETEILTER STANDORT/);
 });

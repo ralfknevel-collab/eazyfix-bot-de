@@ -302,7 +302,19 @@ const VIDEO_GENERIC = new Set(
 const VIDEO_SYN = {
   fenster: ['fensterrahmen'], fensterholz: ['fensterrahmen'], rahmen: ['fensterrahmen'],
   türschwelle: ['fensterbank'], schwelle: ['fensterbank'],
+  // Duitse video's (kanaal @eazyfix-de, november 2026): titels noemen "Tür", "Garten",
+  // "Holzboden", "Treppen", "Dach".
+  haustür: ['tür'], haustüre: ['tür'], eingangstür: ['tür'], gartentür: ['tür', 'garten'],
+  zaun: ['garten'], zaunpfosten: ['garten'], gartenzaun: ['garten'], pfosten: ['garten'], pergola: ['garten'],
+  holzboden: ['boden'], dielen: ['boden'], parkett: ['boden'], fußboden: ['boden'],
+  stufe: ['treppen'], treppenstufe: ['treppen'], treppe: ['treppen'],
+  dachrand: ['dach'], stirnbrett: ['dach'], traufe: ['dach'],
+  kleber: ['klebstoff'], kleben: ['klebstoff'], verkleben: ['klebstoff'], einkleben: ['klebstoff'],
 };
+
+// Opzoeken gaat op de gestemde vorm (haustür -> haustuer, zaunpfosten -> zaunpfost);
+// daarom een kaart met gestemde sleutels (review 11-11-2026).
+const VIDEO_SYN_STEM = new Map(Object.entries(VIDEO_SYN).map(([k, v]) => [stem(k), v]));
 
 // WHITELIST van termen die een video MOGEN triggeren: alleen concrete objecten
 // (fenster, tür, fensterbank, treppe, ...), productnamen en technieken met een eigen
@@ -313,11 +325,14 @@ const VIDEO_TOPIC = new Set([
   'fensterrahmen', 'rahmen', 'fenster', 'fensterholz', 'fensterbank', 'schwelle', 'türschwelle',
   'tür', 'türen', 'türrahmen', 'treppe', 'treppenstufe', 'stufe', 'möbel', 'fensterladen', 'laden',
   'boden', 'dach',
+  'haustür', 'haustüre', 'eingangstür', 'gartentür', 'zaun', 'zaunpfosten', 'gartenzaun', 'pfosten', 'pergola', 'garten',
+  'holzboden', 'dielen', 'parkett', 'fußboden', 'treppen', 'dachrand', 'stirnbrett', 'traufe',
   // producten
   'holzspachtelmasse', 'spachtelmasse', 'feinspachtel', 'holzimprägnierung', 'imprägnierung',
   'holzfäulefräser', 'fräser',
   // technieken met een eigen instructievideo
   'fräsen', 'modellieren', 'teilerneuerung', 'ersetzen',
+  'mischen', 'mische', 'entfernen', 'entferne', 'auftragen', 'kleben', 'kleber', 'verkleben', 'einkleben', 'klebstoff', 'reinigen', 'düse',
 ].map(stem));
 
 // De gebruiker heeft het OVER het videokaartje zelf (meestal een klacht: "das Video
@@ -331,18 +346,24 @@ const VIDEO_NICHE = new Set([]);
 
 // Kies de best passende video op basis van de VRAAG van de gebruiker (niet het
 // antwoord). Een instructievideo hoort ALLEEN bij een echte hoe-doe-ik-/reparatievraag.
-const VIDEO_HOWTO = /\b(wie|reparieren|reparier|reparatur|auftragen|auftrag|verwenden|verwend|gebrauch|anleitung|stappenplan|ablaufplan|mischen|mischungsverhältnis|entfernen|fräsen|schleifen|anmischen|anwenden|schritt|füllen|auffüllen|modellieren|abschleifen|behandeln|verarbeiten)\b/i;
+// Woordbegin, zodat ook vervoegingen tellen ("mische", "repariere", "entferne").
+const VIDEO_HOWTO = /\b(wie|reparier\w*|reparatur\w*|auftrag\w*|trage\w*\s+auf|verwend\w*|gebrauch\w*|anleitung\w*|stappenplan|ablaufplan|misch\w*|anmisch\w*|entfern\w*|fräs\w*|schleif\w*|abschleif\w*|anwend\w*|schritt\w*|füll\w*|auffüll\w*|modellier\w*|behandl\w*|behandel\w*|verarbeit\w*)/i;
+
+const OPPERVLAK = /\b(kratzer\w*|delle\w*|feinspachtel|riss\w*|nagell(ö|oe)ch\w*|ast\w*|unebenheit\w*)/i;
+const ROT = /\b(faul\w*|f(ä|ae)ule|morsch\w*|weich\w*|br(ö|oe)sel\w*|verrott\w*)/i;
 
 function relevantVideos(query, { limit = 1 } = {}) {
   const q = String(query || '');
   if (!VIDEO_HOWTO.test(q)) return []; // geen hoe-/reparatie-intentie → geen instructievideo
   if (VIDEO_COMPLAINT.test(q)) return []; // gebruiker praat over de video zelf → geen nieuwe plakken
-  const base = tokenize(q).map(stem).filter((t) => t.length > 2 && !VIDEO_GENERIC.has(t));
+  // tokenize() stemt al; nog een keer stemmen kortte "zaunpfost" in tot "zaunpfo" en
+  // "holzspachtelmass" tot "holzspachtelmas", waardoor die nooit matchten (review 11-11-2026).
+  const base = tokenize(q).filter((t) => t.length > 2 && !VIDEO_GENERIC.has(t));
   // Alleen object-/product-/techniek-termen mogen een video triggeren (geen filler).
   const topic = base.filter((t) => VIDEO_TOPIC.has(t));
   if (!topic.length) return [];
   const want = new Set(topic);
-  for (const t of topic) for (const extra of (VIDEO_SYN[t] || [])) want.add(stem(extra));
+  for (const t of topic) for (const extra of (VIDEO_SYN_STEM.get(t) || [])) want.add(stem(extra));
   const seen = new Set();
   const cand = [];
   for (const p of DATA) {
@@ -352,10 +373,14 @@ function relevantVideos(query, { limit = 1 } = {}) {
     if (seen.has(key)) continue;
     seen.add(key);
     const titleStems = [...new Set(
-      tokenize(cleanVideoTitle(p.title)).map(stem).filter((t) => t.length > 2 && !VIDEO_GENERIC.has(t))
+      tokenize(cleanVideoTitle(p.title)).filter((t) => t.length > 2 && !VIDEO_GENERIC.has(t))
     )];
     const hits = titleStems.filter((t) => want.has(t)).length;
     if (hits < 1) continue;
+    // Juiste route: bij krassen en deuken in gezond hout geen houtrotvideo, bij
+    // houtrot geen Feinspachtel-video (review 11-11-2026).
+    if (OPPERVLAK.test(q) && !ROT.test(q) && /holzf(ä|ae)ule|holzspachtelmasse/i.test(p.title)) continue;
+    if (ROT.test(q) && /fein\s*spachtel/i.test(p.title)) continue;
     const frag = /^\s*(stap|schritt)\s*\d/i.test(p.title) ? 1 : 0; // deelstap-video = lagere prioriteit
     // Volledig stappenplan/instructievideo > losse "... reparieren"-video > overig.
     const howto = /stappenplan|ablaufplan|instructievideo|instruktionsvideo/i.test(p.title) ? 2 : (/repareren|reparieren|reparatie|reparatur|verwijderen|entfernen/i.test(p.title) ? 1 : 0);

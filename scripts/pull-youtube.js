@@ -1,10 +1,12 @@
-// Trek de kennis uit de EAZYFIX YouTube-video's (@eazyfixnl) naar
-// src/kennis-video.json, zodat de bot ook de video-uitleg kan raadplegen.
+// Trek de kennis uit de Duitse EAZYFIX YouTube-video's (@eazyfix-de) naar
+// src/kennis-video.json, zodat de bot ook de video-uitleg kan raadplegen en Duitse
+// videokaartjes kan tonen. Tot 11-11-2026 stond hier het Nederlandse kanaal
+// (@eazyfixnl): de Duitse bot had daardoor alleen Nederlandse video's, die nooit
+// matchten (review REVIEW-CHATBOT-DE.md, punt 6).
 //
-// Werkwijze: yt-dlp haalt per video de titel + beschrijving op (die bevatten
-// het volledige stappenplan met producten). Claude schoont elke beschrijving
-// op tot nette, doorzoekbare kennis en gooit niet-instructieve clips weg.
-// Geen audio/captions/ffmpeg nodig.
+// Werkwijze: yt-dlp haalt per video de titel + beschrijving op. Claude schoont elke
+// beschrijving op tot nette, doorzoekbare Duitse kennis en gooit niet-instructieve
+// clips weg. Geen audio/captions/ffmpeg nodig.
 //
 // Vereist: yt-dlp op PATH (of via YT_DLP=/pad/naar/yt-dlp) en ANTHROPIC_API_KEY.
 // Gebruik: npm run yt:pull
@@ -16,31 +18,31 @@ const { spawn } = require('child_process');
 const Anthropic = require('@anthropic-ai/sdk');
 const { scrubText, normalizeBrand } = require('./scrub');
 
-const CHANNEL = process.env.YT_CHANNEL || 'https://www.youtube.com/@eazyfixnl/videos';
+const CHANNEL = process.env.YT_CHANNEL || 'https://www.youtube.com/@eazyfix-de/videos';
 const YTDLP = process.env.YT_DLP || 'yt-dlp';
 const MODEL = process.env.YT_CLEAN_MODEL || 'claude-haiku-4-5';
 const TARGET = path.join(__dirname, '..', 'src', 'kennis-video.json');
 const CONCURRENCY = 4;
 const MIN_DESC = 150; // beschrijvingen korter dan dit bevatten te weinig om uit te halen
 
-const CLEAN_PROMPT = `Je verwerkt de titel en YouTube-beschrijving van een EAZYFIX-instructievideo tot nette, doorzoekbare kennis voor een houtrot-reparatie-assistent.
+const CLEAN_PROMPT = `Du verarbeitest den Titel und die YouTube-Beschreibung eines EAZYFIX-Anleitungsvideos zu sauberem, durchsuchbarem Wissen für einen Holzfäule-Reparatur-Assistenten für deutsche Heimwerker.
 
-Antwoord UITSLUITEND met een geldig JSON-object, zonder andere tekst, zonder markdown:
-- "keep": true of false. false als de video niet-instructief is (puur promo, sfeerbeeld, "abonneer", aankondiging, geen concrete reparatie- of productuitleg). true als er bruikbare uitleg in zit (stappen, werkwijze, producttoepassing, tips).
-- "text": als keep true is: schrijf de kennis in vloeiend Nederlands, gericht op een doe-het-zelver. Begin met 1 zin wat de video behandelt. Geef daarna de werkwijze/stappen en het juiste EAZYFIX-productgebruik in lopende tekst of korte stappen. Behoud concrete feiten (mengverhoudingen, droogtijden, toerental, volgorde). Als keep false is: lege string "".
+Antworte AUSSCHLIESSLICH mit einem gültigen JSON-Objekt, ohne anderen Text, ohne Markdown:
+- "keep": true oder false. false, wenn das Video nicht anleitend ist (reine Werbung, Stimmungsbild, "abonnieren", Ankündigung, keine konkrete Reparatur- oder Produkterklärung). true, wenn brauchbare Erklärung drin ist (Schritte, Vorgehensweise, Produktanwendung, Tipps).
+- "text": wenn keep true ist: schreib das Wissen in flüssigem Deutsch (du-Form), für einen Heimwerker. Beginne mit 1 Satz, was das Video zeigt. Gib danach die Vorgehensweise und die richtige Anwendung der EAZYFIX-Produkte in Fließtext oder kurzen Schritten. Behalte konkrete Fakten (Mischungsverhältnisse, Trocknungszeiten, Drehzahl, Reihenfolge). Wenn keep false ist: leerer String "".
 
-CANONIEKE PRODUCTFEITEN (leidend — als de beschrijving hiermee in strijd is, volg DEZE feiten en neem de fout NIET over):
-- Premium Houtrotvuller: TWEE-componenten epoxy (mengverhouding 2:1). Noem hem nooit één-/eencomponent.
-- Houtversterker: twee componenten (verhouding 1:1, blauw+geel → groen), ca. 25 min laten intrekken.
-- Premium Houtplamuur: ALLEEN voor cosmetische schade in gezond hout (krasjes, gaatjes, naden). NOOIT voor houtrot — bij rot altijd frezen + houtversterker + Houtrotvuller.
-- Houtrotfrees: in een hoogtoerig roterend gereedschap (multitool/Dremel, ca. 30.000 tpm), niet in een gewone boormachine.
+KANONISCHE PRODUKTFAKTEN (maßgeblich; widerspricht die Beschreibung, folge DIESEN Fakten und übernimm den Fehler NICHT):
+- Premium Holzspachtelmasse: ZWEI-Komponenten-Epoxid (Mischungsverhältnis 2:1, kommt fertig dosiert aus der Kartusche). Nenne sie nie einkomponentig.
+- Holzimprägnierung: zwei Komponenten (Verhältnis 1:1), mit einem Rührstäbchen mischen, ca. 25 Minuten einziehen lassen.
+- Premium Holz Feinspachtel: NUR für oberflächliche Schäden in gesundem Holz (Kratzer, Löcher, Fugen bis 6 mm). NIE bei Holzfäule; bei Fäule immer fräsen + Holzimprägnierung + Holzspachtelmasse.
+- Holzfäule Fräser: in ein hochtouriges rotierendes Multitool (Dremel-Typ, ca. 30.000 U/min), nicht in eine gewöhnliche Bohrmaschine.
+- Benutze die deutschen Produktnamen: Premium Holzspachtelmasse, Holzimprägnierung, Premium Holz Feinspachtel, Holzfäule Fräser, Holzfeuchtemessgerät, Abtönkonzentrat, Premium Fertigspachtel. Keine niederländischen Namen (Houtrotvuller, Houtversterker, Houtplamuur).
 
-REGELS voor "text":
-- Verzin NIETS. Gebruik alleen wat in titel/beschrijving staat. Geen feit erin? Laat het weg. (Uitzondering: de canonieke productfeiten hierboven gaan altijd vóór een tegenstrijdige beschrijving.)
-- Schrijf de merknaam ALTIJD als EAZYFIX (hoofdletters).
-- GEEN tijdstempels (0:00), GEEN URL's, GEEN links, GEEN prijzen, GEEN "abonneer/like/volg ons", GEEN social media of nieuwsbrief-teksten.
-- Engelse beschrijving? Geef de "text" toch in het Nederlands.
-- Kort en feitelijk, geen marketingtaal.`;
+REGELN für "text":
+- Erfinde NICHTS. Nutze nur, was in Titel und Beschreibung steht. (Ausnahme: die kanonischen Produktfakten oben gehen einer widersprüchlichen Beschreibung immer vor.)
+- Schreib den Markennamen IMMER als EAZYFIX (Großbuchstaben).
+- KEINE Zeitstempel (0:00), KEINE URLs, KEINE Links, KEINE Preise, KEIN "abonnieren/liken/folgen", KEINE Social-Media- oder Newsletter-Texte, KEINE Hashtags.
+- Kurz und sachlich, keine Werbesprache.`;
 
 let client;
 function anthropic() {
@@ -72,14 +74,19 @@ function fetchVideos() {
   });
 }
 
+// Producten die niet meer op de Duitse site staan (eazy-fix.nl/de, november 2026):
+// hun video's horen niet in de kennis, anders raadt de bot ze weer aan.
+const NIET_MEER_LEVERBAAR = /all[\s-]?in[\s-]?one/i;
+
 async function cleanOne(v) {
+  if (NIET_MEER_LEVERBAAR.test(v.title)) return { keep: false };
   const desc = (v.description || '').trim();
   if (desc.length < MIN_DESC) return { keep: false };
   const msg = await anthropic().messages.create({
     model: MODEL,
     max_tokens: 1500,
     system: CLEAN_PROMPT,
-    messages: [{ role: 'user', content: `TITEL: ${v.title}\n\nBESCHRIJVING:\n${desc}` }],
+    messages: [{ role: 'user', content: `TITEL: ${v.title}\n\nBESCHREIBUNG:\n${desc}` }],
   });
   const raw = (msg.content.find((b) => b.type === 'text') || {}).text || '';
   let parsed;
@@ -116,7 +123,7 @@ async function mapPool(items, fn) {
     return {
       type: 'video',
       slug: `yt-${v.id}`,
-      title: normalizeBrand(v.title),
+      title: normalizeBrand(v.title.replace(/\s*#\S+/g, '').trim()),
       url: v.webpage_url || `https://www.youtube.com/watch?v=${v.id}`,
       text: scrubText(`${v.title}\n${r.text.trim()}`),
     };
