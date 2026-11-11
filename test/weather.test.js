@@ -117,3 +117,14 @@ test('geocode cachet: tweede aanvraag voor dezelfde plaats doet geen nieuwe fetc
   assert.ok(geo2);
   assert.equal(calls, 1);
 });
+
+// Port eazyfix-bot 9d05f53: der Bot tat so, als wäre übermorgen das Wochenende.
+test('Wetter: jeder Tag mit Wochentag und dem Ende der Vorschau', () => {
+  const { dagLabel, weekdag } = require('../src/weather');
+  const freitag = new Date('2026-11-13T10:00:00Z');
+  assert.equal(dagLabel(0, freitag), 'Heute (Freitag)');
+  assert.equal(dagLabel(2, freitag), 'Übermorgen (Sonntag)');
+  assert.equal(weekdag(0, new Date('2026-11-10T23:30:00Z')), 'Mittwoch', 'deutsche Zeit zählt, nicht UTC');
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'src', 'weather.js'), 'utf8');
+  assert.match(src, /Die Vorschau reicht bis einschließlich \$\{weekdag\(days\.length - 1\)\}/);
+});

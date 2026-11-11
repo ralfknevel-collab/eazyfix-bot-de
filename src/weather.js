@@ -82,8 +82,17 @@ async function geocode(query) {
   return geo;
 }
 
-function dagLabel(i) {
-  return i === 0 ? 'Heute' : i === 1 ? 'Morgen' : i === 2 ? 'Übermorgen' : `Tag ${i + 1}`;
+// Mit dem Wochentag, damit der Bot weiß, ob ein gefragter Tag ("dieses Wochenende") noch
+// in der Vorschau liegt (port eazyfix-bot 9d05f53).
+const WOCHENTAGE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+function weekdag(i, nu = new Date()) {
+  const dag = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Berlin', weekday: 'short' }).format(nu);
+  const idx = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(dag);
+  return WOCHENTAGE[(idx + i) % 7];
+}
+function dagLabel(i, nu = new Date()) {
+  const naam = i === 0 ? 'Heute' : i === 1 ? 'Morgen' : i === 2 ? 'Übermorgen' : `Tag ${i + 1}`;
+  return `${naam} (${weekdag(i, nu)})`;
 }
 
 // Cache de samenvatting per ~1km (2 decimalen) zodat herhaalde/nabije vragen
@@ -120,6 +129,7 @@ function format(plek, cur, days) {
       `Regenwahrscheinlichkeit ${d.rainProb ?? 0}%, ${d.precip ?? 0} mm Niederschlag.`
     );
   });
+  if (days.length) lines.push(`Die Vorschau reicht bis einschließlich ${weekdag(days.length - 1)}; weiter im Voraus ist das Wetter noch nicht bekannt.`);
   return lines.join('\n');
 }
 
@@ -295,4 +305,4 @@ function runWeatherTool(input = {}, ctx = {}) {
   return lookup(inp);
 }
 
-module.exports = { lookup, geocode, LocationNotFoundError, WEATHER_TOOL, runWeatherTool };
+module.exports = { dagLabel, weekdag, lookup, geocode, LocationNotFoundError, WEATHER_TOOL, runWeatherTool };

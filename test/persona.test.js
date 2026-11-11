@@ -377,3 +377,21 @@ test('vage erste Frage: keine Ankündigung der Fragen', () => {
   assert.equal(r.length, 1);
   assert.match(r[0], /Kündige deine Fragen NICHT an/);
 });
+
+// Port eazyfix-bot 9d05f53 (review 11-11-2026): natürlichere Antworten für Privatleute.
+test('review 11-11: Regeln für natürliche Antworten stehen genau einmal da', () => {
+  const regeln = BASE_SYSTEM_PROMPT.split('\n');
+  const eine = (start) => { const r = regeln.filter((x) => x.startsWith(start)); assert.equal(r.length, 1, start); return r[0]; };
+  assert.match(eine('- WAS DER HEIMWERKER SCHON GESAGT HAT, GILT:'), /bitte NICHT noch einmal um den Stichtest/);
+  assert.match(eine('- KEINE WIEDERHOLTEN FRAGEN:'), /stell sie nicht noch einmal/);
+  assert.match(eine('- KÜNDIGE DEINE FRAGEN NIE AN, in keiner Antwort'), /Noch zwei Fragen:/);
+  assert.match(eine('- ENDE DEINER ANTWORT:'), /VOR diesem Abschluss, nie danach/);
+  assert.match(eine('- DANKE ODER ABSCHLUSS:'), /Wiederhole deine früheren Fragen dann NICHT/);
+  assert.match(eine('- LÄNGE:'), /zuerst die Antwort in ein oder zwei Sätzen/);
+  assert.match(eine('- EINFACHE SPRACHE:'), /nie "kosmetischer Schaden"/);
+  assert.match(eine('- UNSICHER ODER WEITERVERWEISEN:'), /ZUERST, was du sicher weißt/);
+  assert.match(eine('- Die Vorschau von weather_lookup reicht bis übermorgen'), /Tu NIE so, als wäre morgen oder übermorgen das Wochenende/);
+  assert.match(eine('- Nenne ein Produkt beim ERSTEN Mal in deiner Antwort vollständig'), /nimm den kurzen Namen ohne EAZYFIX®/);
+  assert.doesNotMatch(BASE_SYSTEM_PROMPT, /IMMER vollständig mit "EAZYFIX®" davor, auch bei Wiederholung/);
+  assert.doesNotMatch(IMAGE_ANALYSIS_PROMPT, /IMMER vollständig mit "EAZYFIX®" davor, auch bei Wiederholung/);
+});

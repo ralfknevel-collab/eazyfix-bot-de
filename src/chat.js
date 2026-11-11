@@ -75,9 +75,10 @@ async function runWithTools(messages, opts = {}) {
 // dus mag het in de tekst kort uitnodigen de video te bekijken (zonder URL).
 function videoInviteNote(videos) {
   return `UNTER DEINER ANTWORT ERSCHEINT EINE KLICKBARE VIDEOKARTE mit dem EAZYFIX-Video "${videos[0].title}". `
-    + 'Schließe deine Antwort mit EINER kurzen, natürlichen Einladung ab, es anzusehen, '
+    + 'Setz in deine Antwort EINE kurze, natürliche Einladung, es anzusehen, '
     + 'zum Beispiel "Schau dir auch kurz das Video unten an, da siehst du es Schritt für Schritt." '
     + 'Schreib diese Einladung in der Sprache deiner Antwort: antwortest du auf Englisch, dann zum Beispiel "Have a look at the video below, it shows you step by step." '
+    + 'Setz diese Einladung direkt VOR deine Schlussfrage oder Fotobitte, nie danach: deine Frage an den Heimwerker steht immer am Ende. Hast du keine Schlussfrage, darf die Einladung der letzte Satz sein. '
     + 'Füge SELBST KEINEN Link, keine URL und keine YouTube-Adresse in deinen Text ein (die Karte erledigt das). '
     + 'Nenne den Videotitel nicht wörtlich; verweise einfach auf "das Video unten".';
 }

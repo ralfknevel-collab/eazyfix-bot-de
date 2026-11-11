@@ -86,3 +86,11 @@ test('locatie: de chatpagina vraagt niet meer om de locatie bij het openen', () 
   assert.match(html, /function vraagLocatieBijWeervraag\(text\) \{\s+if \(geo \|\| geoGevraagd \|\| !navigator\.geolocation \|\| !WEER_RE\.test\(text\)\) return Promise\.resolve\(\);/);
   assert.match(html, /await vraagLocatieBijWeervraag\(text\);\s+const resp = await apiFetch\('\/api\/chat\/stream'/);
 });
+
+// Port eazyfix-bot 9d05f53: Video-Einladung vor der Schlussfrage.
+test('Video-Einladung steht vor der Schlussfrage', () => {
+  const { videoInviteNote } = require('../src/chat');
+  const note = videoInviteNote([{ title: 'A' }]);
+  assert.match(note, /direkt VOR deine Schlussfrage oder Fotobitte, nie danach/);
+  assert.doesNotMatch(note, /Schließe deine Antwort mit/);
+});
