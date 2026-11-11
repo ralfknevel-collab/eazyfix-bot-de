@@ -368,7 +368,7 @@ test('Chatseite: Zeilen direkt untereinander bekommen nach dem Abschluss Zwische
   const html = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8');
   assert.match(html, /\.msg \.lsp \{ display: block; height: 7px; \}/);
   assert.match(html, /function regelRuimte\(answerEl\)/);
-  assert.equal(html.split('linkifyEmails(out); regelRuimte(out);').length - 1, 5);
+  assert.equal(html.split('linkifyEmails(out); regelRuimte(out);').length - 1, 6); // widget van NL: zes plekken
 });
 
 // Port eazyfix-bot (Ralf 11-11-2026): keine Ankündigung der Rückfragen.
