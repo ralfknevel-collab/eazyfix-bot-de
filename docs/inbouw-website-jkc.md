@@ -32,6 +32,7 @@ Ongewijzigd ten opzichte van de Nederlandse chat. Valideer op `event.origin === 
 | `ready`  |                  | iframe geladen en interactief      |
 | `resize` | `height` (int)   | gewenste hoogte in px, 480 tot 820 |
 | `event`  | `name` (string)  | `message_sent`, `photo_sent`, `answer_received`, `chat_ended`, `rating_given`, `new_chat`, `lead_given` |
+| `close`  |                  | de bezoeker sluit de chat met het kruisje in de chatbalk of met Escape; de website kan het chatvenster dan sluiten. Het kruisje staat alleen in de inbouwversie, dus de website hoeft geen eigen balk met sluitknop te tonen |
 
 ## 4. Contextparameters
 

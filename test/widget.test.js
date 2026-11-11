@@ -72,3 +72,14 @@ test('widget: statische HTML is Duits (geen Nederlandse knopteksten vóór het l
   assert.doesNotMatch(html, /url\('bg\.png'\)/, 'geen Nederlandse sitefoto als achtergrond');
   assert.match(html, /'EAZYFIX' : T\.verzonden/);
 });
+
+// Verzoek JKC (Rik, 11-11-2026): sluitknop en Escape sturen {type:'close'} naar de website.
+test('widget: sluitknop alleen in de inbouwversie, knop en Escape sturen close', () => {
+  const h = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  assert.match(h, /<button type="button" class="sluit" id="sluit" data-t-title="sluiten"/);
+  assert.match(h, /\.top \.sluit \{ display: none;/);
+  assert.match(h, /html\.embed \.top \.sluit \{ display: flex; \}/);
+  assert.match(h, /function sluitChat\(\) \{ postToSite\(\{ type: 'close' \}\); \}/);
+  assert.match(h, /if \(e\.key !== 'Escape'\) return;\n\s*if \(!photoMenu\.hidden\) \{ hidePhotoMenu\(\); return; \}\n\s*if \(EMBED\) sluitChat\(\);/);
+  for (const t of ['Chat sluiten', 'Close chat', 'Chat schließen']) assert.ok(h.includes(`sluiten: '${t}'`), t);
+});
