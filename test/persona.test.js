@@ -409,7 +409,7 @@ test('review 11-11-2026 (port eazyfix-bot 66ea2b4): kurz, keine Wiederholung, Pr
   assert.match(BASE_SYSTEM_PROMPT, /einleitende Zeile, die mit einem Doppelpunkt endet/);
   const foto = IMAGE_ANALYSIS_PROMPT.split('\n').filter((x) => x.startsWith('- LÄNGE (Pflicht'));
   assert.equal(foto.length, 1);
-  assert.match(foto[0], /140 Wörter[\s\S]*Schweregradwort/);
+  assert.match(foto[0], /110 Wörter[\s\S]*mehr als 140[\s\S]*Schweregradwort/);
   assert.doesNotMatch(IMAGE_ANALYSIS_PROMPT, /250 bis 300 Wörter/);
 });
 
@@ -471,4 +471,11 @@ test('review DE: naam, Anrede, Rücksendung, Sets, Fräsrand, Foto-Abschluss, Ma
   assert.equal(analyseFases({ ...muur, materiaal: 'Kunststoff' }).route, 'niethout');
   assert.ok(isMauerMaterial('Ziegelmauer') && isMauerMaterial('Beton') && !isMauerMaterial('Metall'));
   assert.match(buildRagQuery(muur), /Fertigspachtel/);
+});
+
+test('foto: lengteregel gaat als laatste systeemblok mee (port eazyfix-bot FOTO_LENGTE_REGEL)', () => {
+  const { FOTO_LENGTE_REGEL } = require('../src/persona');
+  assert.match(FOTO_LENGTE_REGEL, /höchstens 140 Wörter[\s\S]*Schweregradwort/);
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'src', 'index.js'), 'utf8');
+  assert.equal((src.match(/system\.push\(\{ type: 'text', text: videoNote\(videos\) \}\);\n    system\.push\(\{ type: 'text', text: FOTO_LENGTE_REGEL \}\);/g) || []).length, 2);
 });

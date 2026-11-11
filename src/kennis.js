@@ -379,6 +379,7 @@ function relevantVideos(query, { limit = 1 } = {}) {
     // Een treffer op het onderdeel (Fenster, Tür, Garten) weegt zwaarder dan een treffer op
     // een productnaam, die in bijna elke titel staat.
     const hits = titleStems.filter((t) => want.has(t)).reduce((n, t) => n + (VIDEO_PRODUCT.has(t) ? 1 : 2), 0);
+    const obj = titleStems.filter((t) => want.has(t) && !VIDEO_PRODUCT.has(t)).length;
     if (hits < 1) continue;
     // Juiste route: bij krassen en deuken in gezond hout geen houtrotvideo, bij
     // houtrot geen Feinspachtel-video (review 11-11-2026).
@@ -387,11 +388,14 @@ function relevantVideos(query, { limit = 1 } = {}) {
     const frag = /^\s*(stap|schritt)\s*\d/i.test(p.title) ? 1 : 0; // deelstap-video = lagere prioriteit
     // Volledig stappenplan/instructievideo > losse "... reparieren"-video > overig.
     const howto = /stappenplan|ablaufplan|instructievideo|instruktionsvideo/i.test(p.title) ? 2 : (/repareren|reparieren|reparatie|reparatur|verwijderen|entfernen/i.test(p.title) ? 1 : 0);
-    cand.push({ p, hits, frag, howto });
+    cand.push({ p, hits, frag, howto, obj });
   }
   // Niet-deelstap eerst; dan meeste treffers; dan volledige how-to.
   cand.sort((a, b) => a.frag - b.frag || b.hits - a.hits || b.howto - a.howto);
-  return cand.slice(0, limit).map((x) => ({
+  // Past de beste video op een onderdeel (Tür, Fenster), dan alleen nog video's over dat
+  // onderdeel erbij; geen algemene dakvideo als tweede kaart bij een deurvraag.
+  const lijst = cand.length && cand[0].obj > 0 ? cand.filter((c) => c.obj > 0) : cand;
+  return lijst.slice(0, limit).map((x) => ({
     title: cleanVideoTitle(x.p.title),
     url: x.p.url,
     thumb: ytThumb(x.p.url),

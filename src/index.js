@@ -4,7 +4,7 @@ const path = require('node:path');
 const cors = require('cors');
 const { parseAllowedOrigins, corsOptions, makeLimiters, embedRoute, makeWebTokens, makeDailyCaps, dailyLimitsFromEnv, messageTooLong, MESSAGE_TOO_LONG,
         limitConversation, newChatImages, catchAsyncRoutes, errorHandler, healthRoute, frameGuard } = require('./abuse-guard');
-const { BASE_SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT } = require('./persona');
+const { BASE_SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT, FOTO_LENGTE_REGEL } = require('./persona');
 const { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages, sendTelegramText, validateGesprekFeedback, saveGesprekFeedback } = require('./feedback');
 const { validateLead, nieuwToken, makePhotoGate, leadLimitsFromEnv, saveLead, leadTokenExists, syncPending } = require('./lead');
 const { mailchimpEnabled, syncLead } = require('./mailchimp');
@@ -403,6 +403,7 @@ app.post('/api/analyze-image', async (req, res) => {
     const siteNote = contextNote(parseContext(req.body.context));
     if (siteNote) system.push({ type: 'text', text: siteNote });
     system.push({ type: 'text', text: videoNote(videos) });
+    system.push({ type: 'text', text: FOTO_LENGTE_REGEL }); // als laatste blok
 
     const { text: raw, usage } = await runWithTools(
       [...priorMessages, { role: 'user', content: [...imageBlocks, { type: 'text', text: promptText + hint }] }],
@@ -578,6 +579,7 @@ app.post('/api/analyze-image/stream', async (req, res) => {
     const siteNote = contextNote(parseContext(req.body.context));
     if (siteNote) system.push({ type: 'text', text: siteNote });
     system.push({ type: 'text', text: videoNote(videos) });
+    system.push({ type: 'text', text: FOTO_LENGTE_REGEL }); // als laatste blok
 
     let convo = [...priorMessages, { role: 'user', content: [...imageBlocks, { type: 'text', text: promptText + hint }] }];
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
