@@ -1,34 +1,28 @@
 // Mailchimp-koppeling voor het gegevensformulier in de Duitse chat (port eazyfix-bot,
-// november 2026). Zelfde opzet als NL:
-// Vinkje 1 (toestemming verwerken, verplicht) -> Duitse lijst "AI Chat".
-// Vinkje 2 (nieuwsbrief, optioneel)           -> ook de Duitse nieuwsbrieflijst.
-// Labels: "AI-chat" (+ "Marketing akkoord" bij vinkje 2) op de AI Chat-lijst,
-// "Bron: AI-chat" en "Land: DE" op de nieuwsbrieflijst. Een bestaand lid wordt niet
-// opnieuw aangemeld of afgemeld (status_if_new).
+// november 2026). Lijsten volgens Nina (Teams, 11-11-2026):
+// Vinkje 1 (toestemming verwerken, verplicht) -> dezelfde lijst "AI Chat" als NL, met
+//   het label "Land: DE" (plus "AI-chat", en "Marketing akkoord" bij vinkje 2).
+// Vinkje 2 (nieuwsbrief, optioneel) -> "Eazyfix Newsletter [de]", met het veld
+//   Landcode (COUNTRY) = DE en de labels "Bron: AI-chat" en "Land: DE".
+// Een bestaand lid wordt niet opnieuw aangemeld of afgemeld (status_if_new).
 //
 // Dubbele opt-in alleen voor de nieuwsbrief (besluit Nina, 11-11-2026, zoals NL): de
-// nieuwsbrieflijst krijgt "pending" (eerst de bevestigingsmail), de AI Chat-lijst
-// "subscribed".
+// nieuwsbrieflijst krijgt "pending" (eerst de bevestigingsmail), AI Chat "subscribed".
 //
-// De Duitse lijsten heeft Nina nog niet doorgegeven (11-11-2026). Daarom is er GEEN
-// standaardlijst: zonder MAILCHIMP_LIST_AICHAT staat de koppeling uit. Inschrijvingen
-// blijven dan in Supabase staan (mailchimp_synced=false) en gaan alsnog door zodra
-// sleutel en lijsten zijn ingesteld (syncPending in src/lead.js).
-//
-// Instellingen: MAILCHIMP_API_KEY (eindigt op "-usNN"), MAILCHIMP_LIST_AICHAT (verplicht)
-// en MAILCHIMP_LIST_NIEUWSBRIEF (optioneel; zonder gaat vinkje 2 alleen als label mee).
+// Instellingen: MAILCHIMP_API_KEY (eindigt op "-usNN"; zelfde account als NL),
+// MAILCHIMP_LIST_AICHAT en MAILCHIMP_LIST_NIEUWSBRIEF (standaard de lijsten hieronder).
 
 const crypto = require('node:crypto');
 
-const LIJST_AICHAT = '';
-const LIJST_NIEUWSBRIEF = '';
+const LIJST_AICHAT = 'c53276f7d7'; // AI Chat (gedeeld met NL, label Land: DE)
+const LIJST_NIEUWSBRIEF = '265659b591'; // Eazyfix Newsletter [de]
 const TAG = 'AI-chat';
 const TAG_MARKETING = 'Marketing akkoord';
 const TAG_BRON = 'Bron: AI-chat';
 const TAG_LAND = 'Land: DE';
 
 function mailchimpEnabled(env = process.env) {
-  return /^[0-9a-f]{32}-us\d+$/.test(env.MAILCHIMP_API_KEY || '') && /^[0-9a-z]{6,20}$/.test(env.MAILCHIMP_LIST_AICHAT || '');
+  return /^[0-9a-f]{32}-us\d+$/.test(env.MAILCHIMP_API_KEY || '');
 }
 
 function lijsten(env = process.env) {
@@ -48,11 +42,11 @@ function bouwAanmeldingen(row, env = process.env) {
   const l = lijsten(env);
   const { FNAME, LNAME } = splitsNaam(row.naam);
   const marketing = row.nieuwsbrief === true;
-  const uit = [{ lijst: l.aichat, status: STATUS_AICHAT, merge_fields: { FNAME, LNAME }, tags: marketing ? [TAG, TAG_MARKETING] : [TAG] }];
-  // De extra velden van de Nederlandse nieuwsbrieflijst (MMERGE5/6) bestaan op de Duitse
-  // lijst niet; alleen voor- en achternaam.
+  const uit = [{ lijst: l.aichat, status: STATUS_AICHAT, merge_fields: { FNAME, LNAME }, tags: marketing ? [TAG, TAG_LAND, TAG_MARKETING] : [TAG, TAG_LAND] }];
+  // Velden van "Eazyfix Newsletter [de]": Vorname, Nachname, Privacy (MMERGE5) en
+  // Landcode (COUNTRY).
   if (marketing && l.nieuwsbrief) {
-    uit.push({ lijst: l.nieuwsbrief, status: STATUS_NIEUWSBRIEF, merge_fields: { FNAME, LNAME }, tags: [TAG_BRON, TAG_LAND] });
+    uit.push({ lijst: l.nieuwsbrief, status: STATUS_NIEUWSBRIEF, merge_fields: { FNAME, LNAME, MMERGE5: 'ja (AI-chat)', COUNTRY: 'DE' }, tags: [TAG_BRON, TAG_LAND] });
   }
   return uit;
 }

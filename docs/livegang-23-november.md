@@ -17,7 +17,7 @@ Alles staat klaar op de tak `nieuwe-site`. De huidige Duitse chat (main) blijft 
 1. Antwoorden van Eazyfix (Nina):
    - Welk telefoonnummer voor Duitsland: 03222 1097923 (nu in de chat) of +31 85 201 201 1 (FAQ van de nieuwe site)?
    - Blijft eazy-fix.de bestaan of stuurt het door naar eazy-fix.nl/de? De chat noemt nu "eazy-fix.de" als webshop.
-   - Duitse Mailchimp-lijsten (AI Chat en nieuwsbrief): de lijst-id's.
+   - Bevestigingsmail op de lijst "Eazyfix Newsletter [de]": Duitse tekst, net als Nina voor NL heeft gemaakt.
 2. JKC: iframe op de Duitse site naar `https://eazyfix-bot-de.onrender.com/embed` (zie inbouwhandleiding) en de drie punten uit hoofdstuk 6 van die handleiding.
 3. Vlak voor de livegang de kennis opnieuw ophalen (de site kan nog veranderen):
    `EZ_PREVIEW=<token> node scripts/pull-site.js` (na de livegang zonder token).
@@ -26,7 +26,7 @@ Alles staat klaar op de tak `nieuwe-site`. De huidige Duitse chat (main) blijft 
 
 1. Render (srv-d99u7k57vvec738916kg), omgevingsvariabelen:
    - `SUPABASE_URL` en `SUPABASE_SERVICE_KEY` naar project ozpnyfhzfptrhmopbbyq (dezelfde waarden als de NL-bot).
-   - `MAILCHIMP_API_KEY` (zelfde account als NL), `MAILCHIMP_LIST_AICHAT`, `MAILCHIMP_LIST_NIEUWSBRIEF` (Duitse lijsten).
+   - `MAILCHIMP_API_KEY` (zelfde sleutel als NL). De lijsten staan als standaard in de code (besluit Nina 11-11): AI Chat met label "Land: DE" en "Eazyfix Newsletter [de]" met Landcode DE.
    - `TELEGRAM_*` mag blijven (alleen het alarm bij het dagplafond, zonder gespreksinhoud).
 2. Tak `nieuwe-site` samenvoegen met main en pushen (Render zet hem automatisch live).
 3. Controleren: `/health` met x-health-key (kennisSite = https://www.eazy-fix.nl/de), een vraag via `/api/chat/stream` met prefix `livetest-`, de chat in de Duitse site openen.
