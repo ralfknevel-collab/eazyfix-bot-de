@@ -13,11 +13,15 @@ Alles staat klaar op de tak `nieuwe-site`. De huidige Duitse chat (main) blijft 
 - Tests 225 groen, examenset 32/32 (twee keer), browsertest lokaal (vraag, 3 foto's, formulier, smiley).
 - Inbouwhandleiding voor JKC: `docs/inbouw-website-jkc.md`.
 
+- Review 11-11 (REVIEW-CHATBOT-DE.md) verwerkt: webshop overal eazy-fix.nl/de, retour volgens de FAQ (30 dagen), geen geslacht raden, freesmarge 2 cm, één naam (KI-Heimwerkerberater), inhoud van de sets, kinderen en föhn, foto zonder winkelzoeker, muurfoto's naar de Fertigspachtel, 35 Duitse video's van @eazyfix-de, Duitse HTML-teksten. Tests 228, examenset 32/32.
+
 ## Nog nodig vóór 23 november
 
 1. Antwoorden van Eazyfix (Nina):
    - Welk telefoonnummer voor Duitsland: 03222 1097923 (nu in de chat) of +31 85 201 201 1 (FAQ van de nieuwe site)?
-   - Blijft eazy-fix.de bestaan of stuurt het door naar eazy-fix.nl/de? De chat noemt nu "eazy-fix.de" als webshop.
+   - Blijft eazy-fix.de bestaan? De chat noemt nu "eazy-fix.nl/de" als webshop (werkt in beide gevallen); wil Eazyfix liever eazy-fix.de, dan is dat één vervanging in src/persona.js.
+   - Oostenrijk (nu: via eazy-fix.nl/de, 9,32 euro) en Zwitserland (nu: via de Oostenrijkse site, 17,78 euro): de binnendienst bevestigde dit in juli 2026, de oudere chats zeggen eazy-fix.at en geen Zwitserland. Graag nog één keer bevestigen.
+   - Korting via de nieuwsbrief (10 procent?), MDF/multiplex, temperatuurregel, maximale laagdikte (site: 5 tot 20 mm, daarboven een nieuw stuk hout).
    - Bevestigingsmail op de lijst "Eazyfix Newsletter [de]": Duitse tekst, net als Nina voor NL heeft gemaakt.
 2. JKC: iframe op de Duitse site naar `https://eazyfix-bot-de.onrender.com/embed` (zie inbouwhandleiding) en de drie punten uit hoofdstuk 6 van die handleiding.
 3. Vlak voor de livegang de kennis opnieuw ophalen (de site kan nog veranderen):

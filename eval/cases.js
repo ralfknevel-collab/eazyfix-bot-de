@@ -54,7 +54,7 @@ module.exports = [
     name: 'Verkaufsstelle nach Ort — kein Treffer, online-first',
     messages: u('Ich wohne in Hamburg. Wo kann ich EAZYFIX kaufen?'),
     checks: [noEmDash],
-    judges: ['Der Bot erfindet KEINE Verkaufsstelle und behauptet nicht, es gebe in Hamburg einen Laden (z. B. einen Hornbach) mit EAZYFIX. Er verweist ehrlich auf die Online-Kanäle: den Webshop auf eazy-fix.de, Amazon oder HORNBACH online. Ein Verweis auf eine "Verkaufsstellen-Karte" ist NICHT erwünscht. (Ob er dafür erst die Verkaufsstellen-Suche aufruft, ist egal.)'],
+    judges: ['Der Bot erfindet KEINE Verkaufsstelle und behauptet nicht, es gebe in Hamburg einen Laden (z. B. einen Hornbach) mit EAZYFIX. Er verweist ehrlich auf die Online-Kanäle: den Webshop auf eazy-fix.nl/de, Amazon oder HORNBACH online. Ein Verweis auf eine "Verkaufsstellen-Karte" ist NICHT erwünscht. (Ob er dafür erst die Verkaufsstellen-Suche aufruft, ist egal.)'],
   },
   {
     // Frühere Daten führten ~25 Hornbach-Filialen; die sind gestoppt. Der Bot darf
@@ -62,7 +62,7 @@ module.exports = [
     name: 'Laden in München — kein gestoppter Hornbach, sondern online',
     messages: u('Ich wohne in München. Gibt es dort einen Baumarkt, wo ich EAZYFIX bekomme?'),
     checks: [noEmDash],
-    judges: ['Der Bot behauptet NICHT, dass es in München (oder bei einem bestimmten Hornbach-Filiale) EAZYFIX physisch zu kaufen gibt. Er sagt, dass in der Nähe keine Verkaufsstelle bekannt ist, und verweist auf die Online-Kanäle (Webshop auf eazy-fix.de, Amazon oder HORNBACH online). Er erfindet keinen Händler und keine Adresse.'],
+    judges: ['Der Bot behauptet NICHT, dass es in München (oder bei einem bestimmten Hornbach-Filiale) EAZYFIX physisch zu kaufen gibt. Er sagt, dass in der Nähe keine Verkaufsstelle bekannt ist, und verweist auf die Online-Kanäle (Webshop auf eazy-fix.nl/de, Amazon oder HORNBACH online). Er erfindet keinen Händler und keine Adresse.'],
   },
   {
     // Antwort (2:1) darf aus dem Bot-Wissen oder via zoek_kennis kommen; wir prüfen
@@ -74,7 +74,7 @@ module.exports = [
   {
     name: 'Preisfrage — kein Betrag',
     messages: u('Was kostet die EAZYFIX Premium Holzspachtelmasse?'),
-    checks: [noPrice, mentions(/eazy-fix\.de/i, 'verweist auf eazy-fix.de')],
+    checks: [noPrice, mentions(/eazy-fix\.nl\/de/i, 'verweist auf eazy-fix.nl/de')],
   },
   {
     name: 'kleiner Kratzer in gesundem Holz — Feinspachtel darf',
@@ -147,7 +147,7 @@ module.exports = [
     name: 'Rechnung — fragt erst den Kundentyp',
     messages: u('Wo finde ich meine Rechnung?'),
     checks: [noEmDash],
-    judges: ['Der Bot geht nicht blind davon aus, sondern unterscheidet zwischen einem Privatkunden (Rechnung im Konto auf eazy-fix.de hinter der Bestellung) und einem Händler/Wiederverkäufer (Innendienst), oder fragt zuerst, welcher von beiden der Kunde ist.'],
+    judges: ['Der Bot geht nicht blind davon aus, sondern unterscheidet zwischen einem Privatkunden (Rechnung im Konto auf eazy-fix.nl/de hinter der Bestellung) und einem Händler/Wiederverkäufer (Innendienst), oder fragt zuerst, welcher von beiden der Kunde ist.'],
   },
   {
     // Nichts erfinden: ein Produkt/Merkmal, das es nicht gibt, darf der Bot nicht
@@ -155,7 +155,7 @@ module.exports = [
     name: 'unbekanntes Produkt — nicht erfinden',
     messages: u('Verkauft ihr auch EAZYFIX Holzbeize, und welche Farben gibt es?'),
     checks: [noPrice, noEmDash],
-    judges: ['Der Bot behauptet NICHT, dass es eine "EAZYFIX Holzbeize" gibt, und erfindet keine Liste von Beizfarben. Er sagt ehrlich, dass EAZYFIX keine Holzbeize/keine Farbe im Sortiment hat. Er DARF dabei die echten EAZYFIX-Alternativen nennen (das EAZYFIX Abtönkonzentrat zum Einfärben der Reparatur; dass die ausgehärtete Spachtelmasse hell eichenfarben ist und überstrichen werden kann) oder an eazy-fix.de bzw. den Innendienst verweisen. Ein nicht existierendes Produkt, eine erfundene Beize oder eine erfundene Farbpalette zu behaupten, ist ein Fehlschlag.'],
+    judges: ['Der Bot behauptet NICHT, dass es eine "EAZYFIX Holzbeize" gibt, und erfindet keine Liste von Beizfarben. Er sagt ehrlich, dass EAZYFIX keine Holzbeize/keine Farbe im Sortiment hat. Er DARF dabei die echten EAZYFIX-Alternativen nennen (das EAZYFIX Abtönkonzentrat zum Einfärben der Reparatur; dass die ausgehärtete Spachtelmasse hell eichenfarben ist und überstrichen werden kann) oder an eazy-fix.nl/de bzw. den Innendienst verweisen. Ein nicht existierendes Produkt, eine erfundene Beize oder eine erfundene Farbpalette zu behaupten, ist ein Fehlschlag.'],
   },
 
   // ---------------------------------------------------------------------------
@@ -172,7 +172,7 @@ module.exports = [
     checks: [calledTool('find_verkooppunt'), ['stellt eine Rückfrage', (r) => r.text.includes('?')], noEmDash],
     // Sinds 11-11-2026 zoekt de bot bij een postcode zelf ook op de bijbehorende stad;
     // "geen winkel in de buurt" is dan een eerlijk tool-resultaat, geen verzinsel.
-    judges: ['Der Bot erfindet KEINE Verkaufsstelle. Er fragt nach dem Ortsnamen (oder der nächstgrößeren Stadt) ODER er sucht selbst mit dem passenden Ortsnamen und sagt dann ehrlich, dass dort keine Verkaufsstelle bekannt ist. Er nennt den Webshop auf eazy-fix.de als Alternative.'],
+    judges: ['Der Bot erfindet KEINE Verkaufsstelle. Er fragt nach dem Ortsnamen (oder der nächstgrößeren Stadt) ODER er sucht selbst mit dem passenden Ortsnamen und sagt dann ehrlich, dass dort keine Verkaufsstelle bekannt ist. Er nennt den Webshop auf eazy-fix.nl/de als Alternative.'],
   },
   {
     // Ein Viertel der Gespräche im deutschen Chat ist niederländisch. Die

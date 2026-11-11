@@ -75,7 +75,7 @@ const VERKOOPPUNT_TOOL = {
   description:
     'Suche physische EAZYFIX-Verkaufsstellen in Deutschland und Österreich (in Deutschland gibt es nur noch ganz wenige). ' +
     'Nutze das Tool IMMER, sobald der Nutzer einen Ort oder eine Postleitzahl nennt, bevor du sagst, ob es in der Nähe etwas gibt. ' +
-    'Findet es nichts, verweise auf den Webshop auf eazy-fix.de, Amazon oder HORNBACH online.',
+    'Findet es nichts, verweise auf den Webshop auf eazy-fix.nl/de, Amazon oder HORNBACH online.',
   input_schema: {
     type: 'object',
     properties: {
@@ -99,7 +99,7 @@ function runVerkooppuntTool(input) {
     // klant weg terwijl er een filiaal in zijn stad kan staan.
     return `Zur Postleitzahl "${plaats}" ist keine Verkaufsstelle hinterlegt; unsere Verkaufsstellen sind nach Ort erfasst, nicht nach Postleitzahl. ` +
       'Frag den Nutzer kurz nach dem Ortsnamen (oder der nächstgrößeren Stadt) und such dann noch einmal. ' +
-      'Nenne zusätzlich, dass EAZYFIX® vor allem online erhältlich ist: Webshop auf eazy-fix.de, Amazon oder HORNBACH online. Erfinde keine Verkaufsstelle.';
+      'Nenne zusätzlich, dass EAZYFIX® vor allem online erhältlich ist: Webshop auf eazy-fix.nl/de, Amazon oder HORNBACH online. Erfinde keine Verkaufsstelle.';
   }
 
   if (!stores.length) {
@@ -107,7 +107,7 @@ function runVerkooppuntTool(input) {
     // verwijzen (conform de "nooit verzinnen"-regel).
     return `Keine EAZYFIX-Verkaufsstelle gefunden für "${plaats || ''}". ` +
       'Sag ehrlich, dass in der Nähe keine physische Verkaufsstelle bekannt ist. EAZYFIX® ist vor allem online erhältlich: ' +
-      'verweise auf den Webshop auf eazy-fix.de, auf Amazon oder auf HORNBACH online. ' +
+      'verweise auf den Webshop auf eazy-fix.nl/de, auf Amazon oder auf HORNBACH online. ' +
       'Schick den Nutzer nicht zu einer weit entfernten Verkaufsstelle. Bei Fragen: EAZYFIX-Innendienst 03222 1097923.';
   }
 

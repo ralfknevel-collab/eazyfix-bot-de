@@ -15,7 +15,7 @@ const { roundGeo, runChat, runWithTools, buildChatContext, videoNote } = require
 const { productsInText } = require('./producten');
 const { searchContext, relevantVideos, siteBase } = require('./kennis');
 const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt,
-  buildDiagnosePrompt, containsDistressSignal, distressReply, analyseFoutReply, analyseFases } = require('./image-diagnose');
+  buildDiagnosePrompt, containsDistressSignal, distressReply, analyseFoutReply, analyseFases, isMauerMaterial, mauerHinweis, videoQuery } = require('./image-diagnose');
 const { startKeepAlive } = require('./keepalive');
 
 const MAX_TOOL_ROUNDS = 4;
@@ -376,7 +376,7 @@ app.post('/api/analyze-image', async (req, res) => {
     }
 
     // Geen hout (steen/metselwerk/beton/metaal/...): buiten scope, geen gok.
-    if (diagnose && !diagnose.isHout) {
+    if (diagnose && !diagnose.isHout && !isMauerMaterial(diagnose.materiaal)) {
       const reply = nietHoutReply(diagnose);
       persistPhoto(reply);
       return res.json({ content: reply, flow: null, productIds: [], products: [], usage: null });
@@ -389,7 +389,7 @@ app.post('/api/analyze-image', async (req, res) => {
     let hint = '';
     if (diagnose) {
       kennisContext = searchContext(buildRagQuery(diagnose, caption), 3);
-      hint = `\n\nVorläufige Diagnose (nutze als Hinweis, prüfe selbst am Foto): Schaden scheint ${diagnose.schadeType || 'unbekannt'}${diagnose.ernst && diagnose.ernst !== 'onbekend' ? `, Schweregrad ${diagnose.ernst}` : ''}.`;
+      hint = `\n\nVorläufige Diagnose (nutze als Hinweis, prüfe selbst am Foto): Schaden scheint ${diagnose.schadeType || 'unbekannt'}${diagnose.ernst && diagnose.ernst !== 'onbekend' ? `, Schweregrad ${diagnose.ernst}` : ''}.` + mauerHinweis(diagnose);
     }
 
     // Pass 2: het warme, volledige analyse-antwoord. zoek_kennis blijft als
@@ -397,7 +397,7 @@ app.post('/api/analyze-image', async (req, res) => {
     // Videokaartjes bij de foto-analyse (port eazyfix-bot): de backend kiest, het model
     // verzint nooit een URL. "wie reparieren" erbij: de videomatcher eist een
     // hoe-/reparatiewoord en een foto-analyse is per definitie een reparatievraag.
-    const videos = diagnose ? relevantVideos(`${buildRagQuery(diagnose, caption)} wie reparieren`, { limit: 2 }) : [];
+    const videos = diagnose ? relevantVideos(videoQuery(diagnose, caption), { limit: 2 }) : [];
     const system = [{ type: 'text', text: IMAGE_ANALYSIS_PROMPT }];
     if (kennisContext) system.push({ type: 'text', text: kennisContext });
     const siteNote = contextNote(parseContext(req.body.context));
@@ -566,13 +566,13 @@ app.post('/api/analyze-image/stream', async (req, res) => {
     let hint = '';
     if (diagnose) {
       kennisContext = searchContext(buildRagQuery(diagnose, caption), 3);
-      hint = `\n\nVorläufige Diagnose (nutze als Hinweis, prüfe selbst am Foto): Schaden scheint ${diagnose.schadeType || 'unbekannt'}${diagnose.ernst && diagnose.ernst !== 'onbekend' ? `, Schweregrad ${diagnose.ernst}` : ''}.`;
+      hint = `\n\nVorläufige Diagnose (nutze als Hinweis, prüfe selbst am Foto): Schaden scheint ${diagnose.schadeType || 'unbekannt'}${diagnose.ernst && diagnose.ernst !== 'onbekend' ? `, Schweregrad ${diagnose.ernst}` : ''}.` + mauerHinweis(diagnose);
     }
 
     // Fase 4: advies opstellen, pass 2 als stream met dezelfde tool-lus als de
     // niet-streaming handler (zoek_kennis blijft als vangnet beschikbaar).
     send({ phase: 'advies' });
-    const videos = diagnose ? relevantVideos(`${buildRagQuery(diagnose, caption)} wie reparieren`, { limit: 2 }) : [];
+    const videos = diagnose ? relevantVideos(videoQuery(diagnose, caption), { limit: 2 }) : [];
     const system = [{ type: 'text', text: IMAGE_ANALYSIS_PROMPT }];
     if (kennisContext) system.push({ type: 'text', text: kennisContext });
     const siteNote = contextNote(parseContext(req.body.context));

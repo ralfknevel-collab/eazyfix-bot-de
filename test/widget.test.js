@@ -62,3 +62,13 @@ test('widget: productlinks met Duitse namen en paden die in de kennis bestaan', 
   assert.equal(pad('Premium Holz Feinspachtel'), '/product/premium-holz-fein-spachtel/');
   assert.equal(pad('Holzfäule Fräser'), '/product/holzfaeule-fraeser/');
 });
+
+// Review 11-11-2026: vóór het laden van het script stonden Nederlandse teksten in de HTML.
+test('widget: statische HTML is Duits (geen Nederlandse knopteksten vóór het laden)', () => {
+  const body = html.slice(html.indexOf('<body'), html.indexOf('<script>', html.indexOf('<body')));
+  assert.doesNotMatch(body, /Klusadviseur|Gesprek beëindigen|Maak foto|Kies uit bibliotheek|Typ je bericht|Verstuur"|Foto toevoegen/);
+  assert.match(body, /Gespräch beenden/);
+  assert.match(body, /maxlength="4000"/);
+  assert.doesNotMatch(html, /url\('bg\.png'\)/, 'geen Nederlandse sitefoto als achtergrond');
+  assert.match(html, /'EAZYFIX' : T\.verzonden/);
+});

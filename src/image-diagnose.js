@@ -100,7 +100,8 @@ function parseDiagnose(text) {
 // wegdrukt.
 function buildRagQuery(diagnose, caption = '') {
   const cap = typeof caption === 'string' ? caption.trim().slice(0, 200) : '';
-  return [diagnose.schadeType, ...(diagnose.zoektermen || []), cap]
+  const mauer = !diagnose.isHout && isMauerMaterial(diagnose.materiaal) ? 'Premium Fertigspachtel Wand Risse Löcher' : '';
+  return [diagnose.schadeType, mauer, ...(diagnose.zoektermen || []), cap]
     .filter((s) => typeof s === 'string' && s.trim() !== '')
     .join(' ');
 }
@@ -181,6 +182,38 @@ function analyseFoutReply() {
   return 'Bei mir ist beim Betrachten deines Fotos etwas schiefgelaufen; das liegt nicht am Foto selbst. Schick es gleich noch einmal, dann schaue ich erneut. Klappt es dann immer noch nicht, ruf kurz den EAZYFIX®-Innendienst an unter 03222 1097923.';
 }
 
+// Mauer, Stein, Putz und Beton sind KEIN Holz, gehören aber zum Sortiment: der
+// EAZYFIX® Premium Fertigspachtel ist für Wand und Stein (laut eazy-fix.nl/de innen und
+// außen). Solche Fotos bekommen daher Rat statt "kein Holz" (port eazyfix-bot
+// isMuurMateriaal, review REVIEW-CHATBOT-DE.md punt 5). Kein \b links, damit auch
+// Zusammensetzungen wie "Ziegelmauer" oder "Kalkputz" passen.
+const MAUER_MATERIAL_RE = /(mauer|wand|stein|ziegel|klinker|beton|zement|putz|gips|stuck|estrich)/i;
+
+function isMauerMaterial(materiaal) {
+  return typeof materiaal === 'string' && MAUER_MATERIAL_RE.test(materiaal);
+}
+
+// Hinweis für pass 2 bei einem Foto von Mauerwerk/Putz.
+function mauerHinweis(diagnose) {
+  if (!diagnose || diagnose.isHout || !isMauerMaterial(diagnose.materiaal)) return '';
+  return `\n\nDas Material ist kein Holz, sondern ${diagnose.materiaal}. Folge der Regel MAUER UND STEIN: rate zum EAZYFIX® Premium Fertigspachtel, ohne Holzfäule-Route, Fräser oder Holzimprägnierung.`;
+}
+
+// Zoektekst voor de videokaartjes bij een foto. De route volgt het schadetype, niet
+// losse woorden: bij een opengewerkte verbinding staat "Riss" in de zoektermen, maar het
+// advies is de Holzspachtelmasse (review 11-11-2026: daar kwam een Feinspachtel-video bij).
+// Bij Mauerwerk geen video (er is geen Fertigspachtel-video).
+function videoQuery(diagnose, caption = '') {
+  if (!diagnose) return '';
+  if (!diagnose.isHout) return '';
+  const type = String(diagnose.schadeType || '').toLowerCase();
+  const route = /f(ä|ae)ule|verbindung/.test(type)
+    ? 'Holzfäule Holzspachtelmasse'
+    : 'Kratzer Feinspachtel';
+  const cap = typeof caption === 'string' ? caption.trim().slice(0, 200) : '';
+  return `${route} ${cap} wie reparieren`;
+}
+
 function analyseFases(diagnose) {
   // Leere Diagnose = technischer Fehler: nicht ungeprüft weiter ins Beratungs-Gleis,
   // sonst entfällt die Material-Prüfung. Gleiche Reihenfolge wie in der NL-Bot.
@@ -189,9 +222,9 @@ function analyseFases(diagnose) {
   // "kein Holz" oder "Produkt" ergeben, sonst faellt ein Urteil, das das Bild nicht traegt.
   if (diagnose && !diagnose.duidelijk) return { fases: ['foto', 'schade'], route: 'unclear' };
   if (diagnose && diagnose.isProduct) return { fases: ['foto', 'schade'], route: 'product' };
-  if (diagnose && !diagnose.isHout) return { fases: ['foto', 'schade'], route: 'niethout' };
+  if (diagnose && !diagnose.isHout && !isMauerMaterial(diagnose.materiaal)) return { fases: ['foto', 'schade'], route: 'niethout' };
   return { fases: ['foto', 'schade', 'kennisbank', 'advies'], route: 'advies' };
 }
 
-module.exports = { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt,
+module.exports = { videoQuery, isMauerMaterial, mauerHinweis, parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt,
   buildDiagnosePrompt, containsDistressSignal, distressReply, analyseFoutReply, analyseFases };

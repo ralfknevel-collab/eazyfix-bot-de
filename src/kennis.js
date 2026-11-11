@@ -349,6 +349,7 @@ const VIDEO_NICHE = new Set([]);
 // Woordbegin, zodat ook vervoegingen tellen ("mische", "repariere", "entferne").
 const VIDEO_HOWTO = /\b(wie|reparier\w*|reparatur\w*|auftrag\w*|trage\w*\s+auf|verwend\w*|gebrauch\w*|anleitung\w*|stappenplan|ablaufplan|misch\w*|anmisch\w*|entfern\w*|fräs\w*|schleif\w*|abschleif\w*|anwend\w*|schritt\w*|füll\w*|auffüll\w*|modellier\w*|behandl\w*|behandel\w*|verarbeit\w*)/i;
 
+const VIDEO_PRODUCT = new Set(['holzspachtelmasse', 'spachtelmasse', 'feinspachtel', 'holzimprägnierung', 'imprägnierung', 'holzfäulefräser', 'fräser'].map(stem));
 const OPPERVLAK = /\b(kratzer\w*|delle\w*|feinspachtel|riss\w*|nagell(ö|oe)ch\w*|ast\w*|unebenheit\w*)/i;
 const ROT = /\b(faul\w*|f(ä|ae)ule|morsch\w*|weich\w*|br(ö|oe)sel\w*|verrott\w*)/i;
 
@@ -375,7 +376,9 @@ function relevantVideos(query, { limit = 1 } = {}) {
     const titleStems = [...new Set(
       tokenize(cleanVideoTitle(p.title)).filter((t) => t.length > 2 && !VIDEO_GENERIC.has(t))
     )];
-    const hits = titleStems.filter((t) => want.has(t)).length;
+    // Een treffer op het onderdeel (Fenster, Tür, Garten) weegt zwaarder dan een treffer op
+    // een productnaam, die in bijna elke titel staat.
+    const hits = titleStems.filter((t) => want.has(t)).reduce((n, t) => n + (VIDEO_PRODUCT.has(t) ? 1 : 2), 0);
     if (hits < 1) continue;
     // Juiste route: bij krassen en deuken in gezond hout geen houtrotvideo, bij
     // houtrot geen Feinspachtel-video (review 11-11-2026).
@@ -522,14 +525,14 @@ function serviceFallback(onderwerp) {
   return `Die Frage zu "${onderwerp || ''}" betrifft kommerzielle oder Service-Themen ` +
     '(wie Preise, Bestellung, Bezahlung, Lieferung, Rücksendung oder Garantie). Dazu hat der ' +
     'EAZYFIX®-Bot bewusst keine Daten. Erfinde NICHTS: verweise den Heimwerker freundlich an den ' +
-    'Webshop auf eazy-fix.de oder den EAZYFIX®-Innendienst (03222 1097923). Für eine physische ' +
+    'Webshop auf eazy-fix.nl/de oder den EAZYFIX®-Innendienst (03222 1097923). Für eine physische ' +
     'Verkaufsstelle darfst du das Tool find_verkooppunt nutzen, wenn der Heimwerker einen Ort oder ' +
     'eine Postleitzahl nennt.';
 }
 
 // Tekst voor een inhoudelijke vraag zonder betrouwbare treffer: niet gokken.
 function noMatchFallback(onderwerp) {
-  return `Keine verlässlichen Informationen auf eazy-fix.de zu "${onderwerp || ''}" gefunden. ` +
+  return `Keine verlässlichen Informationen auf eazy-fix.nl/de zu "${onderwerp || ''}" gefunden. ` +
     'Erfinde selbst NICHTS und rate nicht. Sag dem Heimwerker ehrlich und freundlich, in deinem ' +
     'normalen warmen Heimwerker-Ton, dass du das gerade nicht sicher weißt, und verweise für eine ' +
     'verlässliche Antwort an den EAZYFIX®-Innendienst: 03222 1097923.';
@@ -541,7 +544,7 @@ function runKennisTool(input) {
   const stems = queryStems(onderwerp).expanded;
   const found = confidentSearch(onderwerp, 3);
   if (!found.length) return noMatchFallback(onderwerp);
-  return 'Gefunden auf eazy-fix.de (maßgeblich):\n\n' + found.map((p) => formatEntry(p, stems)).join('\n\n');
+  return 'Gefunden auf eazy-fix.nl/de (maßgeblich):\n\n' + found.map((p) => formatEntry(p, stems)).join('\n\n');
 }
 
 // Geformatteerde kennis-context voor injectie in een prompt (bv. pass-2 van de
@@ -559,7 +562,7 @@ function searchContext(query, limit = 3) {
   // matchen de Nederlandstalige video's wél op Nederlandse vragen.
   const found = confidentSearch(query, limit + 3).filter((p) => p.type !== 'video').slice(0, limit);
   if (!found.length) return '';
-  return 'RELEVANTES EAZY-FIX.DE-WISSEN (maßgeblich über Annahmen):\n\n' +
+  return 'RELEVANTES EAZY-FIX.NL/DE-WISSEN (maßgeblich über Annahmen):\n\n' +
     found.map((p) => formatEntry(p, stems)).join('\n\n');
 }
 

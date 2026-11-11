@@ -108,7 +108,7 @@ test('merknaam EAZYFIX genormaliseerd in tool-output, domein (eazy-fix.de) ongem
   const prose = out.replace(/\(https?:\/\/[^)]*\)/g, '');
   const leaks = (prose.match(/\beazyfix\b/gi) || []).filter((m) => m !== 'EAZYFIX');
   assert.deepEqual(leaks, [], `merknaam moet EAZYFIX zijn: ${leaks.join(', ')}`);
-  assert.match(out, /eazy-fix\.de/);
+  assert.match(out, /eazy-fix\.nl\/de/);
 });
 
 test('geen mixed-case merknaam in titels van de kennisdata', () => {
@@ -166,7 +166,7 @@ test('cleanVideoTitle normaliseert merknaam naar EAZYFIX', () => {
 
 test('runKennisTool geeft sitebron-tekst (eazy-fix.de) terug', () => {
   const out = runKennisTool({ onderwerp: 'Holzfäule im Fensterrahmen reparieren' });
-  assert.match(out, /eazy-fix\.de/);
+  assert.match(out, /eazy-fix\.nl\/de/);
   assert.ok(out.length > 50);
 });
 
@@ -312,4 +312,13 @@ test('zoeker: bij een product gaan de technische gegevens altijd mee', () => {
     assert.match(c, /Verarbeitungszeit: 10 . 15 min/);
     assert.match(c, /Überstreichbar: Nach 2 Stunden/);
   }
+});
+
+test('foto-video volgt het schadetype: verbinding en houtrot -> Holzspachtelmasse, kras -> Feinspachtel, muur -> geen', () => {
+  const { videoQuery } = require('../src/image-diagnose');
+  const titel = (d, c) => relevantVideos(videoQuery(d, c), { limit: 2 }).map((v) => v.title).join(' | ');
+  assert.match(titel({ isHout: true, schadeType: 'offene Verbindung' }, 'Fensterrahmen'), /^Holzfäule im Fensterrahmen/);
+  assert.doesNotMatch(titel({ isHout: true, schadeType: 'offene Verbindung' }, 'Riss am Fensterrahmen'), /Fein\s*Spachtel/i);
+  assert.match(titel({ isHout: true, schadeType: 'kosmetisch' }, 'Treppe'), /Fein\s*Spachtel/i);
+  assert.equal(titel({ isHout: false, materiaal: 'Putz' }, ''), '');
 });

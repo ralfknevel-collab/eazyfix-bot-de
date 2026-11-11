@@ -59,7 +59,7 @@ test('runTool find_verkooppunt geeft HolzLand MAHL bij Hünxe', () => {
 test('runTool geeft nette DE-tekst als niets gevonden, met binnendienst-verwijzing', () => {
   const out = runTool('find_verkooppunt', { plaats: 'Atlantis' });
   assert.match(out, /Keine EAZYFIX-Verkaufsstelle/);
-  assert.match(out, /eazy-fix\.de/);
+  assert.match(out, /eazy-fix\.nl\/de/);
   assert.match(out, /03222 1097923/);
 });
 
@@ -84,7 +84,7 @@ test('Duitse postcode zonder treffer vraagt om de plaatsnaam in plaats van niets
   assert.deepEqual(stores, []);
   const out = runTool('find_verkooppunt', { plaats: '85049' });
   assert.match(out, /Ortsnamen/);
-  assert.match(out, /eazy-fix\.de/);
+  assert.match(out, /eazy-fix\.nl\/de/);
   assert.doesNotMatch(out, /Keine EAZYFIX-Verkaufsstelle gefunden/);
 });
 

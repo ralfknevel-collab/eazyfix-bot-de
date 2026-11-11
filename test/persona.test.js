@@ -106,7 +106,7 @@ test('Verarbeitungszeit en Drehzahl volgen de kennisbank', () => {
 test('foto-prompt verbiedt verzonnen bedragen en verwijst naar de webshop', () => {
   assert.match(IMAGE_ANALYSIS_PROMPT, /Erfinde NIEMALS einen Betrag/);
   assert.match(IMAGE_ANALYSIS_PROMPT, /keinen Gesamtpreis und keine Preisspanne/);
-  assert.match(IMAGE_ANALYSIS_PROMPT, /Webshop auf eazy-fix\.de/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /Webshop auf eazy-fix\.nl\/de/);
 });
 
 // Correctie 20-07-2026: de prijsregel verwees alleen naar de webshop, terwijl EAZYFIX
@@ -127,7 +127,7 @@ test('basis-prompt eist eerst antwoorden, daarna pas een link', () => {
 
 test('basis-prompt verbiedt te ontkennen dat de bot een bot is', () => {
   assert.match(BASE_SYSTEM_PROMPT, /BIST DU EIN BOT/);
-  assert.match(BASE_SYSTEM_PROMPT, /digitale Assistent von EAZYFIX®/);
+  assert.match(BASE_SYSTEM_PROMPT, /dass du der KI-Heimwerkerberater von EAZYFIX® bist, also eine KI und kein Mensch/);
   assert.match(BASE_SYSTEM_PROMPT, /Streite das NIEMALS ab/);
 });
 
@@ -442,4 +442,33 @@ test('neue Seite: Garantieformular, drei Kontaktwege, kein Live-Chat mit Mitarbe
   assert.match(k, /https:\/\/www\.eazy-fix\.nl\/de\/kontakt\//);
   assert.match(k, /Nenne KEINEN Live-Chat mit einem Mitarbeiter/);
   assert.doesNotMatch(k, /\+31|085/, 'nummer volgt de bestaande nummerregel');
+});
+
+// Review REVIEW-CHATBOT-DE.md (11-11-2026): must-fix en verbeterpunten.
+test('review DE: naam, Anrede, Rücksendung, Sets, Fräsrand, Foto-Abschluss, Mauer', () => {
+  const alles = BASE_SYSTEM_PROMPT + IMAGE_ANALYSIS_PROMPT;
+  assert.doesNotMatch(alles, /Ich bin der Holzfäule-Assistent|der digitale Assistent von/);
+  assert.match(BASE_SYSTEM_PROMPT, /^Du bist der KI-Heimwerkerberater von EAZYFIX®/);
+  const regeln = BASE_SYSTEM_PROMPT.split('\n');
+  const eine = (start, tekst = regeln) => { const r = tekst.filter((x) => x.startsWith(start)); assert.equal(r.length, 1, start); return r[0]; };
+  assert.match(eine('- ANREDE:'), /Rate NIE das Geschlecht/);
+  assert.match(eine('- RÜCKSENDUNG'), /30 Tage[\s\S]*kostenlos[\s\S]*nur vollständig[\s\S]*14 Tagen/);
+  assert.match(eine('- Holzfäule Starterset mit Holzfäule Fräser:'), /erste Holzfäule-Reparatur/);
+  assert.match(eine('- Holzfäule Standardset mit Holzfäule Fräser:'), /OHNE Handschuhe/);
+  assert.match(eine('- Jedes Set enthält EINE Kartusche'), /NUR im Großen Reparaturset/);
+  assert.match(eine('- KINDER:'), /nicht mit der Spachtelmasse/);
+  assert.match(eine('2. Alles faule Holz mit dem Holzfäule Fräser wegfräsen'), /2 cm/);
+  assert.doesNotMatch(alles, /plus ca\. 0,5 cm gesundes Holz/);
+  assert.doesNotMatch(alles, /(?<![@\w/])eazy-fix\.de(?![\w-])/, 'webshop overal eazy-fix.nl/de');
+  assert.doesNotMatch(IMAGE_ANALYSIS_PROMPT, /Ort\/Postleitzahl für eine Verkaufsstelle in der Nähe/);
+  assert.match(IMAGE_ANALYSIS_PROMPT, /Biete KEINE Suche nach einer Verkaufsstelle an/);
+  const foto = IMAGE_ANALYSIS_PROMPT.split('\n');
+  assert.match(eine('- MAUER UND STEIN:', foto), /Premium Fertigspachtel[\s\S]*KEIN Fräser/);
+  assert.match(eine('- WEITERES FOTO DERSELBEN STELLE:', foto), /wiederhole die Vorgehensweise nicht/);
+  const { analyseFases, isMauerMaterial, buildRagQuery } = require('../src/image-diagnose');
+  const muur = { isHout: false, materiaal: 'Putz/Mauerwerk', duidelijk: true, isProduct: false, zoektermen: [] };
+  assert.equal(analyseFases(muur).route, 'advies');
+  assert.equal(analyseFases({ ...muur, materiaal: 'Kunststoff' }).route, 'niethout');
+  assert.ok(isMauerMaterial('Ziegelmauer') && isMauerMaterial('Beton') && !isMauerMaterial('Metall'));
+  assert.match(buildRagQuery(muur), /Fertigspachtel/);
 });
