@@ -15,6 +15,8 @@ Alles staat klaar op de tak `nieuwe-site`. De huidige Duitse chat (main) blijft 
 
 - Review 11-11 (REVIEW-CHATBOT-DE.md) verwerkt: webshop overal eazy-fix.nl/de, retour volgens de FAQ (30 dagen), geen geslacht raden, freesmarge 2 cm, één naam (KI-Heimwerkerberater), inhoud van de sets, kinderen en föhn, foto zonder winkelzoeker, muurfoto's naar de Fertigspachtel, 35 Duitse video's van @eazyfix-de, Duitse HTML-teksten. Tests 228, examenset 32/32.
 
+- Ook gedaan (11-11, avond): tak `nieuwe-site` staat op GitHub (nep-testsleutel in stukken voor de push-beveiliging), tweede videokaartje alleen over hetzelfde onderdeel, lengteregel foto als laatste blok, muurfoto en gedeelde locatie getest, privacylink naar /de/datenschutzerklaerung/, Duitse privacytekst voor de chat in `docs/datenschutz-chat-eazyfix-de.md`.
+
 ## Nog nodig vóór 23 november
 
 1. Antwoorden van Eazyfix (Nina):
@@ -23,8 +25,9 @@ Alles staat klaar op de tak `nieuwe-site`. De huidige Duitse chat (main) blijft 
    - Oostenrijk (nu: via eazy-fix.nl/de, 9,32 euro) en Zwitserland (nu: via de Oostenrijkse site, 17,78 euro): de binnendienst bevestigde dit in juli 2026, de oudere chats zeggen eazy-fix.at en geen Zwitserland. Graag nog één keer bevestigen.
    - Korting via de nieuwsbrief (10 procent?), MDF/multiplex, temperatuurregel, maximale laagdikte (site: 5 tot 20 mm, daarboven een nieuw stuk hout).
    - Bevestigingsmail op de lijst "Eazyfix Newsletter [de]": Duitse tekst, net als Nina voor NL heeft gemaakt.
-2. JKC: iframe op de Duitse site naar `https://eazyfix-bot-de.onrender.com/embed` (zie inbouwhandleiding) en de drie punten uit hoofdstuk 6 van die handleiding.
-3. Vlak voor de livegang de kennis opnieuw ophalen (de site kan nog veranderen):
+2. JKC: iframe op de Duitse site naar `https://eazyfix-bot-de.onrender.com/embed` (zie inbouwhandleiding). De punten over de site zelf (winkelpagina met NL-winkels, live chat in de FAQ, twee telefoonnummers, NL-webinar op de productpagina) liggen bij Nina.
+3. Privacy: de Duitse privacyverklaring noemt de chat nog niet; voorstel in `docs/datenschutz-chat-eazyfix-de.md` (bij Nina of wie de verklaring beheert).
+4. Vlak voor de livegang de kennis opnieuw ophalen (de site kan nog veranderen):
    `EZ_PREVIEW=<token> node scripts/pull-site.js` (na de livegang zonder token).
 
 ## Op 23 november (volgorde)

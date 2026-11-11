@@ -64,8 +64,5 @@ De server accepteert alleen slugs en paden die op eazy-fix.nl/de bestaan. Onbeke
 
 ## 6. Graag aan jullie kant
 
-- Op de Duitse site het iframe naar `eazyfix-bot-de.onrender.com` laten wijzen, niet naar de Nederlandse chat met `lang=de`: de Duitse chat heeft de Duitse producten, verkooppunten, verzendkosten en het Duitse telefoonnummer.
-- Op de preview vielen ons drie dingen op die niet van de chat zijn:
-  1. De pagina Verkaufsstellen toont Nederlandse winkels en zegt "Hunderte Verkaufsstellen"; in Duitsland zijn er maar heel weinig.
-  2. De FAQ noemt een "Live-Chat mit Mitarbeiter (grünes Symbol unten rechts)"; de chat is de KI-Heimwerkerberater, geen medewerker.
-  3. De FAQ en de blog noemen het Nederlandse nummer 085 201 201 1, de productpagina's het Duitse nummer 03222 1097923.
+- Op de Duitse site het iframe naar `eazyfix-bot-de.onrender.com/embed` laten wijzen, niet naar de Nederlandse chat met `lang=de`: de Duitse chat heeft de Duitse producten, verkooppunten, verzendkosten en het Duitse telefoonnummer.
+- Dezelfde tests als bij de Nederlandse inbouw: toetsenbord op iOS Safari in het iframe, "Foto aufnehmen" op een echte iPhone en Android, meegroeien van de hoogte en de events in de dataLayer.
