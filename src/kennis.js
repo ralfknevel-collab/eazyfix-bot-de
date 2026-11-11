@@ -61,6 +61,17 @@ const DATA_BASIS = dedupeData([
 ]).filter((p) => !OUTDATED_SLUGS.has(p.slug));
 const DATA = [...DATA_BASIS, ...faqEntries(DATA_BASIS)];
 
+// Basisadres van de site waar de producten staan, afgeleid uit de kennis: sinds de
+// nieuwe site https://www.eazy-fix.nl/de (alles vóór /product/). Eén nieuwe pull bij
+// een adreswijziging volstaat.
+const SITE_STANDAARD = 'https://www.eazy-fix.nl/de';
+function siteBase() {
+  const p = DATA.find((x) => x.type === 'product' && x.url);
+  if (!p) return SITE_STANDAARD;
+  const m = String(p.url).match(/^(https:\/\/[^/]+(?:\/[a-z]{2})?)\/product\//);
+  return m ? m[1] : SITE_STANDAARD;
+}
+
 // Duitse stopwoorden (lidwoorden, voornaamwoorden, voorzetsels, hulpwerkwoorden,
 // voegwoorden). Woorden van 2 tekens vallen sowieso al weg (len > 2-filter).
 const STOP = new Set(
@@ -527,4 +538,4 @@ function searchContext(query, limit = 3) {
     found.map((p) => formatEntry(p, stems)).join('\n\n');
 }
 
-module.exports = { faqEntries, excerpt, specs, search, scoreAll, confidentSearch, classifyIntent, searchContext, relevantVideos, cleanVideoTitle, runKennisTool, KENNIS_TOOL, DATA };
+module.exports = { siteBase, faqEntries, excerpt, specs, search, scoreAll, confidentSearch, classifyIntent, searchContext, relevantVideos, cleanVideoTitle, runKennisTool, KENNIS_TOOL, DATA };

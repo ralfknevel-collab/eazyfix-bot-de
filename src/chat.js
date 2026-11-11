@@ -6,6 +6,7 @@ const { MODEL, createClient, REQUEST_DEFAULTS, CHAT_EFFORT, REFUSAL_TEXT, isRefu
 const { BASE_SYSTEM_PROMPT } = require('./persona');
 const { CHAT_TOOLS, runTool } = require('./tools');
 const { searchContext, relevantVideos } = require('./kennis');
+const { contextNote, contextZoekterm } = require('./context');
 
 // Platte tekst uit het laatste gebruikersbericht halen (string of contentblokken).
 function lastUserText(messages) {
@@ -71,16 +72,35 @@ async function runWithTools(messages, opts = {}) {
   return { text: textBlock ? textBlock.text : '', content: response.content, toolCalls, usage: response.usage, refused: false };
 }
 
-// Instructie voor het model: onder het antwoord verschijnt een videokaartje,
-// dus mag het in de tekst kort uitnodigen de video te bekijken (zonder URL).
+// Instructie voor het model: onder het antwoord verschijnen een of meer
+// videokaartjes, dus mag het in de tekst kort uitnodigen die te bekijken (zonder URL).
+// Geen video bij dit antwoord: zeg dat expliciet, anders kopieert het model de
+// uitnodiging uit een eerder antwoord (port eazyfix-bot, feedback #116).
+const GEEN_VIDEO_NOTE = 'UNTER DIESER ANTWORT ERSCHEINT KEINE VIDEOKARTE. Verweise also nicht auf ein Video unten oder im Chat, auch nicht, wenn du das in einer früheren Antwort getan hast.';
+function videoNote(videos) {
+  return videos && videos.length ? videoInviteNote(videos) : GEEN_VIDEO_NOTE;
+}
+
 function videoInviteNote(videos) {
-  return `UNTER DEINER ANTWORT ERSCHEINT EINE KLICKBARE VIDEOKARTE mit dem EAZYFIX-Video "${videos[0].title}". `
-    + 'Setz in deine Antwort EINE kurze, natürliche Einladung, es anzusehen, '
-    + 'zum Beispiel "Schau dir auch kurz das Video unten an, da siehst du es Schritt für Schritt." '
+  const mehrere = videos.length > 1;
+  const titel = videos.map((v) => `"${v.title}"`).join(', ');
+  return (mehrere
+    ? `UNTER DEINER ANTWORT ERSCHEINEN ${videos.length} KLICKBARE VIDEOKARTEN mit den EAZYFIX-Videos ${titel}. `
+    : `UNTER DEINER ANTWORT ERSCHEINT EINE KLICKBARE VIDEOKARTE mit dem EAZYFIX-Video ${titel}. `)
+    + 'Setz in deine Antwort EINE kurze, natürliche Einladung, '
+    + (mehrere ? 'sie anzusehen, zum Beispiel "Schau dir die Videos unten an, da siehst du es Schritt für Schritt."'
+               : 'es anzusehen, zum Beispiel "Schau dir auch kurz das Video unten an, da siehst du es Schritt für Schritt."') + ' '
     + 'Schreib diese Einladung in der Sprache deiner Antwort: antwortest du auf Englisch, dann zum Beispiel "Have a look at the video below, it shows you step by step." '
     + 'Setz diese Einladung direkt VOR deine Schlussfrage oder Fotobitte, nie danach: deine Frage an den Heimwerker steht immer am Ende. Hast du keine Schlussfrage, darf die Einladung der letzte Satz sein. '
-    + 'Füge SELBST KEINEN Link, keine URL und keine YouTube-Adresse in deinen Text ein (die Karte erledigt das). '
-    + 'Nenne den Videotitel nicht wörtlich; verweise einfach auf "das Video unten".';
+    + 'Füge SELBST KEINEN Link, keine URL und keine YouTube-Adresse in deinen Text ein (die Karten erledigen das). '
+    + 'Nenne die Videotitel nicht wörtlich; verweise einfach auf "das Video unten" oder "die Videos unten".';
+}
+
+// Wie viele Videokarten gehören zu dieser Frage? Bei einer ausdrücklichen
+// Wie-mache-ich- oder Anleitungsfrage mehr; bei einer kurzen, gezielten Frage eine.
+const BREITE_ANLEITUNGSFRAGE = /\b(anleitung|schritt f(ü|ue)r schritt|schritt-f(ü|ue)r-schritt|wie gehe ich|wie mache ich|wie repariere|wie muss ich|wie funktioniert|vollst(ä|ae)ndige|komplette|alle schritte|von anfang bis ende|was muss ich tun|welche schritte|genau vorgehen|erkl(ä|ae)rung)\b/i;
+function videoLimit(userText) {
+  return BREITE_ANLEITUNGSFRAGE.test(String(userText || '')) ? 3 : 2;
 }
 
 // Gedeelde browserlocatie controleren en afronden op twee decimalen (ongeveer een
@@ -111,12 +131,16 @@ function buildChatContext(userText, opts = {}) {
   const system = [{ type: 'text', text: BASE_SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }];
   // Relevante kennis altijd vooraf injecteren, zodat het antwoord niet afhangt
   // van of het model zoek_kennis aanroept (de tool blijft als aanvulling beschikbaar).
-  const ctx = searchContext(userText);
+  // Context uit het iframe-adres (product, pagina, klus, taal; src/context.js).
+  const extra = contextZoekterm(opts.context, userText);
+  const ctx = searchContext(extra ? `${userText} ${extra}` : userText);
   if (ctx) system.push({ type: 'text', text: ctx });
+  const siteNote = contextNote(opts.context);
+  if (siteNote) system.push({ type: 'text', text: siteNote });
   // Videokeuze op basis van de VRAAG (backend kiest, model verzint nooit een URL).
   // Als er een video bij past, mag het model in de tekst uitnodigen die te bekijken.
-  const videos = relevantVideos(userText);
-  if (videos.length) system.push({ type: 'text', text: videoInviteNote(videos) });
+  const videos = relevantVideos(userText, { limit: videoLimit(userText) });
+  system.push({ type: 'text', text: videoNote(videos) });
   const note = geoNote(opts.geo);
   if (note) system.push({ type: 'text', text: note });
   return { system, videos };
@@ -125,9 +149,9 @@ function buildChatContext(userText, opts = {}) {
 // Tekst-chat met de standaard botpersona en chat-tools.
 async function runChat(messages, opts = {}) {
   const geo = opts.geo;
-  const { system, videos } = buildChatContext(lastUserText(messages), { geo });
+  const { system, videos } = buildChatContext(lastUserText(messages), { geo, context: opts.context });
   const result = await runWithTools(messages, { model: opts.model, onTool: opts.onTool, geo, system });
   return { ...result, videos };
 }
 
-module.exports = { runChat, runWithTools, buildChatContext, geoNote, roundGeo, videoInviteNote };
+module.exports = { runChat, runWithTools, buildChatContext, geoNote, roundGeo, videoInviteNote, videoNote, GEEN_VIDEO_NOTE, videoLimit };

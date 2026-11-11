@@ -1,13 +1,14 @@
-// Bewaartermijn van gesprekken en foto's (port eazyfix-bot b934327, veiligheidscheck
-// 20-10-2026). Gesprekken in chats_eazyfix_de en foto's in de (met NL gedeelde) bucket chat-fotos ouder dan BEWAARTERMIJN_DAGEN
-// (standaard 90) worden dagelijks verwijderd. Feedback (duimpjes) blijft staan: dat is
-// de werkvoorraad die Ralf zelf wist. Draait vanuit index.js (eenmaal na de start en
-// daarna elke 24 uur) en handmatig via scripts/opruimen.js (met DRY_RUN=1 alleen tellen).
+// Bewaartermijn (port eazyfix-bot; 12 maanden, besluit Ralf 11-11-2026 voor DE).
+// Gesprekken (chats_eazyfix_de), foto's (bucket chat-fotos, gedeeld met NL), beoordelingen
+// (feedback_eazyfix_de) en formuliergegevens (leads_eazyfix_de) ouder dan BEWAARTERMIJN_DAGEN (standaard 365)
+// worden dagelijks verwijderd. In Mailchimp blijven inschrijvingen staan tot afmelding.
+// Draait vanuit index.js (eenmaal na de start en daarna elke 24 uur) en handmatig via
+// scripts/opruimen.js (met DRY_RUN=1 alleen tellen).
 const { CHAT_BUCKET } = require('./feedback');
 
 function retentionDays(env = process.env) {
   const v = parseInt(env.BEWAARTERMIJN_DAGEN, 10);
-  return Number.isFinite(v) && v > 0 ? v : 365; // 12 Monate wie NL (besluit Ralf 11-11-2026)
+  return Number.isFinite(v) && v > 0 ? v : 365;
 }
 
 function cutoffIso(days, now = Date.now()) {
@@ -23,6 +24,8 @@ function headers(extra = {}) {
 
 // Gesprekken ouder dan de grens verwijderen (of alleen tellen bij dryRun).
 const CHATS_TABLE = process.env.CHATS_TABLE || 'chats_eazyfix_de';
+const FEEDBACK_TABLE = process.env.FEEDBACK_TABLE || 'feedback_eazyfix_de';
+const LEADS_TABLE = 'leads_eazyfix_de';
 
 async function opruimenGesprekken(cutoff, { dryRun = false, table = CHATS_TABLE } = {}) {
   const url = `${base()}/rest/v1/${table}?created_at=lt.${encodeURIComponent(cutoff)}`;
@@ -50,17 +53,23 @@ async function listObjects(prefix) {
 }
 
 // Foto's ouder dan de grens verwijderen: per gespreksmap de bestanden bekijken.
-async function opruimenFotos(cutoff, { dryRun = false } = {}) {
-  const folders = (await listObjects('')).filter((o) => !o.id); // mappen hebben geen id
+async function opruimenFotos(cutoff, { dryRun = false, gezien = {} } = {}) {
+  const root = await listObjects('');
+  const folders = root.filter((o) => !o.id); // mappen hebben geen id
   const oud = [];
+  let bestanden = 0;
+  let voorbeeld = null;
   for (const f of folders) {
     // Inhoud van een map opvragen vereist de prefix MET slash; zonder slash geeft de
-    // storage-API één lege mapregel terug en geen bestanden (gemeten 20-10-2026, NL b1ceb2a).
+    // storage-API één lege mapregel terug en geen bestanden (gemeten 20-10-2026).
     const files = await listObjects(f.name.replace(/\/+$/, '') + '/');
     for (const file of files) {
+      bestanden += 1;
+      if (!voorbeeld && file.id) voorbeeld = { name: file.name, created_at: file.created_at };
       if (file.id && file.created_at && file.created_at < cutoff) oud.push(`${f.name}/${file.name}`);
     }
   }
+  Object.assign(gezien, { root: root.length, mappen: folders.length, bestanden, voorbeeld, grens: cutoff });
   if (dryRun || oud.length === 0) return oud.length;
   for (let i = 0; i < oud.length; i += 100) {
     const batch = oud.slice(i, i + 100);
@@ -78,8 +87,11 @@ async function opruimen({ dryRun = false, now = Date.now(), env = process.env } 
   const days = retentionDays(env);
   const cutoff = cutoffIso(days, now);
   const gesprekken = await opruimenGesprekken(cutoff, { dryRun });
-  const fotos = await opruimenFotos(cutoff, { dryRun });
-  return { days, cutoff, gesprekken, fotos, dryRun };
+  const beoordelingen = await opruimenGesprekken(cutoff, { dryRun, table: FEEDBACK_TABLE });
+  const leads = await opruimenGesprekken(cutoff, { dryRun, table: LEADS_TABLE });
+  const gezien = {};
+  const fotos = await opruimenFotos(cutoff, { dryRun, gezien });
+  return { days, cutoff, gesprekken, beoordelingen, leads, fotos, dryRun, gezien };
 }
 
-module.exports = { retentionDays, cutoffIso, opruimen, opruimenGesprekken, opruimenFotos, CHATS_TABLE };
+module.exports = { retentionDays, cutoffIso, opruimen, opruimenGesprekken, opruimenFotos, CHATS_TABLE, FEEDBACK_TABLE, LEADS_TABLE };

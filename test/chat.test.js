@@ -34,7 +34,8 @@ test('geen Duitse videobron: video-intentie levert geen videokaart, geo blijft l
   const { system, videos } = buildChatContext('wie repariere ich Holzfäule im Fensterrahmen', { geo: { lat: 52, lon: 5 } });
   // Er is (nog) geen Duitse videobron, dus geen videokaart en geen video-blok.
   assert.deepEqual(videos, []);
-  assert.ok(!system.some((b) => /VIDEOKARTE/.test(b.text)));
+  assert.ok(!system.some((b) => /KLICKBARE VIDEOKARTE/.test(b.text)));
+  assert.ok(system.some((b) => /ERSCHEINT KEINE VIDEOKARTE/.test(b.text)), 'zegt expliciet: geen video');
   // Geo-hint hoort als laatste blok te staan.
   assert.match(system[system.length - 1].text, /GETEILTER STANDORT/);
 });
@@ -42,7 +43,8 @@ test('geen Duitse videobron: video-intentie levert geen videokaart, geo blijft l
 test('koop-/prijsvraag levert geen videokaart', () => {
   const { videos, system } = buildChatContext('was kostet die Holzspachtelmasse', {});
   assert.deepEqual(videos, []);
-  assert.ok(!system.some((b) => /VIDEOKARTE/.test(b.text)));
+  assert.ok(!system.some((b) => /KLICKBARE VIDEOKARTE/.test(b.text)));
+  assert.ok(system.some((b) => /ERSCHEINT KEINE VIDEOKARTE/.test(b.text)), 'zegt expliciet: geen video');
 });
 
 // Port van eazyfix-bot / repair-care-bot 5a9d74c (RC-feedback #164/#165): de

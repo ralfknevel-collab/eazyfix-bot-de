@@ -1,6 +1,6 @@
-// Bescherming tegen misbruik van de open API. Port van eazyfix-bot (NL, commit
-// cf9a663), daar weer een port van repair-care-bot (9dab9ba, f6a7cfd) en
-// repair-care-bot-de (ccd23ab).
+// Bescherming tegen misbruik van de open API. Port van eazyfix-bot (NL); daar weer een
+// port van repair-care-bot (9dab9ba, f6a7cfd) en repair-care-bot-de (ccd23ab).
+// November 2026: volledig gelijkgetrokken met NL voor de inbouw in eazy-fix.nl/de (JKC).
 //
 // Twee maatregelen:
 // 1. Herkomstcontrole (CORS-allowlist): alleen de eigen site(s) mogen de API vanuit
@@ -11,14 +11,18 @@
 //    duurst). De melding verschijnt als chatbubbel: public/index.html toont d.error
 //    bij status 429.
 //
-// Standaardlijst: de eigen Render-host en de Duitse site. Overschrijfbaar via
-// ALLOWED_ORIGIN (komma-gescheiden).
+// De Duitse chat komt als iframe in de Duitse site onder eazy-fix.nl/de (JKC). De
+// standaardlijst bevat de eigen Render-host, eazy-fix.nl (daar staat /de/), de oude
+// eazy-fix.de en de testomgeving van JKC. Overschrijfbaar via ALLOWED_ORIGIN.
 const rateLimit = require('express-rate-limit');
 
 const DEFAULT_ORIGINS = [
-  'https://eazyfix-bot-de.onrender.com', // eigen testpagina
+  'https://eazyfix-bot-de.onrender.com', // eigen testpagina en de iframe-pagina
+  'https://www.eazy-fix.nl', // de Duitse site staat onder /de/
+  'https://eazy-fix.nl',
   'https://www.eazy-fix.de',
   'https://eazy-fix.de',
+  'https://eazyfix.jkc-dev.nl', // testomgeving nieuwe site (JKC Media)
 ];
 
 const LOCALHOST_RE = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
@@ -71,7 +75,6 @@ function makeLimiters() {
 // De widget begrenst een bericht op 2000 tekens, maar wie de API rechtstreeks aanroept
 // kan megabytes sturen (express.json staat op 10 MB voor foto's). Elk teken gaat naar
 // het model en kost geld; daarom een harde grens op de server, ruim boven de widget.
-// Port van eazyfix-bot (NL) a41ea98; meldingen in de du-vorm van de Duitse persona.
 const MAX_MESSAGE_CHARS = 4000;
 const MESSAGE_TOO_LONG = 'Deine Nachricht ist zu lang (maximal 4000 Zeichen). Kürze sie bitte etwas und versuch es noch einmal.';
 
@@ -176,7 +179,6 @@ function catchAsyncRoutes(app) {
   return app;
 }
 
-// Port van eazyfix-bot (NL) 7526fea; meldingen in de du-vorm van de Duitse persona.
 const BAD_REQUEST = 'Ungültige Anfrage.';
 const TOO_LARGE = 'Die Anfrage ist zu groß. Schick bitte weniger oder kleinere Fotos.';
 const SERVER_ERROR = 'Da ist gerade etwas schiefgelaufen. Versuch es gleich erneut, oder ruf den Innendienst an unter 03222 1097923.';
@@ -206,20 +208,27 @@ function errorHandler(log = console.error) {
 // een plafond per bezoeker per dag (berichten en foto's apart) en een plafond voor de
 // hele bot per dag, met nette melding (429) en een alarm bij 80% van het botplafond.
 // Tellers staan in het geheugen van het proces en beginnen elke dag (UTC) op nul; na
-// een herstart ook. Overschrijfbaar via omgevingsvariabelen (zie dailyLimitsFromEnv).
+// een herstart ook. Dat is bewust eenvoudig: het gaat om het afkappen van misbruik,
+// niet om boekhouding. Gewoon gebruik zit ver onder deze getallen (20 tot 30
+// berichten per dag in oktober 2026). Overschrijfbaar via omgevingsvariabelen.
 // Een aanvraag die de server zelf afwijst voordat het model iets doet (ongeldige
 // invoer, geen toegang) telt niet mee: de teller wordt dan teruggezet. Anders kan een
 // buitenstaander het plafond van de hele bot volmaken met onzin-aanvragen die niets
-// kosten. Geteld wordt per IPv4-adres of per IPv6-blok (zie ipKey). Port NL 7526fea.
+// kosten. Geteld wordt per IPv4-adres of per IPv6-blok (zie ipKey).
 const NOT_COUNTED = new Set([400, 401, 403, 404, 413, 415]);
-// Beoordelingen schrijven naar de database en hebben daarom een eigen plafond: zonder
-// grens kon een script de tabel volschrijven, en de noodstop raakte deze route niet.
-// Port eazyfix-bot 00afcf6 (de Duitse bot heeft geen formulier, dus alleen beoordelingen).
-const DAILY_LIMITS = { perIpMessages: 60, perIpPhotos: 15, globalMessages: 400, globalPhotos: 60, perIpFeedback: 60, globalFeedback: 400 };
+// Formulier (naam en e-mail) en beoordelingen schrijven naar de database en hebben
+// daarom een eigen plafond: zonder grens kon een script de tabellen volschrijven, en de
+// noodstop (plafond op 1 zetten) raakte deze routes niet. Review 10-11-2026.
+const DAILY_LIMITS = {
+  perIpMessages: 60, perIpPhotos: 15, globalMessages: 400, globalPhotos: 60,
+  perIpLeads: 5, globalLeads: 200, perIpFeedback: 60, globalFeedback: 400,
+};
+const DAILY_IP_FORM = 'Du hast das Formular heute schon ein paar Mal ausgefüllt. Versuch es morgen noch einmal.';
 const DAILY_IP_FEEDBACK = 'Du hast für heute die maximale Zahl an Bewertungen abgegeben. Danke für deine Hilfe.';
 const KINDS = {
   messages: { global: 'globalMessages', ip: 'perIpMessages' },
   photos: { global: 'globalPhotos', ip: 'perIpPhotos' },
+  leads: { global: 'globalLeads', ip: 'perIpLeads' },
   feedback: { global: 'globalFeedback', ip: 'perIpFeedback' },
 };
 const DAILY_IP_MESSAGE = 'Du hast für heute die maximale Zahl an Fragen an den Assistenten erreicht. Morgen geht es weiter; bei einer dringenden Frage hilft dir der EAZYFIX® Innendienst unter 03222 1097923.';
@@ -233,6 +242,8 @@ function dailyLimitsFromEnv(env = process.env) {
     perIpPhotos: num('DAG_FOTOS_PER_BEZOEKER', DAILY_LIMITS.perIpPhotos),
     globalMessages: num('DAG_BERICHTEN_TOTAAL', DAILY_LIMITS.globalMessages),
     globalPhotos: num('DAG_FOTOS_TOTAAL', DAILY_LIMITS.globalPhotos),
+    perIpLeads: num('DAG_FORMULIER_PER_BEZOEKER', DAILY_LIMITS.perIpLeads),
+    globalLeads: num('DAG_FORMULIER_TOTAAL', DAILY_LIMITS.globalLeads),
     perIpFeedback: num('DAG_BEOORDELINGEN_PER_BEZOEKER', DAILY_LIMITS.perIpFeedback),
     globalFeedback: num('DAG_BEOORDELINGEN_TOTAAL', DAILY_LIMITS.globalFeedback),
   };
@@ -244,7 +255,7 @@ function makeDailyCaps(opts = {}) {
   const now = opts.now || (() => Date.now());
   const onAlert = opts.onAlert || (() => {});
   let day = null;
-  const leeg = () => ({ messages: 0, photos: 0, feedback: 0 });
+  const leeg = () => ({ messages: 0, photos: 0, leads: 0, feedback: 0 });
   let global = leeg();
   let perIp = new Map();
   const alerted = new Set();
@@ -257,7 +268,7 @@ function makeDailyCaps(opts = {}) {
   function guard(kind) {
     const globalCap = KINDS[kind].global;
     const ipCap = KINDS[kind].ip;
-    const ipMessage = { messages: DAILY_IP_MESSAGE, photos: DAILY_IP_PHOTO, feedback: DAILY_IP_FEEDBACK }[kind];
+    const ipMessage = { messages: DAILY_IP_MESSAGE, photos: DAILY_IP_PHOTO, leads: DAILY_IP_FORM, feedback: DAILY_IP_FEEDBACK }[kind];
     return (req, res, next) => {
       roll();
       if (global[kind] >= limits[globalCap]) return res.status(429).json({ error: DAILY_GLOBAL });
@@ -304,9 +315,10 @@ function makeDailyCaps(opts = {}) {
   return {
     messageGuard: guard('messages'),
     photoGuard: guard('photos'),
+    leadGuard: guard('leads'),
     feedbackGuard: guard('feedback'),
     countChatPhotos,
-    status() { roll(); return { dag: day, vandaag: { berichten: global.messages, fotos: global.photos, beoordelingen: global.feedback }, limieten: { ...limits } }; },
+    status() { roll(); return { dag: day, vandaag: { berichten: global.messages, fotos: global.photos, formulier: global.leads, beoordelingen: global.feedback }, limieten: { ...limits } }; },
   };
 }
 
@@ -317,7 +329,7 @@ function makeDailyCaps(opts = {}) {
 // aanroept moet dan per adres een verse pagina halen, elk uur opnieuw. Dat stopt geen
 // vastberaden aanvaller (de dagplafonds doen dat), maar wel het simpele curl-script.
 // Afdwingen gebeurt alleen met WEB_TOKEN_VERPLICHT=1 (zie index.js), zodat de native
-// app eerst zijn eigen sleutel (APP_SECRET) kan krijgen. Port van eazyfix-bot b934327.
+// app eerst zijn eigen sleutel (APP_SECRET) kan krijgen.
 const crypto = require('node:crypto');
 const WEB_TOKEN_TTL_MS = 60 * 60 * 1000;
 
@@ -341,17 +353,33 @@ function makeWebTokens(opts = {}) {
   };
 }
 
-// De chatpagina (testpagina op /) met per aanvraag een vers toegangsbewijs op de plek
-// van __WEB_TOKEN__ in public/index.html. Per aanvraag gelezen (klein bestand, geen
-// cache-verrassingen na een deploy).
-function chatPage(publicDir, tokens) {
+// --- iframe in de website -------------------------------------------------------
+// De chat komt als iframe in de Duitse site op eazy-fix.nl/de (JKC). Alleen de eigen origins
+// (en localhost, voor lokaal ontwikkelen) mogen de pagina /embed in een kader laden;
+// anders kan elke willekeurige site de chat en daarmee het modelbudget inlijsten.
+// Browsers handhaven dit via de CSP-richtlijn frame-ancestors.
+function frameAncestorsHeader(allowedOrigins) {
+  return ["frame-ancestors 'self'", ...allowedOrigins, 'http://localhost:*', 'http://127.0.0.1:*'].join(' ');
+}
+
+// De chatpagina (testpagina op / en inbouwversie op /embed) met per aanvraag een vers
+// toegangsbewijs op de plek van __WEB_TOKEN__ in public/index.html. Het bestand wordt
+// per aanvraag gelezen (klein, geen cache-verrassingen na een deploy).
+function chatPage(publicDir, tokens, { frameAncestors } = {}) {
   const fs = require('node:fs');
   const file = require('node:path').join(publicDir, 'index.html');
   return (req, res) => {
     const html = fs.readFileSync(file, 'utf8').replace('__WEB_TOKEN__', tokens.issue(req.ip));
+    if (frameAncestors) res.set('Content-Security-Policy', frameAncestors);
     res.set('Cache-Control', 'no-store');
     res.type('html').send(html);
   };
+}
+
+// Route voor /embed: dezelfde chatpagina als de testpagina (geen tweede kopie), met
+// de frame-ancestors-header. De pagina zelf herkent het pad en toont de inbouwversie.
+function embedRoute(allowedOrigins, publicDir, tokens = makeWebTokens()) {
+  return chatPage(publicDir, tokens, { frameAncestors: frameAncestorsHeader(allowedOrigins) });
 }
 
 // --- statuspagina -----------------------------------------------------------------
@@ -359,7 +387,7 @@ function chatPage(publicDir, tokens) {
 // dagtellers, limieten en de uitkomst van de opruiming. Dat helpt een aanvaller meten
 // hoe ver hij van een plafond zit. Openbaar is nu alleen { ok: true }; de details
 // komen mee met de kop x-health-key (omgevingsvariabele HEALTH_KEY). Zonder ingestelde
-// sleutel zijn de details voor niemand zichtbaar. Port eazyfix-bot 6bf3328.
+// sleutel zijn de details voor niemand zichtbaar. Review 10-11-2026.
 function healthRoute(details, env = process.env) {
   return (req, res) => {
     const key = env.HEALTH_KEY;
@@ -374,13 +402,25 @@ function healthRoute(details, env = process.env) {
   };
 }
 
+// Statische pagina's (zoals /productcheck.html) mogen net als de chat alleen door de
+// eigen sites worden ingelijst.
+function frameGuard(allowedOrigins) {
+  const header = frameAncestorsHeader(allowedOrigins);
+  return (req, res, next) => {
+    if (/\.html?$/i.test(req.path)) res.set('Content-Security-Policy', header);
+    next();
+  };
+}
+
 module.exports = {
-  healthRoute,
+  healthRoute, frameGuard,
+  makeWebTokens, chatPage, WEB_TOKEN_TTL_MS,
   MAX_MESSAGE_CHARS, MESSAGE_TOO_LONG, messageTooLong,
   CHAT_LIMITS, limitConversation, newChatImages, ipKey,
   catchAsync, catchAsyncRoutes, errorHandler, BAD_REQUEST, TOO_LARGE, SERVER_ERROR,
-  DAILY_LIMITS, DAILY_IP_MESSAGE, DAILY_IP_PHOTO, DAILY_IP_FEEDBACK, DAILY_GLOBAL, dailyLimitsFromEnv, makeDailyCaps,
-  makeWebTokens, chatPage, WEB_TOKEN_TTL_MS,
+  DAILY_LIMITS, DAILY_IP_MESSAGE, DAILY_IP_PHOTO, DAILY_IP_FORM, DAILY_IP_FEEDBACK, DAILY_GLOBAL, dailyLimitsFromEnv, makeDailyCaps,
+  frameAncestorsHeader,
+  embedRoute,
   DEFAULT_ORIGINS,
   parseAllowedOrigins,
   originAllowed,

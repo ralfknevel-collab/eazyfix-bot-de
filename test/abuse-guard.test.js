@@ -20,8 +20,11 @@ test('parseAllowedOrigins: leeg -> standaardlijst (Render-host, eazy-fix.de), li
   assert.deepEqual(parseAllowedOrigins(' https://a.example , https://b.example,, '), ['https://a.example', 'https://b.example']);
   assert.deepEqual(DEFAULT_ORIGINS, [
     'https://eazyfix-bot-de.onrender.com',
+    'https://www.eazy-fix.nl',
+    'https://eazy-fix.nl',
     'https://www.eazy-fix.de',
     'https://eazy-fix.de',
+    'https://eazyfix.jkc-dev.nl',
   ]);
 });
 
@@ -200,7 +203,7 @@ test('berichtlengte: maximaal 4000 tekens per beurt, ook in contentblokken; Duit
 });
 
 test('dagplafonds: standaardwaarden en Duitse meldingen in du-vorm met de Duitse Innendienst', () => {
-  assert.deepEqual(DAILY_LIMITS, { perIpMessages: 60, perIpPhotos: 15, globalMessages: 400, globalPhotos: 60, perIpFeedback: 60, globalFeedback: 400 });
+  assert.deepEqual(DAILY_LIMITS, { perIpMessages: 60, perIpPhotos: 15, globalMessages: 400, globalPhotos: 60, perIpLeads: 5, globalLeads: 200, perIpFeedback: 60, globalFeedback: 400 });
   for (const m of [DAILY_IP_MESSAGE, DAILY_IP_PHOTO, DAILY_GLOBAL]) {
     assert.doesNotMatch(m, /—/);
     assert.doesNotMatch(m, /\bSie\b|\bIhnen\b|\bIhr\b/, 'du-vorm, geen Sie');
@@ -256,7 +259,7 @@ test('dagplafond voor de hele bot: alarm bij 80%, 429 met drukte-melding daarbov
     const r11 = await request(port, '/api/analyze-image', { 'X-Forwarded-For': '198.51.100.99, 172.71.1.1' });
     assert.equal(r11.status, 429);
     assert.equal(JSON.parse(r11.body).error, DAILY_GLOBAL);
-    assert.deepEqual(caps.status().vandaag, { berichten: 0, fotos: 10, beoordelingen: 0 });
+    assert.deepEqual(caps.status().vandaag, { berichten: 0, fotos: 10, formulier: 0, beoordelingen: 0 });
     clock = Date.parse('2026-10-22T00:00:01Z'); // nieuwe dag
     const next = await request(port, '/api/analyze-image', { 'X-Forwarded-For': '198.51.100.99, 172.71.1.1' });
     assert.equal(next.status, 200, 'teller staat op nul op de nieuwe dag');
@@ -464,7 +467,7 @@ test('review: beoordelingen hebben een eigen dagplafond, ook als noodstop', asyn
     assert.equal(f3.status, 429);
     assert.equal(JSON.parse(f3.body).error, DAILY_IP_FEEDBACK);
     assert.equal((await post(port, '/api/feedback', { rating: 'up' }, b)).status, 200);
-    assert.deepEqual(caps.status().vandaag, { berichten: 0, fotos: 0, beoordelingen: 3 });
+    assert.deepEqual(caps.status().vandaag, { berichten: 0, fotos: 0, formulier: 0, beoordelingen: 3 });
   });
   const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'src', 'index.js'), 'utf8');
   assert.match(src, /app\.use\('\/api\/feedback', dailyCaps\.feedbackGuard\);/);
@@ -491,4 +494,40 @@ test('review: chatstroom stopt de modelaanvraag als de bezoeker weg is', () => {
   assert.match(src, /res\.on\('close', \(\) => \{ if \(!res\.writableEnded\) abort\.abort\(\); \}\);/);
   assert.match(src, /\.\.\.REQUEST_DEFAULTS,\n      \}, \{ signal: abort\.signal \}\);/);
   assert.match(src, /app\.get\('\/health', healthRoute\(/);
+});
+
+// --- iframe in de Duitse site (eazy-fix.nl/de, JKC), port eazyfix-bot ------------
+const path = require('node:path');
+const { frameAncestorsHeader, embedRoute, frameGuard } = require('../src/abuse-guard');
+
+test('frameAncestorsHeader: eigen origins plus localhost mogen de chat inlijsten, in CSP-vorm', () => {
+  const h = frameAncestorsHeader(['https://www.eazy-fix.nl', 'https://eazyfix.jkc-dev.nl']);
+  assert.equal(h, "frame-ancestors 'self' https://www.eazy-fix.nl https://eazyfix.jkc-dev.nl http://localhost:* http://127.0.0.1:*");
+});
+
+test('/embed levert de chatpagina met frame-ancestors-header', async () => {
+  const pub = path.join(__dirname, '..', 'public');
+  await withApp((app) => {
+    app.get('/embed', embedRoute(['https://www.eazy-fix.nl'], pub));
+  }, async (port) => {
+    const r = await request(port, '/embed');
+    assert.equal(r.status, 200);
+    assert.match(r.headers['content-type'] || '', /text\/html/);
+    assert.equal(r.headers['content-security-policy'], "frame-ancestors 'self' https://www.eazy-fix.nl http://localhost:* http://127.0.0.1:*");
+    assert.match(r.body, /id="log"/);
+  });
+});
+
+test('statische pagina\'s zijn alleen door de eigen sites in te lijsten; frameGuard vóór static', async () => {
+  await withApp((app) => {
+    app.use(frameGuard(['https://www.eazy-fix.nl']));
+    app.get('/pagina.html', (_req, res) => res.send('<p>x</p>'));
+    app.get('/logo.png', (_req, res) => res.send('x'));
+  }, async (port) => {
+    assert.match((await request(port, '/pagina.html')).headers['content-security-policy'], /^frame-ancestors 'self' https:\/\/www\.eazy-fix\.nl /);
+    assert.equal((await request(port, '/logo.png')).headers['content-security-policy'], undefined);
+  });
+  const src = require('node:fs').readFileSync(path.join(__dirname, '..', 'src', 'index.js'), 'utf8');
+  assert.match(src, /app\.use\(frameGuard\(allowedOrigins\)\);[^\n]*\napp\.use\(express\.static\('public'\)\);/);
+  assert.match(src, /app\.get\('\/embed', embedRoute\(allowedOrigins, PUBLIC_DIR, webTokens\)\);/);
 });

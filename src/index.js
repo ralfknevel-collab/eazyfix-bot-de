@@ -2,15 +2,18 @@ require('dotenv').config();
 const express = require('express');
 const path = require('node:path');
 const cors = require('cors');
-const { parseAllowedOrigins, corsOptions, makeLimiters, chatPage, makeWebTokens, makeDailyCaps, dailyLimitsFromEnv, messageTooLong, MESSAGE_TOO_LONG,
-        limitConversation, newChatImages, catchAsyncRoutes, errorHandler, healthRoute } = require('./abuse-guard');
+const { parseAllowedOrigins, corsOptions, makeLimiters, embedRoute, makeWebTokens, makeDailyCaps, dailyLimitsFromEnv, messageTooLong, MESSAGE_TOO_LONG,
+        limitConversation, newChatImages, catchAsyncRoutes, errorHandler, healthRoute, frameGuard } = require('./abuse-guard');
 const { BASE_SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT } = require('./persona');
-const { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages, sendTelegramText } = require('./feedback');
+const { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages, sendTelegramText, validateGesprekFeedback, saveGesprekFeedback } = require('./feedback');
+const { validateLead, nieuwToken, makePhotoGate, leadLimitsFromEnv, saveLead, leadTokenExists, syncPending } = require('./lead');
+const { mailchimpEnabled, syncLead } = require('./mailchimp');
+const { parseContext, contextNote } = require('./context');
 const { stripTags } = require('./parse');
 const { CHAT_TOOLS, runTool } = require('./tools');
-const { roundGeo, runChat, runWithTools, buildChatContext } = require('./chat');
+const { roundGeo, runChat, runWithTools, buildChatContext, videoNote } = require('./chat');
 const { productsInText } = require('./producten');
-const { searchContext } = require('./kennis');
+const { searchContext, relevantVideos, siteBase } = require('./kennis');
 const { parseDiagnose, buildRagQuery, unclearReply, nietHoutReply, buildAnalysisPrompt,
   buildDiagnosePrompt, containsDistressSignal, distressReply, analyseFoutReply, analyseFases } = require('./image-diagnose');
 const { startKeepAlive } = require('./keepalive');
@@ -130,9 +133,21 @@ function sanitizePriorText(messages) {
 // Guard-tests: test/abuse-guard.test.js, "trust proxy 2".
 app.set('trust proxy', 2);
 
+// Standaard beveiligingskoppen (port eazyfix-bot, controle vóór livegang 3-11-2026):
+// geen Express-vermelding, geen MIME-sniffing, HTTPS afdwingen, beperkte referrer.
+app.disable('x-powered-by');
+app.use((_req, res, next) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Strict-Transport-Security': 'max-age=31536000',
+  });
+  next();
+});
+
 // Herkomstcontrole: alleen de eigen origin(s) mogen de API vanuit de browser aanroepen.
-// Instelbaar via ALLOWED_ORIGIN (komma-gescheiden lijst); standaard de Render-host en
-// eazy-fix.de. localhost blijft toegestaan voor lokaal ontwikkelen; aanroepen zonder
+// Instelbaar via ALLOWED_ORIGIN (komma-gescheiden lijst); standaard de Render-host,
+// eazy-fix.nl (de Duitse site staat onder /de/), eazy-fix.de en de JKC-testomgeving. localhost blijft toegestaan voor lokaal ontwikkelen; aanroepen zonder
 // Origin-header (curl, de native app) hebben geen CORS nodig en blijven werken.
 // Zie src/abuse-guard.js.
 const allowedOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGIN);
@@ -151,14 +166,22 @@ app.use('/api/analyze-image', imageLimiter);
 const dailyCaps = makeDailyCaps({
   limits: dailyLimitsFromEnv(),
   onAlert: ({ kind, count, cap, day }) => {
-    const wat = kind === 'photos' ? 'foto-analyses' : 'berichten';
+    const wat = { photos: 'foto-analyses', leads: 'formulieren', feedback: 'beoordelingen' }[kind] || 'berichten';
     console.warn(`Dagplafond ${wat}: ${count} van ${cap} op ${day}`);
     sendTelegramText(`EAZYFIX-bot DE: ${count} van ${cap} ${wat} vandaag (${day}). Bij ${cap} gaat de bot voor vandaag dicht.`).catch(() => {});
   },
 });
+// Gratis foto's op de website, daarna naam en e-mail (src/lead.js). Staat vóór het
+// dagplafond, zodat een geweigerde foto daar niet meetelt.
+const photoGate = makePhotoGate({
+  limits: leadLimitsFromEnv(),
+  lookupToken: (t) => (feedbackEnabled() ? leadTokenExists(t) : Promise.resolve(false)),
+});
+app.use('/api/analyze-image', photoGate.middleware);
 app.use('/api/chat', dailyCaps.messageGuard);
 app.use('/api/analyze-image', dailyCaps.photoGuard);
-// Beoordelingen schrijven naar de database: eigen dagplafond.
+// Formulier en beoordelingen schrijven naar de database: eigen dagplafond.
+app.use('/api/lead', dailyCaps.leadGuard);
 app.use('/api/feedback', dailyCaps.feedbackGuard);
 
 // Request logging
@@ -170,22 +193,31 @@ app.use((req, _res, next) => {
 // Health check — bewust vóór de auth-middleware, zodat je bereikbaarheid
 // simpel kunt testen (bijv. in de browser op je telefoon).
 // Openbaar alleen { ok: true }; details met de kop x-health-key (zie src/abuse-guard.js).
-app.get('/health', healthRoute(() => ({ model: MODEL, fotoEffort: PHOTO_EFFORT.effort, ...dailyCaps.status() })));
+app.get('/health', healthRoute(() => ({ model: MODEL, fotoEffort: PHOTO_EFFORT.effort, kennisSite: siteBase(), ...dailyCaps.status(), opruiming: opruimStatus })));
+
+// Op welke site staan de producten (sinds november 2026 eazy-fix.nl/de)? De widget
+// haalt dit op om productnamen te linken; komt uit de kennis, dus één nieuwe pull
+// bij een adreswijziging volstaat. Vóór de auth-middleware: geen gevoelige info.
+app.get('/api/site', (_, res) => res.json({ site: siteBase() }));
+
+// Favicon: stilletjes afhandelen vóór de auth-middleware, anders geeft de
+// auto-request van browsers/clients een storende 401 in de console.
+app.get('/favicon.ico', (_, res) => res.status(204).end());
 
 // Toegangsbewijs voor de chatpagina (zie src/abuse-guard.js). Afdwingen alleen met
 // WEB_TOKEN_VERPLICHT=1; de native app gebruikt APP_SECRET.
 const webTokens = makeWebTokens();
 const WEB_TOKEN_VERPLICHT = process.env.WEB_TOKEN_VERPLICHT === '1';
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
-app.get('/', chatPage(PUBLIC_DIR, webTokens));
-app.get('/index.html', chatPage(PUBLIC_DIR, webTokens));
-
-// Favicon: stilletjes afhandelen vóór de auth-middleware, anders geeft de
-// auto-request van browsers/clients een storende 401 in de console.
-app.get('/favicon.ico', (_, res) => res.status(204).end());
+// Inbouwversie voor de website (iframe in eazy-fix.nl/de, JKC): zelfde pagina als de
+// testpagina, met frame-ancestors zodat alleen de eigen sites hem mogen inlijsten.
+app.get('/', embedRoute(allowedOrigins, PUBLIC_DIR, webTokens));
+app.get('/index.html', embedRoute(allowedOrigins, PUBLIC_DIR, webTokens));
+app.get('/embed', embedRoute(allowedOrigins, PUBLIC_DIR, webTokens));
 
 // Test-chatvenster: statische pagina, bewust vóór de auth-middleware zodat
 // de pagina zelf zonder sleutel laadt (de API-calls sturen de sleutel mee).
+app.use(frameGuard(allowedOrigins)); // statische pagina's alleen in te lijsten door de eigen sites
 app.use(express.static('public'));
 
 // Toegang tot /api: de native app met APP_SECRET (x-app-key), de chatpagina met een
@@ -263,9 +295,7 @@ app.post('/api/analyze-image', async (req, res) => {
   // hout", maar de productvraag gewoon beantwoorden met de normale assistent
   // plus kennisbank-context.
   async function runProductAnswer(imageBlocks, caption) {
-    const kennisContext = searchContext(caption || 'EAZYFIX Produkt', 3);
-    const system = [{ type: 'text', text: BASE_SYSTEM_PROMPT }];
-    if (kennisContext) system.push({ type: 'text', text: kennisContext });
+    const { system } = buildChatContext(caption || 'EAZYFIX Produkt', { context: parseContext(req.body.context) });
     const userText = caption
       ? `Auf dem Foto ist ein EAZYFIX® Produkt (Verpackung, Kartusche oder Etikett), kein Holzschaden. Der Nutzer fragt: "${caption}". Beantworte diese Produktfrage. Kannst du etwas allein von der Verpackung nicht mit Sicherheit sagen (etwa das genaue Haltbarkeitsdatum oder die Chargennummer), verweise darauf, wo das auf der Verpackung steht, und frag es bei Bedarf nach.`
       : 'Auf dem Foto ist ein EAZYFIX® Produkt (Verpackung, Kartusche oder Etikett), kein Holzschaden. Sag kurz, welches Produkt du siehst, und frag, was der Nutzer dazu wissen möchte.';
@@ -364,8 +394,15 @@ app.post('/api/analyze-image', async (req, res) => {
 
     // Pass 2: het warme, volledige analyse-antwoord. zoek_kennis blijft als
     // vangnet beschikbaar; de opgehaalde context staat al in de system-prompt.
+    // Videokaartjes bij de foto-analyse (port eazyfix-bot): de backend kiest, het model
+    // verzint nooit een URL. "wie reparieren" erbij: de videomatcher eist een
+    // hoe-/reparatiewoord en een foto-analyse is per definitie een reparatievraag.
+    const videos = diagnose ? relevantVideos(`${buildRagQuery(diagnose, caption)} wie reparieren`, { limit: 2 }) : [];
     const system = [{ type: 'text', text: IMAGE_ANALYSIS_PROMPT }];
     if (kennisContext) system.push({ type: 'text', text: kennisContext });
+    const siteNote = contextNote(parseContext(req.body.context));
+    if (siteNote) system.push({ type: 'text', text: siteNote });
+    system.push({ type: 'text', text: videoNote(videos) });
 
     const { text: raw, usage } = await runWithTools(
       [...priorMessages, { role: 'user', content: [...imageBlocks, { type: 'text', text: promptText + hint }] }],
@@ -384,7 +421,7 @@ app.post('/api/analyze-image', async (req, res) => {
     const text = stripMarkdown(getagd); // vangnet, zie src/model.js
 
     persistPhoto(text);
-    res.json({ content: text, flow, productIds, products: productsInText(text), usage });
+    res.json({ content: text, flow, productIds, products: productsInText(text), videos, usage });
   } catch (err) {
     console.error('Image analysis error:', err.message);
     if (err.status === 401) return res.status(502).json({ error: 'Invalid API key' });
@@ -505,9 +542,7 @@ app.post('/api/analyze-image/stream', async (req, res) => {
     if (plan.route === 'niethout') { streamTekst(nietHoutReply(diagnose)); send({ done: true, wenselijkeFotos: [] }); logStraks(); return res.end(); }
     if (plan.route === 'product') {
       // Productvraag: gewone assistent plus kennisbank-context, in één antwoord.
-      const kennisContext = searchContext(caption || 'EAZYFIX Produkt', 3);
-      const system = [{ type: 'text', text: BASE_SYSTEM_PROMPT }];
-      if (kennisContext) system.push({ type: 'text', text: kennisContext });
+      const { system } = buildChatContext(caption || 'EAZYFIX Produkt', { context: parseContext(req.body.context) });
       const userText = caption
         ? `Auf dem Foto ist ein EAZYFIX® Produkt (Verpackung, Kartusche oder Etikett), kein Holzschaden. Der Nutzer fragt: "${caption}". Beantworte diese Produktfrage. Kannst du etwas allein von der Verpackung nicht mit Sicherheit sagen (etwa das genaue Haltbarkeitsdatum oder die Chargennummer), verweise darauf, wo das auf der Verpackung steht, und frag es bei Bedarf nach.`
         : 'Auf dem Foto ist ein EAZYFIX® Produkt (Verpackung, Kartusche oder Etikett), kein Holzschaden. Sag kurz, welches Produkt du siehst, und frag, was der Nutzer dazu wissen möchte.';
@@ -537,8 +572,12 @@ app.post('/api/analyze-image/stream', async (req, res) => {
     // Fase 4: advies opstellen, pass 2 als stream met dezelfde tool-lus als de
     // niet-streaming handler (zoek_kennis blijft als vangnet beschikbaar).
     send({ phase: 'advies' });
+    const videos = diagnose ? relevantVideos(`${buildRagQuery(diagnose, caption)} wie reparieren`, { limit: 2 }) : [];
     const system = [{ type: 'text', text: IMAGE_ANALYSIS_PROMPT }];
     if (kennisContext) system.push({ type: 'text', text: kennisContext });
+    const siteNote = contextNote(parseContext(req.body.context));
+    if (siteNote) system.push({ type: 'text', text: siteNote });
+    system.push({ type: 'text', text: videoNote(videos) });
 
     let convo = [...priorMessages, { role: 'user', content: [...imageBlocks, { type: 'text', text: promptText + hint }] }];
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -590,7 +629,7 @@ app.post('/api/analyze-image/stream', async (req, res) => {
     // Geef flow/productIds/products mee in het slot, net als de niet-streaming
     // /api/analyze-image, zodat de app de productaanbevelingen en de flow-knop ook
     // na een streaming-analyse toont.
-    send({ done: true, geanalyseerd: true, wenselijkeFotos: [], flow, productIds, products: productsInText(cleaned) });
+    send({ done: true, geanalyseerd: true, wenselijkeFotos: [], flow, productIds, products: productsInText(cleaned), videos });
     logStraks();
     res.end();
   } catch (err) {
@@ -631,6 +670,7 @@ app.post('/api/chat', async (req, res) => {
     const convo = gesprek.map(m => ({ role: m.role, content: toAnthropicContent(m.content) }));
     const { text, usage, videos } = await runChat(convo, {
       geo,
+      context: parseContext(req.body.context),
       onTool: logTool,
     });
     res.json({ content: text, products: productsInText(text), videos: videos || [], usage });
@@ -686,7 +726,7 @@ app.post('/api/chat/stream', async (req, res) => {
     // System-context + videokeuze via de GEDEELDE builder, zodat de streaming-route
     // exact dezelfde persona, kennisinjectie, videokeuze en geo-hint gebruikt als
     // het non-streaming /api/chat-pad (geen drift in guardrails).
-    const { system, videos } = buildChatContext(userText, { geo });
+    const { system, videos } = buildChatContext(userText, { geo, context: parseContext(req.body.context) });
 
     // Tool-use-lus met streaming: stream tekst-deltas per ronde naar de client.
     // Blijkt een ronde toch een tool-aanroep te zijn, dan was die tekst slechts
@@ -778,6 +818,60 @@ app.post('/api/chat/stream', async (req, res) => {
   }
 });
 
+// Elk uur inhalen wat nog niet in Mailchimp staat (bijv. na een storing, of zodra de
+// Duitse lijsten zijn ingesteld).
+if (feedbackEnabled() && mailchimpEnabled()) {
+  const inhalen = () => syncPending(syncLead)
+    .then((r) => { if (r.open) console.log(`Mailchimp-sync: ${r.gelukt} van ${r.open} doorgezet`); })
+    .catch((e) => console.error('Mailchimp-sync mislukt:', e.message));
+  setTimeout(inhalen, 30 * 1000);
+  setInterval(inhalen, 60 * 60 * 1000).unref();
+}
+
+// POST /api/lead — naam en e-mail na de gratis foto's. Geeft een token terug waarmee
+// de chat de extra foto's mag gebruiken. Mailchimp volgt later (kolom mailchimp_synced).
+app.post('/api/lead', async (req, res) => {
+  const v = validateLead(req.body);
+  if (!v.ok) return res.status(400).json({ error: v.error });
+  const token = nieuwToken();
+  if (feedbackEnabled()) {
+    try {
+      await saveLead({ ...v.row, token });
+    } catch (e) {
+      console.error('Lead opslaan mislukt:', e.message);
+      return res.status(500).json({ error: 'Speichern hat nicht geklappt. Versuch es gleich noch einmal.' });
+    }
+  } else {
+    console.warn('Lead niet opgeslagen: Supabase niet ingesteld.');
+  }
+  photoGate.register(token);
+  if (feedbackEnabled() && mailchimpEnabled()) {
+    syncPending(syncLead).catch((e) => console.error('Mailchimp-sync mislukt:', e.message));
+  }
+  console.log(`Lead ontvangen (nieuwsbrief: ${v.row.nieuwsbrief ? 'ja' : 'nee'})`);
+  res.json({ token, extra: photoGate.limits.extra });
+});
+
+// POST /api/feedback/gesprek — oordeel over het hele gesprek (smiley + optionele
+// opmerking) na "Gespräch beenden" in de widget. Eén oordeel per gesprek; het gesprek
+// moet in het logboek staan (anders 404), zodat losse verzinsels niet in de tabel komen.
+app.post('/api/feedback/gesprek', async (req, res) => {
+  const result = validateGesprekFeedback(req.body);
+  if (!result.ok) return res.status(400).json({ error: result.error });
+  if (!feedbackEnabled()) {
+    return res.status(503).json({ error: 'Feedback deaktiviert (keine Supabase-Konfiguration)' });
+  }
+  try {
+    const uitkomst = await saveGesprekFeedback(result.value);
+    if (!uitkomst.ok && uitkomst.reden === 'niet_gevonden') return res.status(404).json({ error: 'Gespräch nicht gefunden' });
+    if (!uitkomst.ok && uitkomst.reden === 'al_beoordeeld') return res.status(409).json({ error: 'Gespräch wurde schon bewertet' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Gespreksbeoordeling opslaan mislukt:', err.message);
+    res.status(502).json({ error: 'Bewertung konnte nicht gespeichert werden' });
+  }
+});
+
 // POST /api/feedback — bewaar een beoordeling (duim op/neer + opmerking)
 app.post('/api/feedback', async (req, res) => {
   const result = validateFeedback(req.body);
@@ -799,13 +893,16 @@ if (!process.env.ANTHROPIC_API_KEY) {
   process.exit(1);
 }
 
-// Bewaartermijn: gesprekken en foto's ouder dan BEWAARTERMIJN_DAGEN (standaard 365)
+// Bewaartermijn: gesprekken, foto's, beoordelingen en formuliergegevens ouder dan
+// BEWAARTERMIJN_DAGEN (standaard 365)
 // dagelijks opruimen; eerste ronde een minuut na de start. Zie src/retentie.js.
+// Uitkomst van de laatste ronde staat in /health (opruiming), zodat een storing opvalt.
+const opruimStatus = { laatste: null, fout: null };
 if (feedbackEnabled()) {
   const { opruimen } = require('./retentie');
   const ronde = () => opruimen()
-    .then((r) => console.log(`Opruiming (${r.days} dagen): ${r.gesprekken} gesprekken en ${r.fotos} foto's verwijderd`))
-    .catch((e) => console.error('Opruiming mislukt:', e.message));
+    .then((r) => { opruimStatus.laatste = { op: new Date().toISOString(), dagen: r.days, gesprekken: r.gesprekken, beoordelingen: r.beoordelingen, leads: r.leads, fotos: r.fotos, gezien: r.gezien }; opruimStatus.fout = null; console.log(`Opruiming (${r.days} dagen): ${r.gesprekken} gesprekken, ${r.beoordelingen} beoordelingen, ${r.leads} inschrijvingen en ${r.fotos} foto's verwijderd`); })
+    .catch((e) => { opruimStatus.fout = { op: new Date().toISOString(), melding: String(e.message).slice(0, 300) }; console.error('Opruiming mislukt:', e.message); });
   setTimeout(ronde, 60 * 1000).unref();
   setInterval(ronde, 24 * 60 * 60 * 1000).unref();
 }
