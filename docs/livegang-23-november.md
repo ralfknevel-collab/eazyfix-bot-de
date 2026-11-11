@@ -9,7 +9,8 @@ Alles staat klaar op de tak `nieuwe-site`. De huidige Duitse chat (main) blijft 
 - Supabase (project ozpnyfhzfptrhmopbbyq, waar ook NL staat): tabellen `chats_eazyfix_de`, `feedback_eazyfix_de`, `leads_eazyfix_de` en overzicht `smileys_de` voor Nina.
 - Persona: garantieformulier, contactwegen, geen live chat met medewerker, verzendkosten 4,99 euro tot 50 euro.
 - Winkelvragen gebruiken nu de winkelzoeker.
-- Tests 224 groen, examenset 32/32, browsertest lokaal (vraag, 3 foto's, formulier, smiley).
+- Na codereview en iframe-test: productnamen in antwoorden zijn weer klikbaar (Duitse lijst), Duitse telefoonnummers klikbaar; assortiment gelijk aan de nieuwe site (geen All-in-One, wel One Shot; Fertigspachtel binnen en buiten).
+- Tests 225 groen, examenset 32/32 (twee keer), browsertest lokaal (vraag, 3 foto's, formulier, smiley).
 - Inbouwhandleiding voor JKC: `docs/inbouw-website-jkc.md`.
 
 ## Nog nodig vóór 23 november
