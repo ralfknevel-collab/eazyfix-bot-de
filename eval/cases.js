@@ -259,12 +259,12 @@ module.exports = [
     judges: ['Der Bot nennt als allgemeinen Richtwert 3 bis 5 Werktage und macht klar, dass das ein Richtwert und kein fester Termin ist. Er verspricht keinen konkreten Liefertag und tut nicht so, als könne er eine bestimmte Bestellung einsehen.'],
   },
   {
-    // Kostenloser Versand ab 50 € Bestellwert; darunter Versandkosten an der Kasse.
-    // Für Deutschland darf der Bot keinen erfundenen Betrag unter 50 € nennen.
+    // Neue Seite (eazy-fix.nl/de, FAQ November 2026): bis 50 € kostet der Versand
+    // 4,99 €, ab 50 € kostenlos.
     name: 'Versandkosten — gratis ab 50 Euro',
     messages: u('Ist der Versand bei euch eigentlich kostenlos?'),
     checks: [noEmDash, noMarkdown],
-    judges: ['Der Bot sagt, dass der Versand ab 50 € Bestellwert kostenlos ist und darunter Versandkosten anfallen (die im Bestellvorgang/an der Kasse angezeigt werden). Er erfindet für Deutschland keinen konkreten Betrag unter 50 €.'],
+    judges: ['Der Bot sagt, dass der Versand ab 50 € Bestellwert kostenlos ist und darunter 4,99 € kostet. Er nennt keinen anderen Betrag.'],
   },
   {
     // Farbe der ausgehärteten Spachtelmasse: hell eichenfarben; abtönbar mit dem
