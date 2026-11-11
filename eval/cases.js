@@ -170,7 +170,9 @@ module.exports = [
     name: 'Postleitzahl statt Ort — fragt nach dem Ortsnamen',
     messages: u('Ich wohne in 85049. Wo kann ich EAZYFIX kaufen?'),
     checks: [calledTool('find_verkooppunt'), ['stellt eine Rückfrage', (r) => r.text.includes('?')], noEmDash],
-    judges: ['Der Bot erfindet KEINE Verkaufsstelle und behauptet auch nicht, es gebe in der Nähe keine. Er fragt nach dem Ortsnamen (oder der nächstgrößeren Stadt) und/oder nennt den Webshop auf eazy-fix.de als Alternative.'],
+    // Sinds 11-11-2026 zoekt de bot bij een postcode zelf ook op de bijbehorende stad;
+    // "geen winkel in de buurt" is dan een eerlijk tool-resultaat, geen verzinsel.
+    judges: ['Der Bot erfindet KEINE Verkaufsstelle. Er fragt nach dem Ortsnamen (oder der nächstgrößeren Stadt) ODER er sucht selbst mit dem passenden Ortsnamen und sagt dann ehrlich, dass dort keine Verkaufsstelle bekannt ist. Er nennt den Webshop auf eazy-fix.de als Alternative.'],
   },
   {
     // Ein Viertel der Gespräche im deutschen Chat ist niederländisch. Die
@@ -264,7 +266,7 @@ module.exports = [
     name: 'Versandkosten — gratis ab 50 Euro',
     messages: u('Ist der Versand bei euch eigentlich kostenlos?'),
     checks: [noEmDash, noMarkdown],
-    judges: ['Der Bot sagt, dass der Versand ab 50 € Bestellwert kostenlos ist und darunter 4,99 € kostet. Er nennt keinen anderen Betrag.'],
+    judges: ['Der Bot sagt, dass der Versand ab 50 € Bestellwert kostenlos ist und darunter 4,99 € kostet. Er nennt für Deutschland keinen anderen Betrag. Angaben für Österreich (9,32 €) oder die Schweiz (17,78 €) sind erlaubt.'],
   },
   {
     // Farbe der ausgehärteten Spachtelmasse: hell eichenfarben; abtönbar mit dem
@@ -272,14 +274,14 @@ module.exports = [
     name: 'Farbe der ausgehärteten Reparatur — hell eichenfarben',
     messages: u('Welche Farbe hat die EAZYFIX Reparatur, wenn sie ausgehärtet ist? Ich möchte sie überstreichen.'),
     checks: [noPrice, noEmDash, noMarkdown],
-    judges: ['Der Bot sagt, dass die ausgehärtete Spachtelmasse einen hellen, eichenähnlichen Farbton (hell eichenfarben / helles Eichenholz) hat, und nennt, dass sie sich mit dem EAZYFIX Abtönkonzentrat auf die gewünschte Holzfarbe abmischen und ohnehin überstreichen lässt. Er erfindet keine andere Farbe.'],
+    judges: ['Der Bot sagt, dass die ausgehärtete Spachtelmasse einen hellen, eichenähnlichen Farbton (hell eichenfarben / helles Eichenholz) hat und dass sie sich überstreichen lässt. Er darf das EAZYFIX Abtönkonzentrat als Möglichkeit nennen, muss es aber nicht (der Heimwerker will überstreichen). Er erfindet keine andere Farbe.'],
   },
   {
     // Garantiedauer: 10 Jahre. Abwicklung einer Reklamation bleibt beim Innendienst.
     name: 'Garantie — 10 Jahre, Abwicklung über den Innendienst',
     messages: u('Wie viel Garantie habe ich auf EAZYFIX?'),
     checks: [noEmDash, noMarkdown],
-    judges: ['Der Bot nennt 10 Jahre Garantie. Er sagt selbst keine Rückerstattung, keinen Umtausch und keine Kulanz zu; für die Abwicklung einer Reklamation verweist er (falls das Thema aufkommt) an den EAZYFIX-Innendienst.'],
+    judges: ['Der Bot nennt 10 Jahre Garantie. Er sagt selbst keine Rückerstattung, keinen Umtausch, kein Ersatzprodukt und keine Kulanz zu. Für die Abwicklung verweist er (falls das Thema aufkommt) auf das Garantieformular der Website (mit Foto, die technischen Berater beurteilen das) und/oder an den EAZYFIX-Innendienst; beides ist richtig.'],
   },
   {
     // Port NL feedback 91 (08-09-2026): der Bot verwies für die Anzahl Kartuschen

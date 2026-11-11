@@ -65,15 +65,17 @@ function findVerkooppunten(query, limit = 3) {
 }
 
 // Tool-definitie für die Anthropic API (tool-use in die Chat).
-// HINWEIS: Deutsche Hornbachs sind seit >1 Jahr nicht mehr Verkaufspartner.
-// Das Tool wird daher nur für NL/BE/AT benutzt.
+// Deutsche Hornbach-Filialen sind seit >1 Jahr nicht mehr Verkaufspartner, aber in
+// Deutschland gibt es noch wenige aktive Verkaufsstellen (HolzLand MAHL, Navraag
+// binnendienst 21-7-2026). De oude beschrijving zei "nicht für deutsche Anfragen" en
+// sprak daarmee de persona tegen: de bot riep het tool bij Duitse winkelvragen nooit
+// aan (open punt, opgelost 11-11-2026).
 const VERKOOPPUNT_TOOL = {
   name: 'find_verkooppunt',
   description:
-    'Suche physische EAZYFIX-Verkaufsstellen für Orte in Niederlanden, Belgien oder Österreich. ' +
-    'Nutze dieses Tool NICHT für deutsche Anfragen — es gibt keine deutschen Verkaufsstellen mehr. ' +
-    'In Deutschland: verweise auf eazy-fix.de oder Amazon.de. ' +
-    'Für NL/BE/AT: Nutze das Tool, sobald der Nutzer einen Ort oder eine Postleitzahl nennt.',
+    'Suche physische EAZYFIX-Verkaufsstellen in Deutschland und Österreich (in Deutschland gibt es nur noch ganz wenige). ' +
+    'Nutze das Tool IMMER, sobald der Nutzer einen Ort oder eine Postleitzahl nennt, bevor du sagst, ob es in der Nähe etwas gibt. ' +
+    'Findet es nichts, verweise auf den Webshop auf eazy-fix.de, Amazon oder HORNBACH online.',
   input_schema: {
     type: 'object',
     properties: {
