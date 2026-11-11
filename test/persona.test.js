@@ -387,11 +387,28 @@ test('review 11-11: Regeln für natürliche Antworten stehen genau einmal da', (
   assert.match(eine('- KÜNDIGE DEINE FRAGEN NIE AN, in keiner Antwort'), /Noch zwei Fragen:/);
   assert.match(eine('- ENDE DEINER ANTWORT:'), /VOR diesem Abschluss, nie danach/);
   assert.match(eine('- DANKE ODER ABSCHLUSS:'), /Wiederhole deine früheren Fragen dann NICHT/);
-  assert.match(eine('- LÄNGE:'), /zuerst die Antwort in ein oder zwei Sätzen/);
+  assert.match(eine('- LÄNGE (der Heimwerker liest auf dem Handy):'), /zuerst die Antwort in ein oder zwei Sätzen/);
   assert.match(eine('- EINFACHE SPRACHE:'), /nie "kosmetischer Schaden"/);
   assert.match(eine('- UNSICHER ODER WEITERVERWEISEN:'), /ZUERST, was du sicher weißt/);
   assert.match(eine('- Die Vorschau von weather_lookup reicht bis übermorgen'), /Tu NIE so, als wäre morgen oder übermorgen das Wochenende/);
   assert.match(eine('- Nenne ein Produkt beim ERSTEN Mal in deiner Antwort vollständig'), /nimm den kurzen Namen ohne EAZYFIX®/);
   assert.doesNotMatch(BASE_SYSTEM_PROMPT, /IMMER vollständig mit "EAZYFIX®" davor, auch bei Wiederholung/);
   assert.doesNotMatch(IMAGE_ANALYSIS_PROMPT, /IMMER vollständig mit "EAZYFIX®" davor, auch bei Wiederholung/);
+});
+
+test('review 11-11-2026 (port eazyfix-bot 66ea2b4): kurz, keine Wiederholung, Profis, Meißel, Garantie', () => {
+  const regeln = BASE_SYSTEM_PROMPT.split('\n');
+  const eine = (start) => { const r = regeln.filter((x) => x.startsWith(start)); assert.equal(r.length, 1, start); return r[0]; };
+  assert.match(eine('- LÄNGE (der Heimwerker liest auf dem Handy):'), /unter 120 Wörtern[\s\S]*höchstens sechs Zeilen[\s\S]*höchstens zehn kurze Schritte/);
+  assert.match(eine('- KEINE WIEDERHOLTEN FRAGEN:'), /höchstens einmal noch[\s\S]*Annahme[\s\S]*höchstens einen als Beispiel/);
+  assert.match(eine('- ABLEHNEN OHNE WIEDERHOLUNG:'), /nicht jedes Mal mit demselben Satz/);
+  assert.match(eine('- Sagt jemand, dass er Maler'), /repair-care\.de/);
+  assert.match(eine('- OHNE MULTITOOL:'), /Meißel/);
+  assert.match(eine('- Garantie: auf EAZYFIX®'), /"rechne nicht damit" ist verboten/);
+  assert.match(eine('- Erfinde NIEMALS etwas und rate NIEMALS.'), /keine eigenen Tests, Tricks oder Faustregeln/);
+  assert.match(BASE_SYSTEM_PROMPT, /einleitende Zeile, die mit einem Doppelpunkt endet/);
+  const foto = IMAGE_ANALYSIS_PROMPT.split('\n').filter((x) => x.startsWith('- LÄNGE (Pflicht'));
+  assert.equal(foto.length, 1);
+  assert.match(foto[0], /140 Wörter[\s\S]*Schweregradwort/);
+  assert.doesNotMatch(IMAGE_ANALYSIS_PROMPT, /250 bis 300 Wörter/);
 });

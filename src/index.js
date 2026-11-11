@@ -57,7 +57,7 @@ const MAX_IMAGES_PER_MESSAGE = 5;
 
 // Validate one message's content (string or array of text/image blocks).
 function validateContent(c) {
-  if (typeof c === 'string') return c.length > 0;
+  if (typeof c === 'string') return c.trim().length > 0; // nur Leerzeichen = leer (port eazyfix-bot 66ea2b4)
   if (!Array.isArray(c) || c.length === 0) return false;
   let imageCount = 0;
   for (const b of c) {

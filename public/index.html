@@ -144,6 +144,8 @@
 
     /* Opening: datum-scheiding en deelname-kop */
     .datescheiding { text-align: center; font-size: 11px; color: #b3b9c6; margin: 8px 0 2px; }
+    .opening-noot { font-size: 12px; line-height: 1.45; color: #6b7280; margin: 4px 0 14px 39px; max-width: 78%; }
+    .opening-noot a { color: inherit; text-decoration: underline; }
     .deelname { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #6b7280; margin: 2px 0 8px; padding-left: 2px; }
     .deelname .deelname-av { width: 20px; height: 20px; border-radius: 50%; overflow: hidden; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; background: var(--navy); }
     .deelname .deelname-av img { width: 15px; height: 15px; object-fit: contain; display: block; }
@@ -446,6 +448,30 @@
     // Na het afronden van een antwoord: een enkele regelovergang (twee regels direct onder
     // elkaar) wordt een klein tussenruimtetje, een lege regel blijft een gewone witregel.
     // Werkt op de tekstknopen van de bubbel zelf, na de linkify-stappen.
+    // Aufzählung sichtbar machen (port eazyfix-bot 66ea2b4): Zeilen direkt nach einer Zeile,
+    // die mit einem Doppelpunkt endet ("Das brauchst du:"), bekommen einen Punkt, bis zur
+    // nächsten Leerzeile. Nummerierte Schritte bleiben, wie sie sind. Läuft vor den
+    // linkify-Schritten, auf dem reinen Text der Blase.
+    function opsommingTekst(text) {
+      const regels = String(text).split('\n');
+      let inLijst = false;
+      for (let i = 0; i < regels.length; i++) {
+        const r = regels[i];
+        // Eine Leerzeile direkt nach der einleitenden Zeile gehört noch zur Liste.
+        if (!r.trim()) { if (!(inLijst && i > 0 && /:\s*$/.test(regels[i - 1]))) inLijst = false; continue; }
+        if (inLijst && !/^\s*(\d+[.)]|[•\-*])\s/.test(r)) regels[i] = '• ' + r.replace(/^\s+/, '');
+        else if (/^\s*\d+[.)]\s/.test(r)) inLijst = false;
+        if (/:\s*$/.test(r)) inLijst = true;
+      }
+      return regels.join('\n');
+    }
+    function opsomming(answerEl) {
+      if (!Array.from(answerEl.childNodes).every((n) => n.nodeType === 3)) return;
+      const t = answerEl.textContent;
+      const nieuw = opsommingTekst(t);
+      if (nieuw !== t) answerEl.textContent = nieuw;
+    }
+
     function regelRuimte(answerEl) {
       answerEl.normalize();
       Array.from(answerEl.childNodes).forEach((n) => {
@@ -711,7 +737,7 @@
           }
           scrollLog();
         }
-        if (acc) { history.push({ role: 'assistant', content: acc }); addFeedbackRow(text, out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out); renderVideos(out, videos); }
+        if (acc) { history.push({ role: 'assistant', content: acc }); addFeedbackRow(text, out); opsomming(out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out); renderVideos(out, videos); }
       } catch (e) {
         out.closest('.row').className = 'row row-bot err';
         out.textContent = 'Keine Verbindung. Prüfe dein Internet und versuch es erneut.';
@@ -833,14 +859,14 @@
         if (klaarData) {
           // Foto-beurt in de geschiedenis bewaren zodat een vervolgfoto of -vraag
           // doorgaat op deze schade i.p.v. los te beginnen. Bijschrift meenemen.
-          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
+          opsomming(out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
           history.push({ role: 'user', content: caption ? '[Foto vom Schaden gesendet] ' + caption : '[Foto vom Schaden gesendet]' });
           history.push({ role: 'assistant', content: acc });
           addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
         } else {
           // Er kwam wel tekst binnen, maar nooit een {done}-event: mogelijk afgekapt.
           out.textContent = acc + '\n\n(Die Verbindung ist unterbrochen; das ist die Antwort bis hierhin.)';
-          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
+          opsomming(out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
           addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
         }
       } catch (e) {
@@ -848,7 +874,7 @@
         // terug op de oude niet-streaming endpoint zodat de klusser altijd antwoord krijgt.
         if (gestreamd && acc) {
           out.textContent = acc + '\n\n(Die Verbindung ist unterbrochen; das ist die Antwort bis hierhin.)';
-          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
+          opsomming(out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
           addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
           return;
         }
@@ -864,7 +890,7 @@
           history.push({ role: 'user', content: caption ? '[Foto vom Schaden gesendet] ' + caption : '[Foto vom Schaden gesendet]' });
           history.push({ role: 'assistant', content: data.content });
           addFeedbackRow(caption ? '[foto: ' + file.name + '] ' + caption : '[foto: ' + file.name + ']', out);
-          linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
+          opsomming(out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
         } catch (e2) {
           out.closest('.row').className = 'row row-bot err'; out.textContent = 'Fehler: ' + e2.message;
         }
@@ -915,17 +941,23 @@
       deelImg.onerror = () => { deelAv.remove(); };
       deelAv.appendChild(deelImg);
       const deelTxt = document.createElement('span');
-      deelTxt.textContent = 'Eazyfix nimmt teil · ' + t;
+      deelTxt.textContent = 'Du chattest mit dem KI-Assistenten · ' + t;
       deelname.appendChild(deelAv);
       deelname.appendChild(deelTxt);
       log.appendChild(deelname);
-      bubble('bot',
-        'Hallo! Ich bin der EAZYFIX Holzfäule-Assistent. Stell deine Frage zur Holzfäule-Reparatur oder schick ein Foto vom Schaden 👇'
-        + '\n\n'
-        + 'Hinweis: Generative KI kann Fehler machen, prüfe daher immer die Ergebnisse. Wenn du persönliche Daten teilst, werden diese nur zur Bearbeitung deiner Anfrage und für Analysen verwendet.'
-        + '\n\n'
-        + 'Dieser Rat stammt von einer KI und kann Fehler enthalten. Lesen Sie immer die Gebrauchsanweisung auf der Verpackung und fragen Sie im Zweifel kurz nach.'
-      );
+      bubble('bot', 'Hallo! Ich bin der KI-Holzfäule-Assistent von EAZYFIX. Stell deine Frage zur Holzfäule-Reparatur oder schick ein Foto vom Schaden 👇');
+      // Kurze Zeile unter der Begrüßung (port eazyfix-bot 66ea2b4): ehrlich über KI und
+      // Speicherdauer (BEWAARTERMIJN_DAGEN, Standard 90), mit Link zur Datenschutzerklärung.
+      const noot = document.createElement('div');
+      noot.className = 'opening-noot';
+      noot.appendChild(document.createTextNode('Ich bin eine KI und kann mich irren: lies auch die Gebrauchsanweisung auf der Verpackung. Gespräche und Fotos speichern wir 90 Tage. '));
+      const pl = document.createElement('a');
+      pl.href = 'https://www.eazy-fix.de/kundendienst/datenschutzerklaerung/';
+      pl.target = '_blank';
+      pl.rel = 'noopener';
+      pl.textContent = 'Datenschutzerklärung';
+      noot.appendChild(pl);
+      log.appendChild(noot);
     }
     toonOpening();
   </script>
