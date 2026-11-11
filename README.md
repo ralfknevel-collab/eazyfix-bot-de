@@ -41,7 +41,7 @@ Toegangsbewijs: de chatpagina krijgt bij het laden een tijdelijk bewijs (een uur
 dat als `x-web-token` meegaat; met `WEB_TOKEN_VERPLICHT=1` is het verplicht naast `APP_SECRET` (native app).
 Privacy: klantfoto's staan in de privé-bucket `chat-fotos` (gedeeld met NL); het logboek bewaart het opslagpad,
 geen openbare link. Bewaartermijn: gesprekken (`chats_eazyfix_de`) en foto's ouder dan `BEWAARTERMIJN_DAGEN`
-(standaard 90) worden dagelijks opgeruimd (`src/retentie.js`, handmatig `node scripts/opruimen.js`, tellen met
+(standaard 365) worden dagelijks opgeruimd (`src/retentie.js`, handmatig `node scripts/opruimen.js`, tellen met
 `DRY_RUN=1`). Port van eazyfix-bot 752580a, a41ea98 en b934327.
 
 ## Endpoints

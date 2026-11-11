@@ -799,7 +799,7 @@ if (!process.env.ANTHROPIC_API_KEY) {
   process.exit(1);
 }
 
-// Bewaartermijn: gesprekken en foto's ouder dan BEWAARTERMIJN_DAGEN (standaard 90)
+// Bewaartermijn: gesprekken en foto's ouder dan BEWAARTERMIJN_DAGEN (standaard 365)
 // dagelijks opruimen; eerste ronde een minuut na de start. Zie src/retentie.js.
 if (feedbackEnabled()) {
   const { opruimen } = require('./retentie');

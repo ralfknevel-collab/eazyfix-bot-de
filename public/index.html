@@ -947,10 +947,10 @@
       log.appendChild(deelname);
       bubble('bot', 'Hallo! Ich bin der KI-Holzfäule-Assistent von EAZYFIX. Stell deine Frage zur Holzfäule-Reparatur oder schick ein Foto vom Schaden 👇');
       // Kurze Zeile unter der Begrüßung (port eazyfix-bot 66ea2b4): ehrlich über KI und
-      // Speicherdauer (BEWAARTERMIJN_DAGEN, Standard 90), mit Link zur Datenschutzerklärung.
+      // Speicherdauer (BEWAARTERMIJN_DAGEN, Standard 365), mit Link zur Datenschutzerklärung.
       const noot = document.createElement('div');
       noot.className = 'opening-noot';
-      noot.appendChild(document.createTextNode('Ich bin eine KI und kann mich irren: lies auch die Gebrauchsanweisung auf der Verpackung. Gespräche und Fotos speichern wir 90 Tage. '));
+      noot.appendChild(document.createTextNode('Ich bin eine KI und kann mich irren: lies auch die Gebrauchsanweisung auf der Verpackung. Gespräche und Fotos speichern wir 12 Monate. '));
       const pl = document.createElement('a');
       pl.href = 'https://www.eazy-fix.de/kundendienst/datenschutzerklaerung/';
       pl.target = '_blank';

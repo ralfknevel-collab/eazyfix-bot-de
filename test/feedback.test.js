@@ -46,13 +46,13 @@ test('foto-opslagpad: bucket-relatief, zonder openbare URL, veilige mapnaam uit 
   assert.doesNotMatch(p, /object\/public/);
 });
 
-// Bewaartermijn: gesprekken (chats_eazyfix_de) en foto's ouder dan 90 dagen gaan weg.
+// Bewaartermijn: gesprekken (chats_eazyfix_de) en foto's ouder dan 365 dagen (12 maanden) gaan weg.
 const { retentionDays, cutoffIso, CHATS_TABLE } = require('../src/retentie');
 
-test('bewaartermijn: standaard 90 dagen, BEWAARTERMIJN_DAGEN overschrijft, grens is een ISO-tijdstip, Duitse tabel', () => {
-  assert.equal(retentionDays({}), 90);
+test('bewaartermijn: standaard 365 dagen, BEWAARTERMIJN_DAGEN overschrijft, grens is een ISO-tijdstip, Duitse tabel', () => {
+  assert.equal(retentionDays({}), 365);
   assert.equal(retentionDays({ BEWAARTERMIJN_DAGEN: '30' }), 30);
-  assert.equal(retentionDays({ BEWAARTERMIJN_DAGEN: 'x' }), 90);
+  assert.equal(retentionDays({ BEWAARTERMIJN_DAGEN: 'x' }), 365);
   assert.equal(cutoffIso(90, Date.parse('2026-10-21T00:00:00Z')), '2026-07-23T00:00:00.000Z');
   assert.equal(CHATS_TABLE, 'chats_eazyfix_de');
 });

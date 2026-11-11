@@ -7,7 +7,7 @@ const { CHAT_BUCKET } = require('./feedback');
 
 function retentionDays(env = process.env) {
   const v = parseInt(env.BEWAARTERMIJN_DAGEN, 10);
-  return Number.isFinite(v) && v > 0 ? v : 90;
+  return Number.isFinite(v) && v > 0 ? v : 365; // 12 Monate wie NL (besluit Ralf 11-11-2026)
 }
 
 function cutoffIso(days, now = Date.now()) {
