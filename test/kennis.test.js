@@ -201,7 +201,7 @@ test('tool-spec heeft naam zoek_kennis en verplicht onderwerp', () => {
 // Duitse pagina vindt in plaats van niets.
 test('Nederlandse productnamen vinden de Duitse pagina', () => {
   const cases = [
-    ['houtrotvuller gebruiken', /spachtelmasse|all-in-one/i],
+    ['houtrotvuller gebruiken', /spachtelmasse/i],
     ['plamuur voor kleine gaatjes', /feinspachtel/i],
     ['houtversterker aanbrengen', /impr(ä|ae)gnierung/i],
     ['past de koker in een kitpistool', /kartusche/i],

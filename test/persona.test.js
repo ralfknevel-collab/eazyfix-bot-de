@@ -78,17 +78,16 @@ test('diagnose-prompt vraagt geldig JSON met de verwachte (contract-)velden', ()
   assert.match(IMAGE_DIAGNOSE_PROMPT, /"licht", "matig", "ernstig"/);
 });
 
-// Audit 20-07-2026: de persona zette Premium All-in-One Spachtel weg als "vollständiges
-// Paket" en als Holzfäule-route, terwijl de kennisbank een losse 150 ml universele koker
-// beschrijft (0-1 cm, 7-10 min, 30 min uitharden). Die specs dragen de Holzfäule-route
-// (0,5-2 cm, 4 uur) niet.
-test('All-in-One Spachtel staat als universele koker, niet als Holzfaeule-set', () => {
-  // Productbeschrijving staat in de basisprompt, de PRODUKTWAHL-lijst in de foto-prompt.
-  assert.doesNotMatch(BASE_SYSTEM_PROMPT, /All-in-One Spachtel: vollständiges Paket/);
-  assert.match(BASE_SYSTEM_PROMPT, /All-in-One Spachtel: universelle 2-Komponenten/);
-  assert.match(BASE_SYSTEM_PROMPT, /KEIN Set und KEIN Ersatz für die Holzfäule-Vorgehensweise/);
-  assert.doesNotMatch(IMAGE_ANALYSIS_PROMPT, /All-in-One Spachtel \(Holzfäule, komplettes Set\)/);
-  assert.match(IMAGE_ANALYSIS_PROMPT, /NICHT bei echter Holzfäule/);
+// Nieuwe site eazy-fix.nl/de (november 2026): de Premium All-in-One Spachtel staat er
+// niet meer op; de bot raadde hem nog aan voor buiten. Wel nieuw: Feinspachtel One Shot.
+// De Fertigspachtel is volgens de Duitse site voor binnen en buiten.
+test('assortiment nieuwe site: geen All-in-One meer, wel One Shot en Fertigspachtel innen und außen', () => {
+  for (const p of [BASE_SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT]) assert.doesNotMatch(p, /All-in-One/i);
+  const regeln = BASE_SYSTEM_PROMPT.split('\n');
+  const eine = (start) => { const r = regeln.filter((x) => x.startsWith(start)); assert.equal(r.length, 1, start); return r[0]; };
+  assert.match(eine('- Premium Holz Feinspachtel One Shot:'), /30 ml[\s\S]*NICHT bei Holzfäule/);
+  assert.match(eine('- Premium Fertigspachtel:'), /innen UND außen/);
+  assert.match(eine('- Premium Fertigspachtel:'), /NICHT für Holz/);
 });
 
 // Audit 20-07-2026: persona zei "ca. 20 Min." waar de kennisbank 20-25 Min zegt (22 chunks),
