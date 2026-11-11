@@ -531,3 +531,17 @@ test('statische pagina\'s zijn alleen door de eigen sites in te lijsten; frameGu
   assert.match(src, /app\.use\(frameGuard\(allowedOrigins\)\);[^\n]*\napp\.use\(express\.static\('public'\)\);/);
   assert.match(src, /app\.get\('\/embed', embedRoute\(allowedOrigins, PUBLIC_DIR, webTokens\)\);/);
 });
+
+// Uitgavenlimiet bij Anthropic (status 400 met melding over limiet/tegoed) is geen kapotte
+// foto: eigen melding in plaats van "stuur een scherpere foto" (11-11-2026).
+test('limietfout van Anthropic wordt herkend en krijgt een eigen melding', () => {
+  const src = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'src', 'index.js'), 'utf8');
+  const fn = src.match(/function isLimietFout\(err\) \{[\s\S]*?\n\}/)[0];
+  const isLimietFout = new Function(fn + ' return isLimietFout;')();
+  assert.equal(isLimietFout({ status: 400, message: 'You have reached your specified API usage limits.' }), true);
+  assert.equal(isLimietFout({ status: 400, message: 'Your credit balance is too low to access the Anthropic API.' }), true);
+  assert.equal(isLimietFout({ status: 400, message: 'Could not process image' }), false);
+  assert.equal(isLimietFout({ status: 429, message: 'usage limit' }), false);
+  assert.match(src, /if \(isLimietFout\(err\)\) return res\.status\(503\)\.json\(\{ error: LIMIET_MELDING \}\);/);
+  assert.match(src, /if \(isLimietFout\(err\)\) return LIMIET_MELDING;/);
+});

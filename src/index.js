@@ -39,8 +39,17 @@ const anthropic = createClient({ maxRetries: 4 });
 // klusser. NOOIT de rauwe API-JSON of err.message tonen (dat lekte voorheen als
 // {"type":"error",...} in de chat). Transiente drukte → vraag om zo opnieuw te
 // proberen; overige fouten → neutrale melding zonder technische details.
+// Uitgavenlimiet of tegoed bij Anthropic op: status 400 met een melding over limiet of
+// tegoed. Dat is geen kapotte foto of vraag; de klant moet dan niet "stuur een scherpere
+// foto" horen (open punt anthropic-uitgavenlimiet, opgelost 11-11-2026).
+function isLimietFout(err) {
+  return !!err && err.status === 400 && /usage limit|spend(ing)? limit|credit balance|billing/i.test(String(err.message || ''));
+}
+const LIMIET_MELDING = 'Der Assistent ist gerade nicht verfügbar. Versuch es später noch einmal oder ruf den EAZYFIX® Innendienst an unter 03222 1097923.';
+
 function friendlyError(err) {
   const status = err && err.status;
+  if (isLimietFout(err)) return LIMIET_MELDING;
   if (status === 429) return 'Es ist gerade sehr viel los. Warte eine halbe Minute und versuch es erneut.';
   if (status === 529 || status === 503 || status === 500) {
     return 'Der Assistent ist gerade überlastet. Versuch es in einer Minute noch einmal. Deine Frage ist nicht verloren.';
@@ -428,6 +437,7 @@ app.post('/api/analyze-image', async (req, res) => {
     if (err.status === 401) return res.status(502).json({ error: 'Invalid API key' });
     // Anthropic 400 = foto onbruikbaar (te klein, corrupt, niet te decoderen).
     // Niet de server stuk: laat de app om een betere foto vragen.
+    if (isLimietFout(err)) return res.status(503).json({ error: LIMIET_MELDING });
     if (err.status === 400) {
       res.locals.modelGebruikt = true; // het model is aangeroepen: blijft meetellen voor het dagplafond
       return res.status(400).json({ error: 'Dieses Foto kann ich nicht verwenden. Schick bitte ein schärferes Foto bei gutem Tageslicht.' });
