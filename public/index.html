@@ -689,36 +689,36 @@
     // Productnaam-herkenning -> pad van de productpagina (slugs van de nieuwe site,
     // 20-10-2026). Specifieke namen vóór algemene, zodat de gecombineerde regex de
     // juiste variant pakt. Spiegelt de RULES uit src/producten.js.
+    // Duitse productnamen met de paden van de nieuwe site (eazy-fix.nl/de, november 2026;
+    // slugs uit src/kennis.json). Specifieke namen vóór algemene.
     const PRODUCTS = [
-      { re: /premium\s*houtrotvuller|houtrotvuller/i,                    path: '/product/premium-houtrotvuller/' },
-      { re: /premium\s*houtplamuur\s*one\s*shot|houtplamuur\s*one\s*shot/i, path: '/product/premium-houtplamuur-oneshot/' },
-      { re: /premium\s*houtplamuur|houtplamuur/i,                        path: '/product/premium-houtplamuur/' },
-      { re: /houtversterker/i,                                            path: '/product/houtversterker-met-toebehoren/' },
-      { re: /houtvochtmeter|vochtmeter/i,                                 path: '/product/houtvochtmeter/' },
-      { re: /houtrot.?frees/i,                                            path: '/product/houtrot-frees/' },
-      { re: /muurvuller/i,                                                path: '/product/muurvuller/' },
-      { re: /kleurpigment/i,                                              path: '/product/kleurpigment/' },
-      { re: /reinigingsdoekjes/i,                                         path: '/product/reinigingsdoekjes-60-stuks/' },
-      { re: /aanvulset/i,                                                 path: '/product/houtrot-aanvulset/' },
-      { re: /startpakket|startset/i,                                      path: '/product/houtrot-startpakket/' },
-      { re: /standaardset/i,                                              path: '/product/houtrot-standaard/' },
-      { re: /alles.?in.?(een|één)|reparatieset/i,                         path: '/product/alles-in-een-hout-reparatieset/' },
+      { re: /premium\s*holzspachtelmasse|holzspachtelmasse/i,                       path: '/product/premium-holzspachtelmasse/' },
+      { re: /(?:premium\s*)?holz\s*feinspachtel\s*one\s*shot|one\s*shot/i,        path: '/product/eazyfix-premium-one-shot/' },
+      { re: /premium\s*holz\s*feinspachtel|holz\s*feinspachtel|feinspachtel/i,     path: '/product/premium-holz-fein-spachtel/' },
+      { re: /premium\s*fertigspachtel|fertigspachtel/i,                            path: '/product/eazyfix-premium-fertigspachtel/' },
+      { re: /holzimpr(?:ä|ae)gnierung/i,                                            path: '/product/eazyfix-holzimpraegnierung-mit-zubehoer/' },
+      { re: /holzfeuchtemessger(?:ä|ae)t|feuchtemessger(?:ä|ae)t/i,                  path: '/product/feuchtigkeitsmesser/' },
+      { re: /holzf(?:ä|ae)ule\s*fr(?:ä|ae)ser/i,                                    path: '/product/holzfaeule-fraeser/' },
+      { re: /abt(?:ö|oe)nkonzentrat(?:e)?/i,                                        path: '/product/eazyfix-abtonkonzentrate/' },
+      { re: /reinigungst(?:ü|ue)cher/i,                                             path: '/product/reinigungstucher-60-stuck/' },
+      { re: /(?:holzf(?:ä|ae)ule\s*)?erweiterungsset/i,                             path: '/product/eazyfix-holzfaeule-erweiterungsset/' },
+      { re: /(?:holzf(?:ä|ae)ule\s*)?starterset/i,                                  path: '/product/eazyfix-holzfaeule-starterset/' },
+      { re: /(?:holzf(?:ä|ae)ule\s*)?standardset/i,                                 path: '/product/eazyfix-holzfaeule-standardset/' },
     ];
 
-    // Gereedschap/toebehoren. De bot noemt deze meestal kaal ("RVS aanbrandmes",
-    // "opbouwmes", "reparatiemessen", "Nitril handschoenen"), zonder EAZYFIX®-
-    // prefix. De namen zijn EAZYFIX-specifiek genoeg om ook zonder prefix veilig
-    // te linken (anders dan generieke woorden als "frees"). "reparatiemessen"
-    // (algemeen) wijst naar de reparatiemessen-set.
+    // Gereedschap en toebehoren: de bot noemt ze vaak zonder EAZYFIX®-prefix; de namen
+    // zijn specifiek genoeg om ook kaal te linken.
     const TOOLS = [
-      { re: /aanbrandmes/i,                          path: '/product/rvs-aanbrandmes/' },
-      { re: /opbouwmes/i,                            path: '/product/rvs-reparatie-opbouwmes/' },
-      { re: /meng-?\s*en\s*plamuurmes|mengmes/i,     path: '/product/plamuurmes-rvs/' },
-      { re: /reparatiemes(?:sen)?/i,                 path: '/product/starterspakket-reparatiemessen/' },
-      { re: /nitril(?:\s*wegwerp)?\s*handschoenen/i, path: '/product/nitril-wegwerphandschoenen/' },
-      { re: /kitpistool/i,                           path: '/product/kitpistool/' },
-      { re: /mengplateau/i,                          path: '/product/mengplateau/' },
-      { re: /modelleerstrips?/i,                     path: '/product/modelleerstrips/' },
+      { re: /mischbrett/i,                                   path: '/product/mischbrett/' },
+      { re: /modellierstrips?/i,                             path: '/product/eazyfix-modellierstrips/' },
+      { re: /kartuschenpresse/i,                             path: '/product/kartuschenpresse/' },
+      { re: /nitril[\s-]*einweghandschuhe/i,                 path: '/product/nitril-einweghandschuhe-sample-size/' },
+      { re: /metall[\s-]*mischspachtel/i,                    path: '/product/metall-mischspachtel/' },
+      { re: /metall[\s-]*bauspachtel/i,                      path: '/product/eazyfix-metall-bauspachtel/' },
+      { re: /kunststoff[\s-]*bauspachtel/i,                  path: '/product/kunststoff-bauspachtel/' },
+      { re: /kunststoff[\s-]*breitspachtel/i,                path: '/product/kunststoff-breitspachtel/' },
+      { re: /metall[\s-]*schmalspachtel/i,                   path: '/product/metall-schmalspachtel/' },
+      { re: /komplettes\s+holzreparaturset/i,                path: '/product/komplettes-reparaturset/' },
     ];
 
     // Maak elke genoemde productnaam in het antwoord klikbaar als groene chip.
@@ -848,8 +848,9 @@
     // Maak telefoonnummers klikbaar (tel:). Ondersteunt +31 (0)... en nationale
     // 0-nummers met spaties/streepjes. Maatvoering (2:1, 18%, 30.000, postcodes)
     // matcht bewust NIET. Draait op tekst-nodes buiten bestaande links.
-    const PHONE_RE = /(\+31[\d\s()-]{8,16}\d)|(\b0\d{1,3}[\s-]?\d{2,4}[\s-]?\d{2,4}(?:[\s-]?\d{1,4})?)/g;
-    function telHref(s) { return 'tel:' + s.replace(/[()\s-]/g, '').replace(/^\+310/, '+31'); }
+    // Ook Duitse vormen: +49 / 0049 en een schuine streep als scheiding (03222 / 1097923).
+    const PHONE_RE = /((?:\+31|\+49|0049)[\d\s()\/-]{8,16}\d)|(\b0\d{1,4}(?:\s?\/\s?|[\s-])?\d{2,4}[\s-]?\d{2,4}(?:[\s-]?\d{1,4})?)/g;
+    function telHref(s) { return 'tel:' + s.replace(/[()\s\/-]/g, '').replace(/^0049/, '+49').replace(/^\+(31|49)0/, '+$1'); }
     function linkifyPhones(answerEl) {
       const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       const walker = document.createTreeWalker(answerEl, NodeFilter.SHOW_TEXT, null);
@@ -1320,7 +1321,7 @@
         '<form novalidate>'
         + '<label class="veld">' + T.naam + '*<input name="naam" autocomplete="name" maxlength="100" required></label>'
         + '<label class="veld">' + T.email + '*<input name="email" type="email" autocomplete="email" maxlength="200" required></label>'
-        + '<label class="vink"><input type="checkbox" name="akkoord"><span>' + T.akkoord + '* <a href="' + SITE + '/privacyverklaring" target="_blank" rel="noopener">' + T.privacy + '</a></span></label>'
+        + '<label class="vink"><input type="checkbox" name="akkoord"><span>' + T.akkoord + '* <a href="' + SITE + '/privacyverklaring/" target="_blank" rel="noopener">' + T.privacy + '</a></span></label>'
         + '<label class="vink"><input type="checkbox" name="nieuwsbrief"><span>' + T.nieuwsbrief + '</span></label>'
         + '<div class="verplicht">' + T.verplicht + '</div>'
         + '<div class="fout" role="alert"></div>'

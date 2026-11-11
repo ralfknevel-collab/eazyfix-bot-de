@@ -45,3 +45,20 @@ test('linkifySite: eazy-fix.de en eazy-fix.nl/de, niet de Nederlandse site', () 
   assert.equal(vind('https://www.eazy-fix.nl/de/faq/ hilft'), 'https://www.eazy-fix.nl/de/faq/');
   assert.equal(vind('www.eazy-fix.nl/kozijn'), null);
 });
+
+// Review 11-11-2026: de productlijst in de widget stond nog in het Nederlands
+// (Houtrotvuller ...), waardoor in het Duits geen enkele productnaam een link werd.
+test('widget: productlinks met Duitse namen en paden die in de kennis bestaan', () => {
+  const kennis = require('../src/kennis.json');
+  const paden = new Set(kennis.map((x) => x.url.replace('https://www.eazy-fix.nl/de', '')));
+  const blok = html.slice(html.indexOf('const PRODUCTS = ['), html.indexOf('function linkifyProducts'));
+  assert.doesNotMatch(blok, /houtrot|houtplamuur|houtversterker|muurvuller/i);
+  const gevonden = [...blok.matchAll(/path: '([^']+)'/g)].map((m) => m[1]);
+  assert.ok(gevonden.length >= 20);
+  for (const p of gevonden) assert.ok(paden.has(p), 'pad bestaat niet op de site: ' + p);
+  const PRODUCTS = new Function(blok.slice(0, blok.indexOf('const TOOLS')) + ' return PRODUCTS;')();
+  const pad = (t) => (PRODUCTS.find((p) => p.re.test(t)) || {}).path;
+  assert.equal(pad('Premium Holz Feinspachtel One Shot'), '/product/eazyfix-premium-one-shot/');
+  assert.equal(pad('Premium Holz Feinspachtel'), '/product/premium-holz-fein-spachtel/');
+  assert.equal(pad('Holzfäule Fräser'), '/product/holzfaeule-fraeser/');
+});
