@@ -1,13 +1,21 @@
-// Trek de inhoud van eazy-fix.de (producten, FAQ, blog) naar src/kennis.json.
+// Trek de inhoud van de Duitse EAZYFIX-site naar src/kennis.json.
+// Sinds november 2026 staat de Duitse site onder https://www.eazy-fix.nl/de/ (JKC).
 // De website is leidend voor de botkennis; dit script ververst de snapshot.
 // Gebruik: node scripts/pull-site.js
+//          EZ_PREVIEW=<token> node scripts/pull-site.js   (zolang /de/ alleen als preview bestaat)
+//          SITE_BASE=https://www.eazy-fix.de node scripts/pull-site.js   (oude site)
+// De Duitse pagina's staan (nog) niet in de sitemap; daarom loopt het script ook de
+// links vanaf de startpagina af (alleen binnen /de/).
 // Bewust GEEN prijzen: bedragen worden verwijderd (prijzen wijzigen te vaak).
 
 const fs = require('fs');
 const path = require('path');
-const { scrubText, prepareHtml, normalizeBrand, isListingJunk, dedupeByUrl, EXCLUDE_PAGE } = require('./scrub');
+const { scrubText, prepareHtml, normalizeBrand, isListingJunk, dedupeByUrl, EXCLUDE_PAGE, removeBlocks } = require('./scrub');
+const { resolveSiteBase, sitemapsFromIndex, isGermanUrl, crawlCandidates, typeOf } = require('./site-config');
 
-const BASE = 'https://www.eazy-fix.de';
+// Bron: SITE_BASE in de omgeving, anders https://www.eazy-fix.nl/de.
+const BASE = resolveSiteBase();
+const ORIGIN = new URL(BASE).origin;
 // KENNIS_OUT: schrijf naar een ander bestand, om oud en nieuw te vergelijken vóór het vervangen.
 const TARGET = process.env.KENNIS_OUT || path.join(__dirname, '..', 'src', 'kennis.json');
 const CONCURRENCY = 6;
@@ -26,7 +34,7 @@ function cleanText(html) {
   // Alleen de body.
   const body = h.match(/<body[\s\S]*?<\/body>/i);
   if (body) h = body[0];
-  // Afgeschermde e-mailadressen herstellen (zie scripts/scrub.js).
+  // E-mailadressen herstellen, reviews en contactblok weg, specificaties op één regel.
   h = prepareHtml(h);
   // Ruis-blokken verwijderen.
   h = h
@@ -61,15 +69,77 @@ function title(html) {
   return t ? decode(t[1].replace(/\s*[-|–].*$/, '').trim()) : '';
 }
 
+const UA = 'Mozilla/5.0 (compatible; EAZYFIX-bot kennis-pull; +https://eazy-fix.nl)';
+// Preview-cookie: de site zet hem bij een bezoek met ?ez_preview=<token>.
+let COOKIE = '';
+async function previewCookie() {
+  const token = String(process.env.EZ_PREVIEW || '').trim();
+  if (!token) return;
+  const res = await fetch(`${BASE}/?ez_preview=${encodeURIComponent(token)}`, { headers: { 'User-Agent': UA }, redirect: 'manual' });
+  const set = res.headers.getSetCookie ? res.headers.getSetCookie() : [res.headers.get('set-cookie') || ''];
+  COOKIE = set.map((c) => c.split(';')[0]).filter((c) => /^ez_lang_preview=/.test(c)).join('; ');
+  if (!COOKIE) throw new Error('EZ_PREVIEW gaf geen preview-cookie (token verlopen?)');
+}
+
 async function fetchText(url) {
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: { 'User-Agent': UA, ...(COOKIE ? { Cookie: COOKIE } : {}) } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.text();
 }
 
-async function locs(sitemap) {
-  const xml = await fetchText(`${BASE}/${sitemap}`);
-  return [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+async function fetchMaybe(url) {
+  try { return await fetchText(url); } catch { return null; }
+}
+
+// Vind de product-, pagina- en blogsitemaps. Eerst via een sitemap-index
+// (WordPress-standaard wp-sitemap.xml of Yoast sitemap_index.xml), anders de losse
+// Yoast-bestanden zoals op de oude site (product-sitemap.xml enz.).
+async function discoverSitemaps() {
+  for (const idx of ['wp-sitemap.xml', 'sitemap_index.xml']) {
+    const xml = await fetchMaybe(`${ORIGIN}/${idx}`);
+    if (xml && /<sitemapindex/i.test(xml)) {
+      const found = sitemapsFromIndex(xml);
+      if (found.products.length || found.pages.length || found.posts.length) return { source: idx, ...found };
+    }
+  }
+  return {
+    source: 'losse Yoast-sitemaps',
+    products: [`${ORIGIN}/product-sitemap.xml`],
+    pages: [`${ORIGIN}/page-sitemap.xml`],
+    posts: [`${ORIGIN}/post-sitemap.xml`],
+  };
+}
+
+// Alle <loc>-adressen uit een of meer sitemaps, alleen de Duitse pagina's.
+async function locsOf(sitemapUrls) {
+  const out = [];
+  for (const u of sitemapUrls) {
+    const xml = await fetchMaybe(u);
+    if (!xml) continue;
+    out.push(...[...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].trim()).filter((x) => isGermanUrl(x, BASE)));
+  }
+  return out;
+}
+
+// Links aflopen vanaf de startpagina, alleen binnen BASE (de Duitse pagina's staan
+// tijdens de preview niet in de sitemap). Hooguit MAX_CRAWL pagina's.
+const MAX_CRAWL = 400;
+async function crawl() {
+  const seen = new Set([BASE + '/']);
+  const queue = [BASE + '/'];
+  const htmlByUrl = new Map();
+  while (queue.length && seen.size <= MAX_CRAWL) {
+    const batch = queue.splice(0, CONCURRENCY);
+    await Promise.all(batch.map(async (u) => {
+      const html = await fetchMaybe(u);
+      if (!html) return;
+      htmlByUrl.set(u, html);
+      for (const next of crawlCandidates(html, BASE)) {
+        if (!seen.has(next)) { seen.add(next); queue.push(next); }
+      }
+    }));
+  }
+  return htmlByUrl;
 }
 
 // Pool met beperkte gelijktijdigheid.
@@ -88,28 +158,27 @@ async function mapPool(items, fn) {
 }
 
 (async () => {
-  const [products, pages, posts] = await Promise.all([
-    locs('product-sitemap.xml'),
-    locs('page-sitemap.xml'),
-    locs('post-sitemap.xml'),
-  ]);
+  await previewCookie();
+  const maps = await discoverSitemaps();
+  const [products, pages, posts] = await Promise.all([locsOf(maps.products), locsOf(maps.pages), locsOf(maps.posts)]);
+  const gecrawld = await crawl();
+  console.log(`Bron: ${BASE} (sitemaps: ${products.length + pages.length + posts.length} Duitse adressen; links: ${gecrawld.size} pagina's)${COOKIE ? ' met preview-cookie' : ''}`);
 
-  // Inhoudspagina's: geen media-uploads, en geen service-/juridische pagina's
-  // (voorwaarden, betaalmethoden, retour, verzending, privacy, cookies, contact,
-  // over-ons). Die horen niet in de botkennis — hiervoor verwijst de bot naar de
-  // binnendienst, en ze vervuilen anders de reparatie-zoekresultaten.
-  const contentPages = pages.filter((u) => !/\/wp-content\//i.test(u) && !EXCLUDE_PAGE.test(u));
+  // Inhoudspagina's: geen media-uploads en geen service-/juridische pagina's (zie
+  // EXCLUDE_PAGE in scrub.js); die vervuilen anders de reparatie-zoekresultaten.
+  const alle = new Set([...products, ...pages, ...posts, ...gecrawld.keys()]);
+  const jobs = [...alle]
+    .filter((u) => !/\/wp-content\//i.test(u) && !EXCLUDE_PAGE.test(u) && u.replace(/\/+$/, '') !== BASE)
+    .map((url) => ({ type: typeOf(url, BASE), url }));
 
-  const jobs = [
-    ...products.filter((u) => !EXCLUDE_PAGE.test(u)).map((url) => ({ type: 'product', url })), // ook Amazon-varianten (-fba) uitsluiten
-    ...contentPages.map((url) => ({ type: 'pagina', url })),
-    ...posts.map((url) => ({ type: 'blog', url })),
-  ];
-
-  console.log(`Pagina's: ${products.length} producten, ${contentPages.length} pagina's, ${posts.length} blogs → ${jobs.length} totaal`);
+  const tel = (t) => jobs.filter((j) => j.type === t).length;
+  console.log(`Pagina's: ${tel('product')} producten, ${tel('pagina')} pagina's, ${tel('blog')} blogs → ${jobs.length} totaal`);
 
   const results = await mapPool(jobs, async (job) => {
-    const html = await fetchText(job.url);
+    const ruw = gecrawld.get(job.url) || await fetchText(job.url);
+    // Dezelfde FAQ-vragen staan als blok onder veel product- en reparatiepagina's; ze
+    // horen alleen bij de FAQ-pagina, anders winnen die pagina's op elke FAQ-vraag.
+    const html = /\/faq\/?$/.test(job.url) ? ruw : removeBlocks(ruw, ['faq-accordion', 'faq-compact__button']);
     const slug = job.url.replace(/\/$/, '').split('/').pop();
     return { type: job.type, slug, title: normalizeBrand(title(html)), url: job.url, text: cleanText(html) };
   });
@@ -134,6 +203,11 @@ async function mapPool(items, fn) {
   const ok = cleaned.filter((r) => r.text && r.text.length > 60);
   ok.sort((a, b) => a.type.localeCompare(b.type) || a.title.localeCompare(b.title));
 
+  if (process.env.DRY_RUN) {
+    console.log(`DRY_RUN: ${ok.length} pagina's gevonden, niets geschreven. Titels:`);
+    for (const r of ok) console.log(`  [${r.type}] ${r.title} — ${r.url}`);
+    return;
+  }
   fs.writeFileSync(TARGET, JSON.stringify(ok, null, 2) + '\n');
   console.log(`✓ ${ok.length} pagina's geschreven naar ${path.relative(process.cwd(), TARGET)}`);
   if (failed.length) console.log(`⚠ ${failed.length} mislukt: ${failed.map((f) => f.url).join(', ')}`);

@@ -30,11 +30,36 @@ function dedupeData(entries) {
 // een gescrapete bron (een re-pull mag ze niet terugbrengen). Op slug gefilterd.
 const OUTDATED_SLUGS = new Set([]);
 
-const DATA = dedupeData([
+// Die FAQ-Seite ist eine lange Seite mit vielen Fragen; als Ganzes rankt sie schlecht.
+// Daher bekommt jede Frage mit Antwort einen eigenen Eintrag im Index
+// (port eazyfix-bot faqEntries, review 11-11-2026).
+const FAQ_URL = /\/faq\/?$/i;
+function faqEntries(entries) {
+  const out = [];
+  for (const p of entries) {
+    if (!FAQ_URL.test(String(p.url || '')) || !p.text) continue;
+    let cur = null;
+    const sluit = () => { if (cur && cur.lines.length) out.push(cur); cur = null; };
+    for (const line of p.text.split('\n')) {
+      if (/\?\s*$/.test(line) && line.length <= 160) {
+        sluit();
+        const slug = line.toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60);
+        cur = { type: 'pagina', title: line.trim(), slug: 'faq-' + slug, url: String(p.url).replace(/\/?$/, '/') + '#' + slug, lines: [] };
+      } else if (cur) {
+        cur.lines.push(line);
+      }
+    }
+    sluit();
+  }
+  return out.map(({ lines, ...q }) => ({ ...q, text: q.title + '\n' + lines.join('\n') }));
+}
+
+const DATA_BASIS = dedupeData([
   ...loadSource('./kennis.json'),
   ...loadSource('./kennis-video.json'),
   ...loadSource('./kennis-extra.json'),
 ]).filter((p) => !OUTDATED_SLUGS.has(p.slug));
+const DATA = [...DATA_BASIS, ...faqEntries(DATA_BASIS)];
 
 // Duitse stopwoorden (lidwoorden, voornaamwoorden, voorzetsels, hulpwerkwoorden,
 // voegwoorden). Woorden van 2 tekens vallen sowieso al weg (len > 2-filter).
@@ -502,4 +527,4 @@ function searchContext(query, limit = 3) {
     found.map((p) => formatEntry(p, stems)).join('\n\n');
 }
 
-module.exports = { excerpt, specs, search, scoreAll, confidentSearch, classifyIntent, searchContext, relevantVideos, cleanVideoTitle, runKennisTool, KENNIS_TOOL, DATA };
+module.exports = { faqEntries, excerpt, specs, search, scoreAll, confidentSearch, classifyIntent, searchContext, relevantVideos, cleanVideoTitle, runKennisTool, KENNIS_TOOL, DATA };

@@ -12,7 +12,7 @@ test('één keer Holzspachtelmasse → tegel + companion Holzimprägnierung', ()
   const r = productsInText('Fülle die Stelle mit der EAZYFIX® Premium Holzspachtelmasse (2:1).');
   assert.equal(r.length, 2);
   assert.match(r[0].name, /Holzspachtelmasse/i);
-  assert.match(r[0].url, /eazy-fix\.de\/.*premium-holzspachtelmasse\/$/);
+  assert.match(r[0].url, /eazy-fix\.nl\/de\/.*premium-holzspachtelmasse\/$/);
   assert.match(r[1].name, /impr(ä|ae)gnierung/i);
 });
 

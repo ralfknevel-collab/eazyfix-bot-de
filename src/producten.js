@@ -1,4 +1,4 @@
-// Koppel productnamen die de bot noemt aan de echte productpagina op eazy-fix.de,
+// Koppel productnamen die de bot noemt aan de echte productpagina op eazy-fix.nl/de,
 // zodat de frontend klikbare "bekijk in webshop"-kaartjes kan tonen.
 // Urls komen uit src/kennis.json (via site:pull), dus ze blijven actueel.
 // Namen zijn de Duitse EAZYFIX-productnamen; slugs bestaan in de DE-kennis.json.
@@ -9,17 +9,19 @@ const bySlug = new Map(PRODUCTS.map((p) => [p.slug, p]));
 // Naam-herkenning -> productslug. Specifieke namen vóór algemene.
 const RULES = [
   [/premium\s*holzspachtelmasse|holzspachtelmasse/i, 'premium-holzspachtelmasse'],
+  [/one\s*shot/i, 'eazyfix-premium-one-shot'],
   [/premium\s*holz\s*feinspachtel|holz\s*feinspachtel|\bfeinspachtel\b/i, 'premium-holz-fein-spachtel'],
+  [/fertigspachtel/i, 'eazyfix-premium-fertigspachtel'],
   [/holzimpr(ä|ae)gnierung/i, 'eazyfix-holzimpraegnierung-mit-zubehoer'],
   [/holzfeuchtemessger(ä|ae)t|feuchtemessger(ä|ae)t|feuchtigkeitsmesser/i, 'feuchtigkeitsmesser'],
   [/holzf(ä|ae)ule.?fr(ä|ae)ser|\bfr(ä|ae)ser\b/i, 'holzfaeule-fraeser'],
   [/abt(ö|oe)nkonzentrat/i, 'eazyfix-abtonkonzentrate'],
   [/reinigungst(ü|ue)cher/i, 'reinigungstucher-60-stuck'],
   [/erweiterungsset/i, 'eazyfix-holzfaeule-erweiterungsset'],
-  [/standardset|starterset|starterpaket/i, 'eazyfix-holzfaeule-standardset'],
-  [/all.?in.?one|komplettset|reparaturset/i, 'eazyfix-premium-all-in-one-spachtel'],
+  [/starterset/i, 'eazyfix-holzfaeule-starterset'],
+  [/standardset|starterpaket/i, 'eazyfix-holzfaeule-standardset'],
+  [/komplettes\s+holzreparaturset|komplettset/i, 'komplettes-reparaturset'],
 ];
-
 // De Holzimprägnierung is geen los advies maar verplichte voorbehandeling: hij
 // wordt alleen als companion-tegel getoond bij een product dat voorbehandelen
 // vereist (Premium Holzspachtelmasse). Sets bevatten de versterker al, dus die niet.
