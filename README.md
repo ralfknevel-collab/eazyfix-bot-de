@@ -3,6 +3,10 @@
 Zelfstandige chat-/analyse-service voor de EAZYFIX houtrot-bot. Levert de
 endpoints die de EAZYFIX-app (en later de website) gebruiken.
 
+## Nieuwe Duitse site (november 2026)
+
+De chat komt op 23 november 2026 als iframe op eazy-fix.nl/de (JKC). Inbouw: `docs/inbouw-website-jkc.md`. Livegang-stappen: `docs/livegang-23-november.md`. Kennis ophalen: `EZ_PREVIEW=<token> node scripts/pull-site.js` (zolang de site een preview is).
+
 ## Lokaal draaien
 1. `npm install`
 2. Kopieer `.env.example` naar `.env` en vul `ANTHROPIC_API_KEY` in.
