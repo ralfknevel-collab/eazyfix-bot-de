@@ -40,7 +40,7 @@ Alles staat klaar op de tak `nieuwe-site`. De huidige Duitse chat (main) blijft 
    - `TELEGRAM_*` mag blijven (alleen het alarm bij het dagplafond, zonder gespreksinhoud).
 2. Tak `nieuwe-site` samenvoegen met main en pushen (Render zet hem automatisch live).
 2a. Overstap naar eazy-fix.de (zodra de nieuwe site daar draait): eerst controleren welke paden werken (staan de pagina's op eazy-fix.de/garantieformular/, /kontakt/, /product/... dus zonder /de/?). Daarna in src/ en public/ alle "eazy-fix.nl/de" vervangen door "eazy-fix.de" (ongeveer 110 plekken: persona, kennisbron in kennis.js, kennis-extra.json, producten.js, verkooppunten.js, lead.js, context.js, index.js), de kennis opnieuw ophalen van eazy-fix.de, tests draaien, een paar links uit de antwoorden aanklikken en pushen. eazy-fix.de staat al in de toegestane websites (abuse-guard.js), dus het iframe werkt daar zonder extra instelling.
-3. Controleren: `/health` (kennisSite = https://www.eazy-fix.de na stap 2a) met x-health-key (kennisSite = https://www.eazy-fix.nl/de), een vraag via `/api/chat/stream` met prefix `livetest-`, de chat in de Duitse site openen.
+3. Controleren: `/health` met x-health-key (kennisSite = https://www.eazy-fix.de na stap 2a), een vraag via `/api/chat/stream` met prefix `livetest-`, de chat in de Duitse site openen.
 4. Nina laten weten: overzicht `smileys_de` in Supabase.
 
 ## Let op
