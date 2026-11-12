@@ -125,3 +125,32 @@ test('fallback verwijst naar online-kanalen, niet naar een dode kaart', () => {
   const plz = runTool('find_verkooppunt', { plaats: '12345' });
   assert.match(plz, /Amazon|HORNBACH online/);
 });
+
+// Winkelkaartjes in de webchat (port eazyfix-bot, 12-11-2026).
+test('kaartjes: verkaufsstelle uit de lijst, zonder afstand, alleen met de vlag', () => {
+  const { runVerkooppuntKaart } = require('../src/verkooppunten');
+  const r = runVerkooppuntKaart({ plaats: 'Hünxe' });
+  assert.equal(r.winkels.length, 1);
+  assert.equal(r.winkels[0].naam, 'HolzLand MAHL');
+  assert.equal(r.winkels[0].km, null);
+  assert.match(r.text, /ANZEIGE IM CHAT/);
+  const niets = runVerkooppuntKaart({ plaats: 'München' });
+  assert.deepEqual(niets.winkels, []);
+  assert.doesNotMatch(niets.text, /ANZEIGE/);
+  const fs = require('node:fs'), path = require('node:path');
+  const idx = fs.readFileSync(path.join(__dirname, '..', 'src', 'index.js'), 'utf8');
+  assert.match(idx, /const kaarten = req\.body\.kaarten === true;/);
+  assert.match(idx, /if \(winkels && winkels\.length\) res\.write/);
+  const h = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  assert.match(h, /kaarten: true \}\)/);
+  assert.match(h, /renderWinkels\(out, winkels\)/);
+  assert.match(h, /bellen: 'Anrufen'/);
+});
+
+test('opsomming: één losse regel na een dubbele punt krijgt geen bolletje', () => {
+  const h = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  const m = h.match(/function opsommingTekst\(text\) \{[\s\S]*?\n    \}/)[0];
+  const f = new Function(m + '; return opsommingTekst;')();
+  assert.equal(f('Du brauchst:\nSpachtel\nFräser'), 'Du brauchst:\n• Spachtel\n• Fräser');
+  assert.equal(f('Hier bekommst du es:\n\nRuf vorher kurz an.'), 'Hier bekommst du es:\n\nRuf vorher kurz an.');
+});

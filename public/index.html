@@ -116,6 +116,33 @@
     /* Regels direct onder elkaar (vragen, losse opsomming) krijgen wat lucht, zodat een
        vraag die over twee regels loopt niet in de volgende overloopt (review 10-11-2026). */
     .msg .lsp { display: block; height: 7px; }
+    /* Opmaak van een afgerond antwoord (verzoek Ralf 12-11-2026): elke regel een eigen blok,
+       opsommingen met een groen bolletje, genummerde stappen met een groen rondje. */
+    .msg > .regel, .msg > .punten, .msg > .stappen { display: block; margin: 7px 0 0; }
+    .msg > :first-child { margin-top: 0; }
+    .msg > .na-wit { margin-top: 14px; }
+    .msg .punten, .msg .stappen { list-style: none; padding: 0; }
+    .msg .punten li, .msg .stappen li { position: relative; margin-top: 6px; }
+    .msg .punten li:first-child, .msg .stappen li:first-child { margin-top: 0; }
+    .msg .punten li { padding-left: 18px; }
+    .msg .punten li::before { content: ''; position: absolute; left: 3px; top: calc(.75em - 3.5px); width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+    .msg .stappen li { padding-left: 31px; min-height: 22px; }
+    .msg .stappen li + li { margin-top: 9px; }
+    .msg .stappen li::before { content: attr(data-n); position: absolute; left: 0; top: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--green); color: var(--green-dark); font-size: 12px; font-weight: 800; line-height: 22px; text-align: center; }
+
+    /* Winkelkaartjes onder een antwoord (uit de winkellijst, niet door de AI geschreven) */
+    .winkels { display: flex; flex-direction: column; gap: 8px; margin: 2px 0 0 39px; max-width: calc(78% + 8px); }
+    .winkel { display: grid; grid-template-columns: 34px 1fr auto; column-gap: 10px; row-gap: 10px; align-items: center; padding: 12px; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04); color: var(--ink); }
+    .winkel .wpin { width: 34px; height: 34px; border-radius: 50%; background: #eef7e6; color: #4f8f22; display: flex; align-items: center; justify-content: center; }
+    .winkel .wpin svg { width: 18px; height: 18px; }
+    .winkel .wbody { min-width: 0; }
+    .winkel .wnaam { font-weight: 700; font-size: 14.5px; line-height: 1.3; }
+    .winkel .wadres { font-size: 12.5px; color: var(--muted); line-height: 1.35; margin-top: 2px; }
+    .winkel .wkm { font-size: 12.5px; font-weight: 700; color: var(--ink); white-space: nowrap; background: #f3f4f6; border-radius: 999px; padding: 3px 9px; }
+    .winkel .wknoppen { grid-column: 2 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+    .winkel .wknop { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid #cfe7bb; background: #f3faec; color: var(--green-dark); font-size: 13px; font-weight: 700; text-decoration: none; transition: background .12s, border-color .12s; }
+    .winkel .wknop:hover, .winkel .wknop:focus-visible { background: #e2f1d3; border-color: var(--green); outline: none; }
+    .winkel .wknop svg { width: 14px; height: 14px; }
     .msg-meta { font-size: 11px; color: var(--muted); margin-top: 8px; }
     .msg-meta-bot { text-align: left; margin-left: 39px; }
     .msg-meta-user { text-align: right; }
@@ -359,7 +386,7 @@
     const LANG = (window.EF_CTX && window.EF_CTX.lang) || 'de';
     const TEKSTEN = {
       nl: {
-        titel: 'AI Klusadviseur', eind: 'Gesprek beëindigen', sluiten: 'Chat sluiten', groter: 'Volledig scherm', kleiner: 'Kleiner venster', verwijder: "Foto's verwijderen", toevoegen: 'Foto toevoegen',
+        titel: 'AI Klusadviseur', eind: 'Gesprek beëindigen', sluiten: 'Chat sluiten', bellen: 'Bellen', route: 'Route', hemelsbreed: 'Hemelsbrede afstand', decimaal: ',', groter: 'Volledig scherm', kleiner: 'Kleiner venster', verwijder: "Foto's verwijderen", toevoegen: 'Foto toevoegen',
         typ: 'Typ je bericht…', verstuur: 'Verstuur', maakFoto: 'Maak foto', bieb: 'Kies uit bibliotheek',
         fotoAlt: 'voorbeeld van een gekozen foto', nFotos: (n) => n + " foto's", nogMogelijk: (n) => ', nog ' + n + ' mogelijk', maxFotos: (n) => 'Maximaal ' + n + " foto's",
         verzonden: 'Verzonden', goed: 'Goed', gingWel: 'Ging wel', nietGoed: 'Niet goed',
@@ -384,7 +411,7 @@
         locale: 'nl-NL',
       },
       en: {
-        titel: 'AI DIY Advisor', eind: 'End conversation', sluiten: 'Close chat', groter: 'Full screen', kleiner: 'Smaller window', verwijder: 'Remove photos', toevoegen: 'Add photo',
+        titel: 'AI DIY Advisor', eind: 'End conversation', sluiten: 'Close chat', bellen: 'Call', route: 'Directions', hemelsbreed: 'Straight-line distance', decimaal: '.', groter: 'Full screen', kleiner: 'Smaller window', verwijder: 'Remove photos', toevoegen: 'Add photo',
         typ: 'Type your message…', verstuur: 'Send', maakFoto: 'Take photo', bieb: 'Choose from library',
         fotoAlt: 'preview of a selected photo', nFotos: (n) => n + ' photos', nogMogelijk: (n) => ', ' + n + ' more possible', maxFotos: (n) => 'Maximum ' + n + ' photos',
         verzonden: 'Sent', goed: 'Good', gingWel: 'Okay', nietGoed: 'Not good',
@@ -407,7 +434,7 @@
         locale: 'en-GB',
       },
       de: {
-        titel: 'KI-Heimwerkerberater', eind: 'Gespräch beenden', sluiten: 'Chat schließen', groter: 'Vollbild', kleiner: 'Kleineres Fenster', verwijder: 'Fotos entfernen', toevoegen: 'Foto hinzufügen',
+        titel: 'KI-Heimwerkerberater', eind: 'Gespräch beenden', sluiten: 'Chat schließen', bellen: 'Anrufen', route: 'Route', hemelsbreed: 'Luftlinie', decimaal: ',', groter: 'Vollbild', kleiner: 'Kleineres Fenster', verwijder: 'Fotos entfernen', toevoegen: 'Foto hinzufügen',
         typ: 'Schreib deine Nachricht…', verstuur: 'Senden', maakFoto: 'Foto aufnehmen', bieb: 'Aus Mediathek wählen',
         fotoAlt: 'Vorschau eines gewählten Fotos', nFotos: (n) => n + ' Fotos', nogMogelijk: (n) => ', noch ' + n + ' möglich', maxFotos: (n) => 'Maximal ' + n + ' Fotos',
         verzonden: 'Gesendet', goed: 'Gut', gingWel: 'Ging so', nietGoed: 'Nicht gut',
@@ -752,15 +779,19 @@
     // zoals ze zijn. Draait vóór de linkify-stappen, op de platte tekst van de bubbel.
     function opsommingTekst(text) {
       const regels = String(text).split('\n');
-      let inLijst = false;
+      let inLijst = false, groep = [];
+      // Eén losse regel na een dubbele punt is geen opsomming (bijvoorbeeld een tip na
+      // "deze winkels:"); pas vanaf twee regels krijgen ze een bolletje.
+      const sluit = () => { if (groep.length >= 2) groep.forEach((j) => { regels[j] = '• ' + regels[j].replace(/^\s+/, ''); }); groep = []; };
       for (let i = 0; i < regels.length; i++) {
         const r = regels[i];
         // Een witregel direct na de inleidende regel ("Dit heb je nodig:") hoort nog bij de lijst.
-        if (!r.trim()) { if (!(inLijst && i > 0 && /:\s*$/.test(regels[i - 1]))) inLijst = false; continue; }
-        if (inLijst && !/^\s*(\d+[.)]|[•\-*])\s/.test(r)) regels[i] = '• ' + r.replace(/^\s+/, '');
-        else if (/^\s*\d+[.)]\s/.test(r)) inLijst = false;
-        if (/:\s*$/.test(r)) inLijst = true;
+        if (!r.trim()) { if (!(inLijst && i > 0 && /:\s*$/.test(regels[i - 1]))) { inLijst = false; sluit(); } continue; }
+        if (inLijst && !/^\s*(\d+[.)]|[•\-*])\s/.test(r)) groep.push(i);
+        else if (/^\s*\d+[.)]\s/.test(r)) { inLijst = false; sluit(); }
+        if (/:\s*$/.test(r)) { sluit(); inLijst = true; }
       }
+      sluit();
       return regels.join('\n');
     }
     function opsomming(answerEl) {
@@ -771,18 +802,54 @@
     }
 
     function regelRuimte(answerEl) {
+      // Verdeel de bubbel in regels (de linkify-stappen kunnen <a>-knopen midden in een
+      // regel hebben gezet; die blijven gewoon in hun regel staan).
       answerEl.normalize();
-      Array.from(answerEl.childNodes).forEach((n) => {
-        if (n.nodeType !== 3 || n.nodeValue.indexOf('\n') < 0) return;
-        const delen = n.nodeValue.split(/(\n+)/);
-        if (!delen.some((d) => d === '\n')) return;
-        const frag = document.createDocumentFragment();
-        for (const d of delen) {
-          if (d === '\n') { const s = document.createElement('span'); s.className = 'lsp'; frag.appendChild(s); }
-          else if (d) frag.appendChild(document.createTextNode(d));
+      const regels = [[]];
+      for (const n of Array.from(answerEl.childNodes)) {
+        if (n.nodeType === 3) {
+          n.nodeValue.split('\n').forEach((d, i) => { if (i > 0) regels.push([]); if (d) regels[regels.length - 1].push(document.createTextNode(d)); });
+        } else regels[regels.length - 1].push(n);
+      }
+      const soort = (r) => {
+        const f = r[0];
+        if (!f) return { t: 'leeg' };
+        if (f.nodeType === 3) {
+          let m = f.nodeValue.match(/^\s*[•*-]\s+/);
+          if (m) { f.nodeValue = f.nodeValue.slice(m[0].length); return { t: 'punt' }; }
+          m = f.nodeValue.match(/^\s*(\d{1,2})[.)]\s+/);
+          if (m) { f.nodeValue = f.nodeValue.slice(m[0].length); return { t: 'stap', n: m[1] }; }
+          if (r.length === 1 && !f.nodeValue.trim()) return { t: 'leeg' };
         }
-        answerEl.replaceChild(frag, n);
-      });
+        return { t: 'tekst' };
+      };
+      const frag = document.createDocumentFragment();
+      let lijst = null, lijstSoort = '', naWit = false;
+      for (const r of regels) {
+        const k = soort(r);
+        if (k.t === 'leeg') { lijst = null; naWit = frag.childNodes.length > 0; continue; }
+        if (k.t === 'tekst') {
+          lijst = null;
+          const el = document.createElement('span');
+          el.className = 'regel' + (naWit ? ' na-wit' : '');
+          r.forEach((n) => el.appendChild(n));
+          frag.appendChild(el);
+        } else {
+          if (!lijst || lijstSoort !== k.t) {
+            lijst = document.createElement(k.t === 'punt' ? 'ul' : 'ol');
+            lijst.className = (k.t === 'punt' ? 'punten' : 'stappen') + (naWit ? ' na-wit' : '');
+            lijstSoort = k.t;
+            frag.appendChild(lijst);
+          }
+          const li = document.createElement('li');
+          if (k.n) li.dataset.n = k.n;
+          r.forEach((n) => li.appendChild(n));
+          lijst.appendChild(li);
+        }
+        naWit = false;
+      }
+      answerEl.textContent = '';
+      answerEl.appendChild(frag);
     }
 
     function linkifyProducts(answerEl) {
@@ -928,6 +995,49 @@
     }
 
     // Toon klikbare videokaartje(s) met thumbnail onder een antwoord (YouTube).
+    // Winkelkaartjes (verzoek Ralf 12-11-2026): de server stuurt de gevonden winkels mee
+    // uit de winkellijst; de bot schrijft er dan alleen een korte inleiding bij.
+    const ICOON_PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg>';
+    const ICOON_BEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>';
+    const ICOON_ROUTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>';
+    function renderWinkels(answerEl, winkels) {
+      if (!Array.isArray(winkels) || !winkels.length) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'winkels';
+      for (const w of winkels.slice(0, 5)) {
+        if (!w || typeof w.naam !== 'string') continue;
+        const kaart = document.createElement('div');
+        kaart.className = 'winkel';
+        const adres = [w.straat, w.plaats].filter(Boolean).join(', ');
+        const zoek = [w.naam, w.straat, [w.postcode, w.plaats].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+        kaart.innerHTML = '<span class="wpin">' + ICOON_PIN + '</span><div class="wbody"><div class="wnaam"></div><div class="wadres"></div></div><span class="wkm"></span><div class="wknoppen"></div>';
+        kaart.querySelector('.wnaam').textContent = w.naam;
+        kaart.querySelector('.wadres').textContent = adres;
+        const km = kaart.querySelector('.wkm');
+        if (typeof w.km === 'number') { km.textContent = (w.km < 10 ? w.km.toFixed(1) : String(Math.round(w.km))).replace('.', T.decimaal) + ' km'; km.title = T.hemelsbreed; }
+        else km.remove();
+        const knoppen = kaart.querySelector('.wknoppen');
+        const tel = typeof w.telefoon === 'string' ? w.telefoon.replace(/[^\d+]/g, '') : '';
+        if (tel) {
+          const a = document.createElement('a');
+          a.className = 'wknop'; a.href = 'tel:' + tel;
+          a.innerHTML = ICOON_BEL + '<span></span>'; a.querySelector('span').textContent = T.bellen;
+          a.setAttribute('aria-label', T.bellen + ' ' + w.naam);
+          knoppen.appendChild(a);
+        }
+        const r = document.createElement('a');
+        r.className = 'wknop'; r.target = '_blank'; r.rel = 'noopener';
+        r.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(zoek);
+        r.innerHTML = ICOON_ROUTE + '<span></span>'; r.querySelector('span').textContent = T.route;
+        r.setAttribute('aria-label', T.route + ' ' + w.naam);
+        knoppen.appendChild(r);
+        wrap.appendChild(kaart);
+      }
+      if (!wrap.childNodes.length) return;
+      (answerEl.closest('.row') || answerEl).after(wrap);
+      scrollLog();
+    }
+
     function renderVideos(answerEl, videos) {
       if (!videos || !videos.length) return;
       const wrap = document.createElement('div');
@@ -1096,7 +1206,7 @@
         await vraagLocatieBijWeervraag(text);
         const resp = await apiFetch('/api/chat/stream', {
           method: 'POST',
-          body: JSON.stringify({ messages: history, conversationId, geo, context: CONTEXT }),
+          body: JSON.stringify({ messages: history, conversationId, geo, context: CONTEXT, kaarten: true }),
         });
         if (!resp.ok) {
           let m = T.misgegaan;
@@ -1107,7 +1217,7 @@
         }
         const reader = resp.body.getReader();
         const dec = new TextDecoder();
-        let buf = '', videos = null;
+        let buf = '', videos = null, winkels = null;
         for (;;) {
           const { value, done } = await reader.read();
           if (done) break;
@@ -1124,12 +1234,13 @@
               if (obj.status === 'tool' && !acc) { out.textContent = T.momentje; }
               if (obj.text) { acc += obj.text; out.textContent = stripFotoMarker(acc); }
               if (obj.videos) { videos = obj.videos; }
+              if (obj.winkels) { winkels = obj.winkels; }
               if (obj.error) { out.closest('.row').className = 'row row-bot err'; out.textContent = vf(obj.error); }
             } catch {}
           }
           scrollLog();
         }
-        if (acc) { history.push({ role: 'assistant', content: stripFotoMarker(acc) }); toonEindknop(); if (DUIMPJES_TESTFASE) addFeedbackRow(text, out); opsomming(out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out); renderVideos(out, videos); postToSite({ type: 'event', name: 'answer_received' }); }
+        if (acc) { history.push({ role: 'assistant', content: stripFotoMarker(acc) }); toonEindknop(); if (DUIMPJES_TESTFASE) addFeedbackRow(text, out); opsomming(out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out); renderVideos(out, videos); renderWinkels(out, winkels); postToSite({ type: 'event', name: 'answer_received' }); }
       } catch (e) {
         // Viel de verbinding weg terwijl het antwoord al binnenkwam (bv. telefoon even
         // op slot of naar een andere app), laat het antwoord tot zover dan staan in

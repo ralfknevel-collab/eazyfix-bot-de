@@ -89,9 +89,7 @@ const VERKOOPPUNT_TOOL = {
 };
 
 // Voer de verkooppunt-tool uit; geeft een korte tekst terug voor het model.
-function runVerkooppuntTool(input) {
-  const plaats = input && input.plaats;
-  const { stores, kind } = findWithMatch(plaats, 3);
+function toolTekst(plaats, stores, kind) {
 
   if (kind === 'ask_city') {
     // Postcode gegeven, maar de verkooppunten staan grotendeels alleen met een
@@ -123,10 +121,43 @@ function runVerkooppuntTool(input) {
   return `${kop}\n${stores.map(formatStore).join('\n')}\n${voorraad}`;
 }
 
+function runVerkooppuntTool(input) {
+  const plaats = input && input.plaats;
+  const { stores, kind } = findWithMatch(plaats, 3);
+  return toolTekst(plaats, stores, kind);
+}
+
+// Winkelkaartjes in de webchat (port eazyfix-bot, 12-11-2026): naast de tekst voor het
+// model ook de winkels zelf, zodat de chat ze als kaartjes met bel- en routeknop toont.
+// De DE-lijst zoekt op plaats of postcoderegio, niet op afstand: dus geen kilometers.
+const KAART_NOOT = '\n\nANZEIGE IM CHAT: diese Verkaufsstellen erscheinen unter deiner Antwort als Kärtchen mit Name, Adresse, ' +
+  'einem Anruf-Knopf und einem Routen-Knopf. Schreib deshalb nur einen kurzen einleitenden Satz (zum Beispiel ' +
+  '"In deiner Nähe bekommst du EAZYFIX® hier:") und nenne die Verkaufsstellen, Adressen und Telefonnummern NICHT ' +
+  'noch einmal im Text. Den Hinweis zum vorherigen Anrufen und den Webshop als Alternative darfst du kurz nennen.';
+
+function winkelKaart(s) {
+  return {
+    naam: s.name,
+    straat: s.street || '',
+    postcode: s.zip || '',
+    plaats: s.city || '',
+    telefoon: s.phone || null,
+    km: null,
+  };
+}
+
+function runVerkooppuntKaart(input) {
+  const plaats = input && input.plaats;
+  const { stores, kind } = findWithMatch(plaats, 3);
+  const tekst = toolTekst(plaats, stores, kind);
+  if (!stores.length) return { text: tekst, winkels: [] };
+  return { text: tekst + KAART_NOOT, winkels: stores.map(winkelKaart) };
+}
+
 // Dispatch op toolnaam (uitbreidbaar voor latere tools).
 function runTool(name, input) {
   if (name === 'find_verkooppunt') return runVerkooppuntTool(input);
   return `Onbekende tool: ${name}`;
 }
 
-module.exports = { findVerkooppunten, findWithMatch, formatStore, STORES, MAP_URL, VERKOOPPUNT_TOOL, runVerkooppuntTool, runTool };
+module.exports = { findVerkooppunten, findWithMatch, formatStore, STORES, MAP_URL, VERKOOPPUNT_TOOL, runVerkooppuntTool, runVerkooppuntKaart, runTool };

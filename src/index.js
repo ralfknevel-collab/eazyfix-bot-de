@@ -11,6 +11,7 @@ const { mailchimpEnabled, syncLead } = require('./mailchimp');
 const { parseContext, contextNote } = require('./context');
 const { stripTags } = require('./parse');
 const { CHAT_TOOLS, runTool } = require('./tools');
+const { runVerkooppuntKaart } = require('./verkooppunten');
 const { roundGeo, runChat, runWithTools, buildChatContext, videoNote } = require('./chat');
 const { productsInText } = require('./producten');
 const { searchContext, relevantVideos, siteBase } = require('./kennis');
@@ -731,6 +732,9 @@ app.post('/api/chat/stream', async (req, res) => {
   try {
     let convo = gesprek.map(m => ({ role: m.role, content: toAnthropicContent(m.content) }));
     let fullText = '';
+    // Winkelkaartjes: alleen als de webchat ze kan tonen (vlag kaarten in de aanvraag).
+    const kaarten = req.body.kaarten === true;
+    let winkels = null;
 
     // Tekst van het laatste user-bericht (voor kennis-injectie en videolinks).
     const userText = lastUserMessageText(messages);
@@ -787,6 +791,11 @@ app.post('/api/chat/stream', async (req, res) => {
           .filter(b => b.type === 'tool_use')
           .map(async b => {
             logTool(b.name, b.input);
+            if (b.name === 'find_verkooppunt' && kaarten) {
+              const r = runVerkooppuntKaart(b.input);
+              winkels = r.winkels;
+              return { type: 'tool_result', tool_use_id: b.id, content: r.text };
+            }
             return { type: 'tool_result', tool_use_id: b.id, content: await runTool(b.name, b.input, { geo }) };
           })
       );
@@ -811,6 +820,7 @@ app.post('/api/chat/stream', async (req, res) => {
 
     // Videokaartje (al op de vraag bepaald, zie boven).
     if (videos.length) res.write(`data: ${JSON.stringify({ videos })}\n\n`);
+    if (winkels && winkels.length) res.write(`data: ${JSON.stringify({ winkels })}\n\n`);
 
     if (fullText && feedbackEnabled()) {
       logChat({
