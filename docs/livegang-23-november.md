@@ -25,7 +25,7 @@ Alles staat klaar op de tak `nieuwe-site`. De huidige Duitse chat (main) blijft 
    - Oostenrijk: eigen webshop eazy-fix.at; Zwitserland bestelt ook via eazy-fix.at (17,78 euro, UPS).
    - Nieuwsbrief geeft eenmalig een kortingscode van 10 procent (staat in de chat en bij het vinkje).
    - Holzspachtelmasse hecht op MDF en multiplex; dieper dan 2 cm kan in lagen of met een nieuw stuk hout (stond al zo).
-   - Nog open: geldt de 10 procent ook voor de Nederlandse nieuwsbrief?
+   - De 10 procent geldt NIET voor de Nederlandse nieuwsbrief (Ralf 12-11); de NL-bot noemt geen korting.
    - Bevestigingsmail op de lijst "Eazyfix Newsletter [de]": Duitse tekst, net als Nina voor NL heeft gemaakt.
 2. JKC: iframe op de Duitse site naar `https://eazyfix-bot-de.onrender.com/embed` (zie inbouwhandleiding). De punten over de site zelf (winkelpagina met NL-winkels, live chat in de FAQ, twee telefoonnummers, NL-webinar op de productpagina) liggen bij Nina.
 3. Privacy: de Duitse privacyverklaring noemt de chat nog niet; voorstel in `docs/datenschutz-chat-eazyfix-de.md` (bij Nina of wie de verklaring beheert).
