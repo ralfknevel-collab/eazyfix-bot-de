@@ -130,6 +130,12 @@
     .msg .stappen li + li { margin-top: 9px; }
     .msg .stappen li::before { content: attr(data-n); position: absolute; left: 0; top: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--green); color: var(--green-dark); font-size: 12px; font-weight: 800; line-height: 22px; text-align: center; }
 
+    /* Keuzeknopjes onder een antwoord (verzoek Ralf 13-11-2026) */
+    .keuzes { display: flex; flex-wrap: wrap; gap: 8px; margin: 2px 0 0 39px; }
+    .keuze { font: inherit; font-size: 14px; font-weight: 700; color: var(--green-dark); background: #f3faec; border: 1px solid #cfe7bb; border-radius: 999px; padding: 8px 15px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: background .12s, border-color .12s, transform .08s; }
+    .keuze:hover, .keuze:focus-visible { background: #e2f1d3; border-color: var(--green); outline: none; }
+    .keuze:active { transform: scale(.97); }
+
     /* Winkelkaartjes onder een antwoord (uit de winkellijst, niet door de AI geschreven) */
     .winkels { display: flex; flex-direction: column; gap: 8px; margin: 2px 0 0 39px; max-width: calc(78% + 8px); }
     .winkel { display: grid; grid-template-columns: 34px 1fr auto; column-gap: 10px; row-gap: 10px; align-items: center; padding: 12px; background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.04); color: var(--ink); }
@@ -765,7 +771,35 @@
     // ⟦FOTO⟧ (de mobiele apps gebruiken die om een foto-knop te tonen). Deze
     // widget heeft al een vaste foto-knop, dus we halen de marker alleen weg.
     function stripFotoMarker(s) {
-      return s.replace(/\s*⟦FOTO⟧\s*/g, '').trimEnd();
+      return s.replace(/\s*⟦FOTO⟧\s*/g, '').replace(/\s*⟦KEUZE:[^⟧]*⟧\s*/g, '').replace(/\s*⟦[^⟧]*$/, '').trimEnd();
+    }
+    // Keuzeknopjes (verzoek Ralf 13-11-2026): de bot sluit een gesloten vraag af met
+    // ⟦KEUZE: Hout | Muur⟧; de chat maakt daar knopjes van onder het antwoord.
+    function haalKeuzes(s) {
+      const m = String(s || '').match(/⟦KEUZE:([^⟧]*)⟧/);
+      if (!m) return [];
+      return m[1].split('|').map((k) => k.trim()).filter((k) => k && k.length <= 40).slice(0, 4);
+    }
+    function wegKeuzes() { document.querySelectorAll('.keuzes').forEach((el) => el.remove()); }
+    function renderKeuzes(answerEl, keuzes) {
+      wegKeuzes();
+      if (!keuzes || keuzes.length < 2) return;
+      const wrap = document.createElement('div');
+      wrap.className = 'keuzes';
+      wrap.setAttribute('role', 'group');
+      for (const k of keuzes) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'keuze'; b.textContent = k;
+        b.addEventListener('click', () => {
+          if (sendBtn.disabled) return;
+          wegKeuzes();
+          inEl.value = k;
+          document.getElementById('f').requestSubmit();
+        });
+        wrap.appendChild(b);
+      }
+      (answerEl.closest('.row') || answerEl).after(wrap);
+      scrollLog();
     }
 
     // Alleen de EERSTE vermelding per product wordt een link (rustiger). Werkt
@@ -1206,7 +1240,7 @@
         await vraagLocatieBijWeervraag(text);
         const resp = await apiFetch('/api/chat/stream', {
           method: 'POST',
-          body: JSON.stringify({ messages: history, conversationId, geo, context: CONTEXT, kaarten: true }),
+          body: JSON.stringify({ messages: history, conversationId, geo, context: CONTEXT, kaarten: true, keuzes: true }),
         });
         if (!resp.ok) {
           let m = T.misgegaan;
@@ -1240,7 +1274,7 @@
           }
           scrollLog();
         }
-        if (acc) { history.push({ role: 'assistant', content: stripFotoMarker(acc) }); toonEindknop(); if (DUIMPJES_TESTFASE) addFeedbackRow(text, out); opsomming(out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out); renderVideos(out, videos); renderWinkels(out, winkels); postToSite({ type: 'event', name: 'answer_received' }); }
+        if (acc) { history.push({ role: 'assistant', content: stripFotoMarker(acc) }); toonEindknop(); if (DUIMPJES_TESTFASE) addFeedbackRow(text, out); opsomming(out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out); renderVideos(out, videos); renderWinkels(out, winkels); renderKeuzes(out, haalKeuzes(acc)); postToSite({ type: 'event', name: 'answer_received' }); }
       } catch (e) {
         // Viel de verbinding weg terwijl het antwoord al binnenkwam (bv. telefoon even
         // op slot of naar een andere app), laat het antwoord tot zover dan staan in
@@ -1350,7 +1384,7 @@
       try {
         const resp = await apiFetch('/api/analyze-image/stream', {
           method: 'POST',
-          body: JSON.stringify({ images, messages: history, conversationId, caption, context: CONTEXT }),
+          body: JSON.stringify({ images, messages: history, conversationId, caption, context: CONTEXT, keuzes: true }),
         });
         if (!resp.ok) {
           // Limiet (429) of andere nette servermelding: toon de tekst van de server
@@ -1391,10 +1425,11 @@
         if (klaarData) {
           opsomming(out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
           history.push({ role: 'user', content: caption ? histLabel + ' ' + caption : histLabel });
-          history.push({ role: 'assistant', content: acc });
+          history.push({ role: 'assistant', content: stripFotoMarker(acc) });
           toonEindknop();
           if (DUIMPJES_TESTFASE) addFeedbackRow(caption ? fotoLabel + ' ' + caption : fotoLabel, out);
           renderVideos(out, klaarData.videos);
+          renderKeuzes(out, haalKeuzes(acc));
           postToSite({ type: 'event', name: 'answer_received' });
         } else {
           // Er kwam wel tekst binnen, maar nooit een {done}-event: mogelijk afgekapt.
@@ -1414,7 +1449,7 @@
         try {
           const resp = await apiFetch('/api/analyze-image', {
             method: 'POST',
-            body: JSON.stringify({ images, messages: history, conversationId, caption, context: CONTEXT }),
+            body: JSON.stringify({ images, messages: history, conversationId, caption, context: CONTEXT, keuzes: true }),
           });
           const data = await resp.json();
           if (resp.status === 403 && data.leadRequired) { out.textContent = vf(data.error); vraagGegevens(files, caption); return; }
@@ -1427,6 +1462,7 @@
           if (DUIMPJES_TESTFASE) addFeedbackRow(caption ? fotoLabel + ' ' + caption : fotoLabel, out);
           opsomming(out); linkifyProducts(out); linkifySite(out); linkifyPhones(out); linkifyEmails(out); regelRuimte(out);
           renderVideos(out, data.videos);
+          renderKeuzes(out, haalKeuzes(data.content));
         } catch (e2) {
           out.closest('.row').className = 'row row-bot err';
           out.textContent = 'Fout: ' + e2.message;
@@ -1490,6 +1526,7 @@
     document.getElementById('f').addEventListener('submit', async (e) => {
       e.preventDefault();
       if (sendBtn.disabled) return; // al een beurt bezig: geen tweede parallelle request
+      wegKeuzes();
       sendBtn.disabled = true;
       try {
         const text = inEl.value.trim();

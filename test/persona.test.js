@@ -357,11 +357,29 @@ test('Fehlermeldungen für Besucher enthalten keinen Gedankenstrich', () => {
 
 // Port eazyfix-bot 20c1c43 (Besluit Ralf 10-11-2026): kurze erste Rückfragen und
 // Zwischenraum zwischen Zeilen im Chat.
-test('erste Rückfragen: höchstens drei kurze Fragen, je eine pro Zeile', () => {
+// Port eazyfix-bot 99124e3 (Besluit Ralf 13-11-2026): zwei Fragen statt drei, die letzte mit Knöpfen.
+test('erste Rückfragen: höchstens zwei kurze Fragen, je eine pro Zeile, und erst etwas geben', () => {
   const r = BASE_SYSTEM_PROMPT.split('\n').filter((x) => x.startsWith('- FORM DER ERSTEN RÜCKFRAGEN:'));
   assert.equal(r.length, 1);
-  assert.match(r[0], /höchstens DREI Fragen, jede in einer eigenen Zeile und jede EINE kurze Frage/);
-  assert.match(r[0], /Hänge keine zweite Frage/);
+  assert.match(r[0], /höchstens ZWEI Fragen, jede in einer eigenen Zeile und jede EINE kurze Frage/);
+  assert.match(r[0], /Hänge keine dritte Frage/);
+  const g = BASE_SYSTEM_PROMPT.split('\n').filter((x) => x.startsWith('- ERST ETWAS GEBEN'));
+  assert.equal(g.length, 1);
+  assert.match(g[0], /höchstens fünf nummerierten Schritten/);
+});
+
+test('Auswahlknöpfe: Regel nur mit der Flagge, Markierung aus dem Text, Knöpfe im Chat', () => {
+  const { KEUZE_REGEL, IMAGE_ANALYSIS_PROMPT } = require('../src/persona');
+  assert.match(KEUZE_REGEL, /⟦KEUZE: Antwort 1 \| Antwort 2 \| Antwort 3⟧/);
+  assert.doesNotMatch(BASE_SYSTEM_PROMPT + IMAGE_ANALYSIS_PROMPT, /⟦KEUZE/);
+  const fs = require('node:fs'), path = require('node:path');
+  const idx = fs.readFileSync(path.join(__dirname, '..', 'src', 'index.js'), 'utf8');
+  assert.equal(idx.split("if (req.body.keuzes === true) system.push({ type: 'text', text: KEUZE_REGEL });").length - 1, 2);
+  const h = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  const m = h.match(/function stripFotoMarker\(s\) \{[\s\S]*?\n    \}/)[0];
+  const strip = new Function(m + '; return stripFotoMarker;')();
+  assert.equal(strip('Holz oder Wand?\n⟦KEUZE: Holz | Wand⟧⟦FOTO⟧'), 'Holz oder Wand?');
+  assert.equal(h.split('keuzes: true }),').length - 1, 3);
 });
 
 test('Chatseite: Zeilen direkt untereinander bekommen nach dem Abschluss Zwischenraum', () => {

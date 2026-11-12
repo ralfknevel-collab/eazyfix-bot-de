@@ -4,7 +4,7 @@ const path = require('node:path');
 const cors = require('cors');
 const { parseAllowedOrigins, corsOptions, makeLimiters, embedRoute, makeWebTokens, makeDailyCaps, dailyLimitsFromEnv, messageTooLong, MESSAGE_TOO_LONG,
         limitConversation, newChatImages, catchAsyncRoutes, errorHandler, healthRoute, frameGuard } = require('./abuse-guard');
-const { BASE_SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT, FOTO_LENGTE_REGEL } = require('./persona');
+const { BASE_SYSTEM_PROMPT, IMAGE_ANALYSIS_PROMPT, IMAGE_DIAGNOSE_PROMPT, FOTO_LENGTE_REGEL, KEUZE_REGEL } = require('./persona');
 const { validateFeedback, feedbackEnabled, saveFeedback, logChat, uploadChatImages, sendTelegramText, validateGesprekFeedback, saveGesprekFeedback } = require('./feedback');
 const { validateLead, nieuwToken, makePhotoGate, leadLimitsFromEnv, saveLead, leadTokenExists, syncPending } = require('./lead');
 const { mailchimpEnabled, syncLead } = require('./mailchimp');
@@ -589,6 +589,7 @@ app.post('/api/analyze-image/stream', async (req, res) => {
     if (kennisContext) system.push({ type: 'text', text: kennisContext });
     const siteNote = contextNote(parseContext(req.body.context));
     if (siteNote) system.push({ type: 'text', text: siteNote });
+    if (req.body.keuzes === true) system.push({ type: 'text', text: KEUZE_REGEL }); // nur Webchat
     system.push({ type: 'text', text: videoNote(videos) });
     system.push({ type: 'text', text: FOTO_LENGTE_REGEL }); // als laatste blok
 
@@ -743,6 +744,8 @@ app.post('/api/chat/stream', async (req, res) => {
     // exact dezelfde persona, kennisinjectie, videokeuze en geo-hint gebruikt als
     // het non-streaming /api/chat-pad (geen drift in guardrails).
     const { system, videos } = buildChatContext(userText, { geo, context: parseContext(req.body.context) });
+    // Auswahlknöpfe nur für den Webchat, der danach fragt (Port eazyfix-bot 99124e3).
+    if (req.body.keuzes === true) system.push({ type: 'text', text: KEUZE_REGEL });
 
     // Tool-use-lus met streaming: stream tekst-deltas per ronde naar de client.
     // Blijkt een ronde toch een tool-aanroep te zijn, dan was die tekst slechts

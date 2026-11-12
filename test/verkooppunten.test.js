@@ -142,7 +142,7 @@ test('kaartjes: verkaufsstelle uit de lijst, zonder afstand, alleen met de vlag'
   assert.match(idx, /const kaarten = req\.body\.kaarten === true;/);
   assert.match(idx, /if \(winkels && winkels\.length\) res\.write/);
   const h = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
-  assert.match(h, /kaarten: true \}\)/);
+  assert.match(h, /kaarten: true, keuzes: true \}\)/);
   assert.match(h, /renderWinkels\(out, winkels\)/);
   assert.match(h, /bellen: 'Anrufen'/);
 });
