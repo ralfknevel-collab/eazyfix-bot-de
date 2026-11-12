@@ -77,9 +77,21 @@ test('widget: statische HTML is Duits (geen Nederlandse knopteksten vóór het l
 test('widget: sluitknop alleen in de inbouwversie, knop en Escape sturen close', () => {
   const h = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8');
   assert.match(h, /<button type="button" class="sluit" id="sluit" data-t-title="sluiten"/);
-  assert.match(h, /\.top \.sluit \{ display: none;/);
+  assert.match(h, /\.top \.sluit, \.top \.groot \{ display: none;/);
   assert.match(h, /html\.embed \.top \.sluit \{ display: flex; \}/);
   assert.match(h, /function sluitChat\(\) \{ postToSite\(\{ type: 'close' \}\); \}/);
   assert.match(h, /if \(e\.key !== 'Escape'\) return;\n\s*if \(!photoMenu\.hidden\) \{ hidePhotoMenu\(\); return; \}\n\s*if \(EMBED\) sluitChat\(\);/);
   for (const t of ['Chat sluiten', 'Close chat', 'Chat schließen']) assert.ok(h.includes(`sluiten: '${t}'`), t);
+});
+
+test('widget: fullscreen-knop volgt de stand van de website en luistert alleen naar eigen sites', () => {
+  const h = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  assert.match(h, /<button type="button" class="groot" id="groot" aria-pressed="false"><\/button>/);
+  assert.match(h, /html\.embed\.kan-groot \.top \.groot \{ display: flex; \}/);
+  assert.match(h, /postToSite\(\{ type: siteGroot \? 'collapse' : 'expand' \}\)/);
+  assert.match(h, /d\.source !== 'eazyfix-site' \|\| d\.type !== 'state'/);
+  assert.match(h, /e\.source !== window\.parent/);
+  assert.match(h, /classList\.toggle\('kan-groot', d\.canExpand === true\)/);
+  for (const o of ['https://www.eazy-fix.nl', 'https://www.eazy-fix.de', 'https://eazyfix.jkc-dev.nl']) assert.ok(h.includes(`'${o}'`), o);
+  for (const t of ['Volledig scherm', 'Full screen', 'Vollbild']) assert.ok(h.includes(`groter: '${t}'`), t);
 });
