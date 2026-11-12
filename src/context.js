@@ -79,7 +79,7 @@ function contextNote(ctx) {
     regels.push(`SPRACHE: der Chat steht auf der Website auf ${TALEN[ctx.lang]}. Antworte auf ${TALEN[ctx.lang]}, es sei denn, der Besucher schreibt selbst in einer anderen Sprache; dann antwortest du in dieser Sprache.`);
   }
   if (ctx.country === 'at') {
-    regels.push('LAND: der Besucher sucht Rat für Österreich. Nenne bei Versand die Angaben für Österreich.');
+    regels.push('LAND: der Besucher sucht Rat für Österreich. Österreich hat einen eigenen Webshop: verweise für Bestellung, Preise und Versand auf eazy-fix.at.');
   }
   return regels.join('\n');
 }
