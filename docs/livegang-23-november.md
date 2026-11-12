@@ -19,11 +19,13 @@ Alles staat klaar op de tak `nieuwe-site`. De huidige Duitse chat (main) blijft 
 
 ## Nog nodig vóór 23 november
 
-1. Antwoorden van Eazyfix (Nina):
-   - Welk telefoonnummer voor Duitsland: 03222 1097923 (nu in de chat) of +31 85 201 201 1 (FAQ van de nieuwe site)?
-   - Blijft eazy-fix.de bestaan? De chat noemt nu "eazy-fix.nl/de" als webshop (werkt in beide gevallen); wil Eazyfix liever eazy-fix.de, dan is dat één vervanging in src/persona.js.
-   - Oostenrijk (nu: via eazy-fix.nl/de, 9,32 euro) en Zwitserland (nu: via de Oostenrijkse site, 17,78 euro): de binnendienst bevestigde dit in juli 2026, de oudere chats zeggen eazy-fix.at en geen Zwitserland. Graag nog één keer bevestigen.
-   - Korting via de nieuwsbrief (10 procent?), MDF/multiplex, temperatuurregel, maximale laagdikte (site: 5 tot 20 mm, daarboven een nieuw stuk hout).
+1. Antwoorden van Eazyfix (Nina), beantwoord 12-11-2026 en verwerkt (main 8f40afb en de9f99f):
+   - Telefoon 03222 1097923 (stond al zo in de chat; Nina past blogs en FAQ aan).
+   - Adres wordt eazy-fix.de; eazy-fix.nl/de is alleen de testomgeving tot de overstap op 23 november. Zie stap 2a hieronder.
+   - Oostenrijk: eigen webshop eazy-fix.at; Zwitserland bestelt ook via eazy-fix.at (17,78 euro, UPS).
+   - Nieuwsbrief geeft eenmalig een kortingscode van 10 procent (staat in de chat en bij het vinkje).
+   - Holzspachtelmasse hecht op MDF en multiplex; dieper dan 2 cm kan in lagen of met een nieuw stuk hout (stond al zo).
+   - Nog open: geldt de 10 procent ook voor de Nederlandse nieuwsbrief?
    - Bevestigingsmail op de lijst "Eazyfix Newsletter [de]": Duitse tekst, net als Nina voor NL heeft gemaakt.
 2. JKC: iframe op de Duitse site naar `https://eazyfix-bot-de.onrender.com/embed` (zie inbouwhandleiding). De punten over de site zelf (winkelpagina met NL-winkels, live chat in de FAQ, twee telefoonnummers, NL-webinar op de productpagina) liggen bij Nina.
 3. Privacy: de Duitse privacyverklaring noemt de chat nog niet; voorstel in `docs/datenschutz-chat-eazyfix-de.md` (bij Nina of wie de verklaring beheert).
@@ -37,7 +39,8 @@ Alles staat klaar op de tak `nieuwe-site`. De huidige Duitse chat (main) blijft 
    - `MAILCHIMP_API_KEY` (zelfde sleutel als NL). De lijsten staan als standaard in de code (besluit Nina 11-11): AI Chat met label "Land: DE" en "Eazyfix Newsletter [de]" met Landcode DE.
    - `TELEGRAM_*` mag blijven (alleen het alarm bij het dagplafond, zonder gespreksinhoud).
 2. Tak `nieuwe-site` samenvoegen met main en pushen (Render zet hem automatisch live).
-3. Controleren: `/health` met x-health-key (kennisSite = https://www.eazy-fix.nl/de), een vraag via `/api/chat/stream` met prefix `livetest-`, de chat in de Duitse site openen.
+2a. Overstap naar eazy-fix.de (zodra de nieuwe site daar draait): eerst controleren welke paden werken (staan de pagina's op eazy-fix.de/garantieformular/, /kontakt/, /product/... dus zonder /de/?). Daarna in src/ en public/ alle "eazy-fix.nl/de" vervangen door "eazy-fix.de" (ongeveer 110 plekken: persona, kennisbron in kennis.js, kennis-extra.json, producten.js, verkooppunten.js, lead.js, context.js, index.js), de kennis opnieuw ophalen van eazy-fix.de, tests draaien, een paar links uit de antwoorden aanklikken en pushen. eazy-fix.de staat al in de toegestane websites (abuse-guard.js), dus het iframe werkt daar zonder extra instelling.
+3. Controleren: `/health` (kennisSite = https://www.eazy-fix.de na stap 2a) met x-health-key (kennisSite = https://www.eazy-fix.nl/de), een vraag via `/api/chat/stream` met prefix `livetest-`, de chat in de Duitse site openen.
 4. Nina laten weten: overzicht `smileys_de` in Supabase.
 
 ## Let op
