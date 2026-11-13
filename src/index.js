@@ -225,10 +225,18 @@ app.get('/', embedRoute(allowedOrigins, PUBLIC_DIR, webTokens));
 app.get('/index.html', embedRoute(allowedOrigins, PUBLIC_DIR, webTokens));
 app.get('/embed', embedRoute(allowedOrigins, PUBLIC_DIR, webTokens));
 
+// Vaste bestanden mogen in de browsercache: het lettertype een jaar (bestandsnaam verandert
+// bij een nieuwe versie), plaatjes een week. HTML en scripts niet; de chatpagina zelf komt
+// via embedRoute met no-store (review design 13-11-2026, punt 15).
+function staticCache(res, filePath) {
+  if (/[\\/]fonts[\\/][^\\/]+\.woff2$/i.test(filePath)) res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  else if (/\.(png|jpe?g|webp|svg|ico)$/i.test(filePath)) res.setHeader('Cache-Control', 'public, max-age=604800');
+}
+
 // Test-chatvenster: statische pagina, bewust vóór de auth-middleware zodat
 // de pagina zelf zonder sleutel laadt (de API-calls sturen de sleutel mee).
 app.use(frameGuard(allowedOrigins)); // statische pagina's alleen in te lijsten door de eigen sites
-app.use(express.static('public'));
+app.use(express.static('public', { setHeaders: staticCache }));
 
 // Toegang tot /api: de native app met APP_SECRET (x-app-key), de chatpagina met een
 // geldig toegangsbewijs (x-web-token). Zolang WEB_TOKEN_VERPLICHT niet aan staat geldt

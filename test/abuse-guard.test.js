@@ -528,7 +528,7 @@ test('statische pagina\'s zijn alleen door de eigen sites in te lijsten; frameGu
     assert.equal((await request(port, '/logo.png')).headers['content-security-policy'], undefined);
   });
   const src = require('node:fs').readFileSync(path.join(__dirname, '..', 'src', 'index.js'), 'utf8');
-  assert.match(src, /app\.use\(frameGuard\(allowedOrigins\)\);[^\n]*\napp\.use\(express\.static\('public'\)\);/);
+  assert.match(src, /app\.use\(frameGuard\(allowedOrigins\)\);[^\n]*\napp\.use\(express\.static\('public', \{ setHeaders: staticCache \}\)\);/);
   assert.match(src, /app\.get\('\/embed', embedRoute\(allowedOrigins, PUBLIC_DIR, webTokens\)\);/);
 });
 

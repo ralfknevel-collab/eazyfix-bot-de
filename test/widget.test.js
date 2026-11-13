@@ -14,7 +14,7 @@ test('widget: standaardtaal Duits, site eazy-fix.nl/de, land alleen DE of AT', (
   assert.match(html, /: 'de', country: \['de', 'at'\]/);
   assert.match(html, /let SITE = 'https:\/\/www\.eazy-fix\.nl\/de';/);
   assert.doesNotMatch(html, /bot-avatar-nina/, 'geen foto van Nina in de Duitse chat');
-  assert.match(html, /\/bot-avatar-de\.png/);
+  assert.match(html, /\/bot-avatar-de-60\.png/); // verkleind naar 60 px (review design 13-11)
 });
 
 test('widget: vertaaltabel heeft dezelfde sleutels in nl, en en de; Duitse fase-labels', () => {
@@ -67,10 +67,10 @@ test('widget: productlinks met Duitse namen en paden die in de kennis bestaan', 
 test('widget: statische HTML is Duits (geen Nederlandse knopteksten vóór het laden)', () => {
   const body = html.slice(html.indexOf('<body'), html.indexOf('<script>', html.indexOf('<body')));
   assert.doesNotMatch(body, /Klusadviseur|Gesprek beëindigen|Maak foto|Kies uit bibliotheek|Typ je bericht|Verstuur"|Foto toevoegen/);
-  assert.match(body, /Gespräch beenden/);
+  assert.match(body, /Gespräch abschließen/);
   assert.match(body, /maxlength="4000"/);
   assert.doesNotMatch(html, /url\('bg\.png'\)/, 'geen Nederlandse sitefoto als achtergrond');
-  assert.match(html, /'EAZYFIX' : T\.verzonden/);
+  assert.match(html, /\(cls === 'bot' \? 'EAZYFIX · ' : ''\)/); // \"Gesendet\" weggelaten (review design 13-11)
 });
 
 // Verzoek JKC (Rik, 11-11-2026): sluitknop en Escape sturen {type:'close'} naar de website.
