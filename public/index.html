@@ -248,6 +248,27 @@
     .beoordeling .dank svg { color: var(--groen-tekst); flex: none; }
     .beoordeling .fout { font-size: 13px; color: #b42318; }
     .beoordeling .fout:empty { display: none; }
+    /* Lichte vraag na 10 seconden stilte (besluit Ralf 14-11-2026): één regeltje onder het
+       laatste antwoord met drie kleine smileys, zonder kaart. Zelfde oordelen en kleuren als
+       de kaart bij "Gesprek afronden"; de labels staan in aria-label en title. */
+    .peil { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; margin: 4px 0 0 39px; max-width: calc(78% + 8px); animation: peilIn .4s ease-out; }
+    @keyframes peilIn { from { opacity: 0; } to { opacity: 1; } }
+    .peil .peilvraag { font-size: 13.5px; color: var(--muted); margin-right: 2px; }
+    .peil .smileys { gap: 0; }
+    .peil .smileys button { min-width: 44px; min-height: 44px; padding: 4px; justify-content: center; }
+    .peil .smileys .gezicht { width: 34px; height: 34px; border-width: 1.5px; }
+    .peil .smileys .gezicht svg { width: 24px; height: 24px; }
+    .peil .toelichting { display: none; flex-direction: column; gap: 8px; width: 100%; margin-top: 4px; }
+    .peil .toelichting.aan { display: flex; }
+    .peil textarea { width: 100%; box-sizing: border-box; border: 1.5px solid var(--rand-veld); border-radius: 12px; padding: 8px 10px; font: inherit; font-size: 16px; resize: vertical; min-height: 56px; }
+    .peil textarea:focus { outline: none; border-color: var(--navy); box-shadow: 0 0 0 3px rgba(9,11,42,.12); }
+    .peil .verstuur { align-self: flex-start; min-height: 44px; border: 0; border-radius: 12px; padding: 8px 16px; font: inherit; font-size: 14px; font-weight: 700; background: var(--green); color: var(--navy); cursor: pointer; }
+    .peil .verstuur:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+    .peil button:disabled { opacity: .5; cursor: default; }
+    .peil .fout { width: 100%; font-size: 13px; color: #b42318; }
+    .peil .fout:empty { display: none; }
+    .peil .dank { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+    .peil .dank svg { color: var(--groen-tekst); flex: none; }
     /* Gegevens na de gratis foto's (27-10-2026) */
     .gegevens { gap: 12px; }
     .gegevens form { display: flex; flex-direction: column; gap: 12px; width: 100%; }
@@ -354,6 +375,7 @@
       .smileys .gezicht, .eindknop, .beoordeling .verstuur, .beoordeling .nieuw, .keuze, .balk span, .fases .stap { transition: none; }
       .smileys button:hover .gezicht, .smileys button.sel .gezicht, .keuze:active { transform: none; }
       .top .dot, .typing span { animation: none; }
+      .peil { animation: none; }
       .typing span { opacity: .6; }
     }
 
@@ -374,6 +396,7 @@
       .composer { padding: 8px 10px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
       .fb { margin-left: 8px; }
       .beoordeling { margin-left: 8px; }
+      .peil { margin-left: 8px; max-width: 100%; }
       .credit { padding-bottom: calc(2px + env(safe-area-inset-bottom)); }
     }
 
@@ -450,6 +473,7 @@
         typ: 'Typ je vraag…', verstuur: 'Versturen', tekens: (n, max) => n + ' / ' + max + ' tekens', maakFoto: 'Maak foto', bieb: 'Kies uit bibliotheek',
         fotoAlt: 'voorbeeld van een gekozen foto', nFotos: (n) => n + " foto's", nogMogelijk: (n) => ', nog ' + n + ' mogelijk', maxFotos: (n) => 'Maximaal ' + n + " foto's",
         goed: 'Goed', gingWel: 'Ging wel', nietGoed: 'Niet goed',
+        peilVraag: 'Heb je hier wat aan?', peilVoorlees: 'Heb je hier wat aan? Geef een oordeel met de smileys.', peilDank: 'Bedankt!',
         hoeWas: 'Hoe was dit gesprek?', helpt: 'Je oordeel helpt ons de assistent te verbeteren.', watBeter: 'Wat kon beter? (optioneel)',
         dank: 'Bedankt voor je feedback!', nieuw: 'Nieuw gesprek', beoordelingFout: 'Je beoordeling kon niet worden opgeslagen. Probeer het nog eens of start een nieuw gesprek.',
         misgegaan: 'Er ging iets mis. Probeer het zo nog eens.', zoekOp: 'Ik zoek het even op', duurtLanger: 'Dit duurt wat langer dan normaal, nog even geduld.',
@@ -477,6 +501,7 @@
         typ: 'Type your question…', verstuur: 'Send', tekens: (n, max) => n + ' / ' + max + ' characters', maakFoto: 'Take photo', bieb: 'Choose from library',
         fotoAlt: 'preview of a selected photo', nFotos: (n) => n + ' photos', nogMogelijk: (n) => ', ' + n + ' more possible', maxFotos: (n) => 'Maximum ' + n + ' photos',
         goed: 'Good', gingWel: 'Okay', nietGoed: 'Not good',
+        peilVraag: 'Was this helpful?', peilVoorlees: 'Was this helpful? Rate it with the smileys.', peilDank: 'Thanks!',
         hoeWas: 'How was this conversation?', helpt: 'Your feedback helps us improve the assistant.', watBeter: 'What could be better? (optional)',
         dank: 'Thanks for your feedback!', nieuw: 'New conversation', beoordelingFout: 'Your rating could not be saved. Please try again or start a new conversation.',
         misgegaan: 'Something went wrong. Please try again in a moment.', zoekOp: 'Let me look that up', duurtLanger: 'This is taking a little longer than usual, please hold on.',
@@ -501,6 +526,7 @@
         typ: 'Schreib deine Frage…', verstuur: 'Senden', tekens: (n, max) => n + ' / ' + max + ' Zeichen', maakFoto: 'Foto aufnehmen', bieb: 'Aus Mediathek wählen',
         fotoAlt: 'Vorschau eines gewählten Fotos', nFotos: (n) => n + ' Fotos', nogMogelijk: (n) => ', noch ' + n + ' möglich', maxFotos: (n) => 'Maximal ' + n + ' Fotos',
         goed: 'Gut', gingWel: 'Ging so', nietGoed: 'Nicht gut',
+        peilVraag: 'Hilft dir das weiter?', peilVoorlees: 'Hilft dir das weiter? Bewerte es mit den Smileys.', peilDank: 'Danke!',
         hoeWas: 'Wie war dieses Gespräch?', helpt: 'Deine Bewertung hilft uns, den Assistenten zu verbessern.', watBeter: 'Was könnte besser sein? (optional)',
         dank: 'Danke für dein Feedback!', nieuw: 'Neues Gespräch', beoordelingFout: 'Deine Bewertung konnte nicht gespeichert werden. Versuch es noch einmal oder starte ein neues Gespräch.',
         misgegaan: 'Etwas ist schiefgelaufen. Versuch es gleich noch einmal.', zoekOp: 'Ich schaue kurz nach', duurtLanger: 'Das dauert etwas länger als sonst, noch einen Moment Geduld.',
@@ -587,6 +613,7 @@
       const nieuw = Array.from(input.files || []);
       input.value = ''; // zodat dezelfde foto nog eens gekozen kan worden
       if (!nieuw.length) return;
+      stopPeil();
       const teVeel = pendingPhotos.length + nieuw.length > MAX_FOTOS;
       pendingPhotos = pendingPhotos.concat(nieuw).slice(0, MAX_FOTOS);
       showPreview(pendingPhotos);
@@ -601,6 +628,7 @@
     function hidePhotoMenu() { photoMenu.hidden = true; }
     // Fotoknop en startknopje "Ik stuur een foto" doen hetzelfde.
     function kiesFoto() {
+      stopPeil(); // bezig met een foto: geen vraag tussendoor
       if (isMobile) { photoMenu.hidden = !photoMenu.hidden; if (!photoMenu.hidden) document.getElementById('optCam').focus(); }
       else photoEl.click();
     }
@@ -1297,15 +1325,150 @@
       { oordeel: 'neutraal', label: T.gingWel, svg: smiley('<path d="M8.5 15.5h7"/>') },
       { oordeel: 'ontevreden', label: T.nietGoed, svg: smiley('<path d="M8 16.5c1-1.4 2.4-2 4-2s3 .6 4 2"/>') },
     ];
+    const ICOON_DANK = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>';
+
+    // Lichte vraag na stilte (besluit Ralf 14-11-2026): bijna niemand klikte zelf op "Gesprek
+    // afronden", dus kwam er weinig oordeel binnen. Na een volledig antwoord loopt een timer
+    // van 10 seconden; gebeurt er niets (geen typen, geen foto, geen knopje), dan verschijnt
+    // onder het laatste antwoord één regeltje "Heb je hier wat aan?" met drie kleine smileys.
+    // Het gesprek gaat niet dicht. Eén keer per gesprek; de server neemt ook maar één
+    // oordeel per gesprek aan (409).
+    // Keuzes: (1) verborgen tabblad: de timer stopt en begint bij terugkomst opnieuw met 10
+    // seconden, zodat de klant eerst weer kan lezen. (2) Herladen: de vlaggen staan los in
+    // sessionStorage onder PEIL_OPSLAG, gekoppeld aan de gesprekscode; een teruggezet gesprek
+    // toont het regeltje dus niet opnieuw als het al getoond was. (3) Doortypen terwijl het
+    // regeltje open staat: het blijft staan onder het antwoord waar het bij hoort, zonder
+    // verspringen; pas "Gesprek afronden" haalt een onbeantwoord regeltje weg.
+    const PEIL_WACHT = 10000;
+    const PEIL_OPSLAG = 'eazyfix-de-peil';
+    let peilTimer = null;
+    let peilKan = false;     // er staat een volledig antwoord als laatste beurt
+    let peilGetoond = false; // regeltje al eens getoond in dit gesprek
+    let beoordeeld = false;  // al een oordeel gegeven (via regeltje of kaart)
+    function bewaarPeil() {
+      try { sessionStorage.setItem(PEIL_OPSLAG, JSON.stringify({ c: conversationId, getoond: peilGetoond, beoordeeld })); } catch {}
+    }
+    function leesPeil() {
+      try {
+        const p = JSON.parse(sessionStorage.getItem(PEIL_OPSLAG) || 'null');
+        if (p && p.c === conversationId) { peilGetoond = p.getoond === true; beoordeeld = p.beoordeeld === true; }
+      } catch {}
+    }
+    function wisPeil() {
+      try { sessionStorage.removeItem(PEIL_OPSLAG); } catch {}
+    }
+    function stopPeil() { clearTimeout(peilTimer); peilTimer = null; }
+    function startPeil() {
+      stopPeil();
+      if (!peilKan || peilGetoond || beoordeeld || chatEl.classList.contains('beeindigd')) return;
+      if (document.visibilityState !== 'visible') return;
+      peilTimer = setTimeout(toonPeil, PEIL_WACHT);
+    }
+    // Na een volledig antwoord: timer aan. Bij elke nieuwe beurt: uit.
+    function peilNaAntwoord() { peilKan = true; startPeil(); }
+    function peilNieuweBeurt() { peilKan = false; stopPeil(); }
+    function magPeil() {
+      return peilKan && !peilGetoond && !beoordeeld && !chatEl.classList.contains('beeindigd')
+        && !sendBtn.disabled && !inEl.value.trim() && !pendingPhotos.length
+        && !log.querySelector('.gegevens form') && document.visibilityState === 'visible';
+    }
+    function toonPeil() {
+      peilTimer = null;
+      if (!magPeil()) return;
+      peilGetoond = true;
+      bewaarPeil();
+      const onderaan = maxScroll() - log.scrollTop < 60;
+      const rij = document.createElement('div');
+      rij.className = 'peil';
+      rij.setAttribute('role', 'group');
+      rij.setAttribute('aria-label', T.peilVraag);
+      rij.innerHTML = '<span class="peilvraag" aria-hidden="true"></span><span class="smileys">'
+        + SMILEYS.map((s) => '<button type="button" data-oordeel="' + s.oordeel + '" aria-label="' + s.label + '" title="' + s.label + '"><span class="gezicht">' + s.svg + '</span></button>').join('')
+        + '</span><div class="toelichting"><textarea rows="2" maxlength="1000"></textarea><button type="button" class="verstuur"></button></div><div class="fout" role="alert"></div>';
+      rij.querySelector('.peilvraag').textContent = T.peilVraag;
+      const tekstveld = rij.querySelector('textarea');
+      tekstveld.placeholder = T.watBeter; tekstveld.setAttribute('aria-label', T.watBeter);
+      rij.querySelector('.verstuur').textContent = T.verstuur;
+      log.appendChild(rij);
+      // Alleen meeschuiven als de klant al onderaan stond; anders verschijnt "Lees verder".
+      if (onderaan) log.scrollTop = maxScroll();
+      toonLeesVerder();
+      reportHeight();
+      leesVoor(T.peilVoorlees); // aankondigen, de focus blijft waar hij was
+      postToSite({ type: 'event', name: 'rating_prompt_shown' });
+
+      let keuze = null;
+      const knoppen = rij.querySelectorAll('.smileys button');
+      const toelichting = rij.querySelector('.toelichting');
+      const fout = rij.querySelector('.fout');
+      knoppen.forEach((b) => {
+        b.onclick = () => {
+          keuze = b.dataset.oordeel;
+          knoppen.forEach((k) => k.classList.toggle('sel', k === b));
+          rij.querySelector('.smileys').classList.add('gekozen');
+          if (keuze === 'blij') { toelichting.classList.remove('aan'); verstuur(); return; }
+          toelichting.classList.add('aan');
+          tekstveld.focus({ preventScroll: true });
+          // Veld en knop helemaal in beeld: het gesprek zelf zoveel omhoog schuiven als nodig
+          // (scrollIntoView stopte halverwege doordat de focus hem onderbrak).
+          const teLaag = rij.getBoundingClientRect().bottom - log.getBoundingClientRect().bottom + 12;
+          if (teLaag > 0) log.scrollTo({ top: log.scrollTop + teLaag, behavior: MINDER_BEWEGING ? 'auto' : 'smooth' });
+        };
+      });
+      rij.querySelector('.verstuur').onclick = verstuur;
+      async function verstuur() {
+        if (!keuze || beoordeeld) return;
+        rij.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+        fout.textContent = '';
+        try {
+          const resp = await apiFetch('/api/feedback/gesprek', {
+            method: 'POST',
+            body: JSON.stringify({ conversationId, rating: keuze, comment: keuze === 'blij' ? '' : tekstveld.value }),
+          });
+          if (!resp.ok && resp.status !== 409) throw new Error('status ' + resp.status);
+          beoordeeld = true;
+          bewaarPeil();
+          postToSite({ type: 'event', name: 'rating_given' });
+          const hadFocus = rij.contains(document.activeElement);
+          rij.classList.add('klaar');
+          rij.innerHTML = '<span class="dank" tabindex="-1">' + ICOON_DANK + '<span></span></span>';
+          rij.querySelector('.dank span').textContent = T.peilDank;
+          leesVoor(T.peilDank);
+          // Focus niet kwijtraken, maar ook niet naar het invoerveld (dat opent op een telefoon het toetsenbord).
+          if (hadFocus) rij.querySelector('.dank').focus({ preventScroll: true });
+        } catch (e) {
+          rij.querySelectorAll('button').forEach((b) => { b.disabled = false; });
+          fout.textContent = T.opslaanFout;
+        }
+        reportHeight();
+      }
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') startPeil(); else stopPeil();
+    });
 
     function eindigGesprek() {
       if (chatEl.classList.contains('beeindigd') || sendBtn.disabled) return;
       chatEl.classList.add('beeindigd');
       photoMenu.hidden = true;
+      stopPeil();
       wisGesprek(); // afgerond gesprek niet terugzetten na een paginawissel
       wegKeuzes(); // keuzeknopjes horen niet meer bij een afgerond gesprek
+      log.querySelectorAll('.peil:not(.klaar)').forEach((el) => el.remove()); // geen twee vragen tegelijk
       const card = document.createElement('div');
       card.className = 'beoordeling';
+      // Al beoordeeld via het lichte regeltje: geen tweede smileykaart (de server neemt maar
+      // één oordeel per gesprek aan), meteen de afsluiting met "Nieuw gesprek".
+      if (beoordeeld) {
+        card.innerHTML = '<div class="dank">' + ICOON_DANK + T.dank + '</div><button type="button" class="nieuw">' + T.nieuw + '</button>';
+        log.appendChild(card);
+        scrollLog();
+        const nieuw = card.querySelector('.nieuw');
+        nieuw.onclick = nieuwGesprek;
+        nieuw.focus({ preventScroll: true });
+        postToSite({ type: 'event', name: 'chat_ended' });
+        return;
+      }
       card.innerHTML =
         '<div class="vraag">' + T.hoeWas + '</div>'
         + '<div class="sub">' + T.helpt + '</div>'
@@ -1347,6 +1510,7 @@
             body: JSON.stringify({ conversationId, rating: keuze, comment: tekstveld.value }),
           });
           if (!resp.ok && resp.status !== 409) throw new Error('status ' + resp.status);
+          beoordeeld = true;
           postToSite({ type: 'event', name: 'rating_given' });
           card.innerHTML = '<div class="dank"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg>' + T.dank + '</div><button type="button" class="nieuw">' + T.nieuw + '</button>';
         } catch (e) {
@@ -1365,6 +1529,7 @@
       history.splice(0, history.length);
       extras = {};
       wisGesprek();
+      peilNieuweBeurt(); peilGetoond = false; beoordeeld = false; wisPeil();
       conversationId = 'c-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
       clearPreview();
       log.innerHTML = '';
@@ -1440,6 +1605,9 @@
       if (history.some((m) => m.role === 'assistant')) toonEindknop();
       log.scrollTop = log.scrollHeight;
       toonLeesVerder();
+      // Lichte vraag: al getoond of al beoordeeld in dit gesprek? Dan niet opnieuw.
+      leesPeil();
+      if (history[history.length - 1].role === 'assistant') peilNaAntwoord();
     }
     // Bij elke beurt die in history komt: tijd en extra's vastleggen, daarna bewaren.
     function legVast(i, x) { extras[i] = Object.assign({ t: nuTijd() }, extras[i] || {}, x || {}); }
@@ -1448,6 +1616,7 @@
     async function beurt(fn) {
       if (sendBtn.disabled) return;
       wegKeuzes();
+      peilNieuweBeurt();
       sendBtn.disabled = true;
       try { await fn(); } finally { sendBtn.disabled = false; }
     }
@@ -1565,6 +1734,7 @@
         legVast(history.length - 2); legVast(history.length - 1, { videos: videos || undefined, winkels: winkels || undefined, keuzes: haalKeuzes(acc) });
         bewaarGesprek();
         leesVoor(out.textContent);
+        peilNaAntwoord();
       } catch (e) {
         // Viel de verbinding weg terwijl het antwoord al binnenkwam (bv. telefoon even
         // op slot of naar een andere app), laat het antwoord tot zover dan staan in
@@ -1747,6 +1917,7 @@
           renderKeuzes(out, haalKeuzes(acc));
           postToSite({ type: 'event', name: 'answer_received' });
           legVast(history.length - 2, fotoExtra); legVast(history.length - 1, { videos: klaarData.videos || undefined, keuzes: haalKeuzes(acc) });
+          peilNaAntwoord();
         } else {
           // Er kwam wel tekst binnen, maar nooit een {done}-event: mogelijk afgekapt.
           out.textContent = stripFotoMarker(acc) + T.haperde;
@@ -1785,6 +1956,7 @@
           legVast(history.length - 2, fotoExtra); legVast(history.length - 1, { videos: data.videos || undefined, keuzes: haalKeuzes(data.content) });
           bewaarGesprek();
           leesVoor(out.textContent);
+          peilNaAntwoord();
         } catch (e2) {
           // Geen verbinding (fetch mislukt) of een onleesbaar antwoord: een gewone zin, geen
           // technische Engelse melding (M2, review design 13-11-2026).
@@ -1856,6 +2028,7 @@
       e.preventDefault();
       if (sendBtn.disabled) return; // al een beurt bezig: geen tweede parallelle request
       wegKeuzes();
+      peilNieuweBeurt();
       sendBtn.disabled = true;
       try {
         const text = inEl.value.trim();
@@ -1927,7 +2100,9 @@
     inEl.addEventListener('keydown', escapeInVeld);
     log.addEventListener('keydown', escapeInVeld);
     // Auto-groeiend invoerveld
-    inEl.addEventListener('input', () => { inEl.style.height = 'auto'; inEl.style.height = Math.min(inEl.scrollHeight, 120) + 'px'; toonTeller(); });
+    inEl.addEventListener('input', () => { inEl.style.height = 'auto'; inEl.style.height = Math.min(inEl.scrollHeight, 120) + 'px'; toonTeller(); peilNaTypen(); });
+    // Lichte vraag: typen zet de timer stil; een weer leeg veld laat hem opnieuw 10 seconden lopen.
+    function peilNaTypen() { if (inEl.value.trim()) stopPeil(); else startPeil(); }
     // Eén grens met de server (snelle winst 10): 4000 tekens, met een tellertje vanaf 3600.
     const MAX_TEKENS = 4000;
     const tellerEl = document.getElementById('teller');

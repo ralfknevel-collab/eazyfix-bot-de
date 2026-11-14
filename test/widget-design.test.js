@@ -192,3 +192,122 @@ test('aanraakdoelen en mobiel: 44 px voor knoppen, 16 px in formuliervelden (gee
   // Volledig scherm: leeskolom van hooguit 760 px.
   assert.match(html, /\.msgs \{[^}]*padding: 18px max\(16px, calc\(\(100% - 760px\) \/ 2\)\);/);
 });
+
+// Lichte vraag na 10 seconden stilte (besluit Ralf 14-11-2026; eerst 30, daarna 15, definitief 10).
+const peilBron = (staat) => 'let peilTimer = null, peilKan = false, peilGetoond = false, beoordeeld = false;\n'
+  + 'const PEIL_WACHT = 10000, PEIL_OPSLAG = "eazyfix-de-peil"; let conversationId = "c-1";\n'
+  + 'function toonPeil() { peilTimer = null; if (!magPeil()) return; peilGetoond = true; bewaarPeil(); staat.getoond++; }\n'
+  + ['bewaarPeil', 'leesPeil', 'wisPeil', 'stopPeil', 'startPeil', 'peilNaAntwoord', 'peilNieuweBeurt', 'magPeil'].map(fn).join('\n')
+  + '\nreturn { startPeil, peilNaAntwoord, peilNieuweBeurt, leesPeil, toonPeil, magPeil, zet: (o) => { if ("beoordeeld" in o) beoordeeld = o.beoordeeld; if ("c" in o) conversationId = o.c; if ("getoond" in o) peilGetoond = o.getoond; }, lees: () => ({ peilKan, peilGetoond, beoordeeld, timer: peilTimer }) };';
+function maakPeil({ zichtbaar = true, bezig = false, invoer = '', opslag = {} } = {}) {
+  const staat = { getoond: 0, timers: [] };
+  const doc = { visibilityState: zichtbaar ? 'visible' : 'hidden' };
+  const ss = { getItem: (k) => (k in opslag ? opslag[k] : null), setItem: (k, v) => { opslag[k] = String(v); }, removeItem: (k) => { delete opslag[k]; } };
+  const p = new Function('staat', 'document', 'sessionStorage', 'setTimeout', 'clearTimeout', 'chatEl', 'sendBtn', 'inEl', 'pendingPhotos', 'log', peilBron(staat))(
+    staat, doc, ss,
+    (f, ms) => { staat.timers.push({ f, ms }); return staat.timers.length; }, () => {},
+    { classList: { contains: () => false } }, { disabled: bezig }, { value: invoer }, [], { querySelector: () => null });
+  return { p, staat, doc, opslag };
+}
+
+test('lichte vraag: timer van precies 10 seconden na een volledig antwoord, alleen bij een zichtbaar tabblad', () => {
+  assert.match(html, /const PEIL_WACHT = 10000;/);
+  assert.match(html, /const PEIL_OPSLAG = 'eazyfix-de-peil';/, 'eigen opslagsleutel, net als eazyfix-de-gesprek');
+  assert.match(fn('startPeil'), /peilTimer = setTimeout\(toonPeil, PEIL_WACHT\);/);
+  const { p, staat } = maakPeil();
+  p.startPeil();
+  assert.equal(staat.timers.length, 0, 'geen timer zonder antwoord (opening)');
+  p.peilNaAntwoord();
+  assert.equal(staat.timers.length, 1);
+  assert.equal(staat.timers[0].ms, 10000);
+  const verborgen = maakPeil({ zichtbaar: false });
+  verborgen.p.peilNaAntwoord();
+  assert.equal(verborgen.staat.timers.length, 0, 'verborgen tabblad: niet tellen');
+  assert.match(html, /document\.addEventListener\('visibilitychange', \(\) => \{\n\s+if \(document\.visibilityState === 'visible'\) startPeil\(\); else stopPeil\(\);/);
+  // Elke nieuwe beurt (verzenden, keuzeknopje, opnieuw proberen) zet hem uit; typen zet hem stil.
+  assert.match(fn('beurt'), /peilNieuweBeurt\(\);/);
+  assert.match(html, /wegKeuzes\(\);\n\s+peilNieuweBeurt\(\);\n\s+sendBtn\.disabled = true;\n\s+try \{\n\s+const text = inEl\.value\.trim\(\);/);
+  assert.match(html, /function peilNaTypen\(\) \{ if \(inEl\.value\.trim\(\)\) stopPeil\(\); else startPeil\(\); \}/);
+  assert.match(fn('kiesFoto'), /stopPeil\(\);/);
+  // Alleen na een geslaagd antwoord (tekst, foto via stream, foto via terugval) en na terugzetten; niet na een fout.
+  assert.equal(html.split('peilNaAntwoord();').length - 1, 4);
+  assert.doesNotMatch(fn('toonFout'), /peil/i);
+  assert.doesNotMatch(fn('haperKnop'), /peil/i);
+});
+
+test('lichte vraag: één keer per gesprek, niet tijdens een antwoord of terwijl de klant typt', () => {
+  const { p, staat, opslag } = maakPeil();
+  p.peilNaAntwoord();
+  staat.timers[0].f();
+  assert.equal(staat.getoond, 1);
+  p.peilNaAntwoord();
+  assert.equal(staat.timers.length, 1, 'na tonen geen nieuwe timer');
+  p.toonPeil();
+  assert.equal(staat.getoond, 1, 'nooit twee keer');
+  assert.deepEqual(JSON.parse(opslag['eazyfix-de-peil']), { c: 'c-1', getoond: true, beoordeeld: false });
+  // Herladen: dezelfde gesprekscode leest de vlag terug, een ander gesprek niet.
+  const terug = maakPeil({ opslag: { 'eazyfix-de-peil': opslag['eazyfix-de-peil'] } });
+  terug.p.leesPeil();
+  terug.p.peilNaAntwoord();
+  assert.equal(terug.staat.timers.length, 0, 'teruggezet gesprek: niet opnieuw tonen');
+  const ander = maakPeil({ opslag: { 'eazyfix-de-peil': opslag['eazyfix-de-peil'] } });
+  ander.p.zet({ c: 'c-2' });
+  ander.p.leesPeil();
+  ander.p.peilNaAntwoord();
+  assert.equal(ander.staat.timers.length, 1);
+  // Bij afgaan van de timer nog eens kijken: niet tijdens een binnenkomend antwoord, niet met tekst in het veld.
+  for (const opt of [{ bezig: true }, { invoer: 'nog een vraag' }]) {
+    const x = maakPeil(opt);
+    x.p.peilNaAntwoord();
+    x.staat.timers[0].f();
+    assert.equal(x.staat.getoond, 0, JSON.stringify(opt));
+  }
+  const nieuweBeurt = maakPeil();
+  nieuweBeurt.p.peilNaAntwoord();
+  nieuweBeurt.p.peilNieuweBeurt();
+  nieuweBeurt.staat.timers[0].f();
+  assert.equal(nieuweBeurt.staat.getoond, 0, 'na verzenden geen vraag');
+  const alBeoordeeld = maakPeil();
+  alBeoordeeld.p.zet({ beoordeeld: true });
+  alBeoordeeld.p.peilNaAntwoord();
+  assert.equal(alBeoordeeld.staat.timers.length, 0, 'al beoordeeld via "Gesprek afronden": geen regeltje');
+});
+
+test('lichte vraag: na een oordeel via het regeltje geen tweede smileykaart, nieuw gesprek zet alles terug', () => {
+  const toon = fn('toonPeil');
+  assert.match(toon, /apiFetch\('\/api\/feedback\/gesprek', \{/);
+  assert.match(toon, /JSON\.stringify\(\{ conversationId, rating: keuze, comment: keuze === 'blij' \? '' : tekstveld\.value \}\)/);
+  assert.match(toon, /if \(!resp\.ok && resp\.status !== 409\) throw new Error/, '409 telt als gelukt');
+  assert.match(toon, /if \(keuze === 'blij'\) \{ toelichting\.classList\.remove\('aan'\); verstuur\(\); return; \}/);
+  assert.match(toon, /postToSite\(\{ type: 'event', name: 'rating_prompt_shown' \}\);/);
+  assert.match(toon, /postToSite\(\{ type: 'event', name: 'rating_given' \}\);/);
+  assert.match(toon, /rij\.setAttribute\('role', 'group'\);\n\s+rij\.setAttribute\('aria-label', T\.peilVraag\);/);
+  assert.match(toon, /leesVoor\(T\.peilVoorlees\);/);
+  assert.doesNotMatch(toon.split('let keuze = null;')[0], /\.focus\(/, 'bij automatisch tonen de focus niet verplaatsen');
+  assert.match(toon, /maxlength="1000"/);
+  assert.match(toon, /if \(teLaag > 0\) log\.scrollTo\(/, 'na Niet goed: veld en knop helemaal in beeld');
+  assert.match(toon, /if \(onderaan\) log\.scrollTop = maxScroll\(\);/);
+  const eind = fn('eindigGesprek');
+  const tak = eind.match(/if \(beoordeeld\) \{[\s\S]*?\n {6}\}/);
+  assert.ok(tak, 'eindigGesprek kent de al-beoordeeld-tak');
+  assert.match(tak[0], /return;/);
+  assert.doesNotMatch(tak[0], /smileys|SMILEYS|hoeWas/);
+  assert.ok(eind.indexOf('if (beoordeeld)') < eind.indexOf('T.hoeWas'), 'de tak komt vóór de smileykaart');
+  assert.match(eind, /\.peil:not\(\.klaar\)'\)\.forEach\(\(el\) => el\.remove\(\)\)/);
+  assert.match(eind, /beoordeeld = true;\n\s+postToSite\(\{ type: 'event', name: 'rating_given' \}\);/);
+  assert.match(fn('nieuwGesprek'), /peilNieuweBeurt\(\); peilGetoond = false; beoordeeld = false; wisPeil\(\);/);
+  // Klein en aanraakbaar: 44 px per smiley, 16 px in het opmerkingenveld, rustig bij minder beweging.
+  assert.match(html, /\.peil \.smileys button \{[^}]*min-width: 44px; min-height: 44px;/);
+  assert.match(html, /\.peil textarea \{[^}]*font-size: 16px;/);
+  assert.match(html, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n\s+\.peil \{ animation: none; \}/);
+});
+
+test('lichte vraag: teksten in alle talen', () => {
+  assert.equal(TEKSTEN.nl.peilVraag, 'Heb je hier wat aan?');
+  assert.equal(TEKSTEN.en.peilVraag, 'Was this helpful?');
+  assert.equal(TEKSTEN.de.peilVraag, 'Hilft dir das weiter?');
+  for (const [taal, t] of Object.entries(TEKSTEN)) {
+    assert.ok(t.peilVoorlees.startsWith(t.peilVraag + ' '), taal);
+    assert.ok(t.peilDank && t.goed && t.gingWel && t.nietGoed && t.opslaanFout, taal);
+  }
+});
