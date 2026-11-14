@@ -157,7 +157,9 @@
     .keuze:hover { background: var(--groen-licht); }
     .keuze:focus-visible { background: var(--groen-licht); outline: 2px solid var(--navy); outline-offset: 2px; }
     .keuze:active { transform: scale(.97); }
-    .keuze .kicoon { font-size: 17px; line-height: 1; }
+    /* Eigen lijnicoontjes in de startknopjes (Ralf 14-11-2026), in de stijl van de menubalk van de site. */
+    .keuze .kicoon { display: inline-flex; flex: none; width: 22px; height: 22px; color: var(--groen-tekst); }
+    .keuze .kicoon svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
     /* Winkelkaartjes onder een antwoord (uit de winkellijst, niet door de AI geschreven) */
     .winkels { display: flex; flex-direction: column; gap: 8px; margin: 2px 0 0 39px; max-width: calc(78% + 8px); }
@@ -952,6 +954,17 @@
       naarInvoer.t = setTimeout(() => f.classList.remove('oplichten'), 1100);
     }
     function wegKeuzes() { document.querySelectorAll('.keuzes').forEach((el) => el.remove()); }
+    // Eigen lijnicoontjes voor de startknopjes (Ralf 14-11-2026): emoji zien er per apparaat
+    // anders uit (Windows vlak en rommelig); deze tekeningen overal hetzelfde, in Eazyfix-groen.
+    const ICONEN = {
+      hout: '<rect x="4.5" y="3" width="15" height="16" rx="1"/><path d="M12 3v16M4.5 11h15M2.5 21h19"/>',
+      muur: '<rect x="3" y="5" width="18" height="14" rx="1"/><path d="M3 9.7h18M3 14.3h18M9 5v4.7M15 5v4.7M6 9.7v4.6M12 9.7v4.6M18 9.7v4.6M9 14.3V19M15 14.3V19"/>',
+      winkel: '<circle cx="8" cy="20.5" r="1.2"/><circle cx="18.5" cy="20.5" r="1.2"/><path d="M2 3h2.2l2.6 12.2a1.8 1.8 0 0 0 1.8 1.4h9.6a1.8 1.8 0 0 0 1.8-1.4L21.6 8H5.3"/>',
+      foto: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3.2"/>',
+      anders: '<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/><path d="m15 5 4 4"/>',
+      meten: '<rect x="2" y="8" width="20" height="8" rx="1"/><path d="M6 8v3M10 8v4M14 8v3M18 8v4"/>',
+      gebruik: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',
+    };
     // Een keuze is een tekst (die als vraag wordt verstuurd) of, bij de startknopjes in de
     // opening, { tekst, icoon, foto }: foto: true opent het fotomenu in plaats van te sturen.
     function renderKeuzes(answerEl, keuzes, opties) {
@@ -967,7 +980,8 @@
         b.type = 'button'; b.className = 'keuze';
         if (k.icoon) {
           const i = document.createElement('span');
-          i.className = 'kicoon'; i.setAttribute('aria-hidden', 'true'); i.textContent = k.icoon;
+          i.className = 'kicoon'; i.setAttribute('aria-hidden', 'true');
+          if (ICONEN[k.icoon]) i.innerHTML = '<svg viewBox="0 0 24 24" focusable="false">' + ICONEN[k.icoon] + '</svg>'; else i.textContent = k.icoon;
           b.appendChild(i);
         }
         b.appendChild(document.createTextNode(k.tekst));
@@ -2137,11 +2151,11 @@
     // dat product; "Ik stuur een foto" opent het fotomenu in plaats van tekst te sturen.
     function startKnoppen() {
       const k = CONTEXT.product
-        ? [{ tekst: T.startHoeveel, icoon: '📏' }, { tekst: T.startGebruik, icoon: '🛠️' }]
-        : [{ tekst: T.startHout, icoon: '🪵' }, { tekst: T.startMuur, icoon: '🧱' }, { tekst: T.startProduct, icoon: '🛒' }];
-      if (!document.documentElement.classList.contains('nofoto')) k.push({ tekst: T.startFoto, icoon: '📷', foto: true });
+        ? [{ tekst: T.startHoeveel, icoon: 'meten' }, { tekst: T.startGebruik, icoon: 'gebruik' }]
+        : [{ tekst: T.startHout, icoon: 'hout' }, { tekst: T.startMuur, icoon: 'muur' }, { tekst: T.startProduct, icoon: 'winkel' }];
+      if (!document.documentElement.classList.contains('nofoto')) k.push({ tekst: T.startFoto, icoon: 'foto', foto: true });
       // "Iets anders vragen" (Ralf 14-11-2026): verstuurt niets, zet alleen de cursor in het invoerveld.
-      k.push({ tekst: T.startAnders, icoon: '✏️', typ: true });
+      k.push({ tekst: T.startAnders, icoon: 'anders', typ: true });
       return k;
     }
     // Toont de opening: één welkomstzin met startknopjes en een korte AI-noot.

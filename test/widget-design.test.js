@@ -320,7 +320,7 @@ test('startknopje "Iets anders vragen": altijd als laatste, verstuurt niets, cur
     for (const [ctx, nofoto] of [[{}, false], [{ product: 'premium-houtrotvuller' }, false], [{}, true]]) {
       const k = maak(ctx, nofoto, taal);
       const laatste = k[k.length - 1];
-      assert.deepEqual(laatste, { tekst: verwacht[taal], icoon: '✏️', typ: true }, taal + ' ' + JSON.stringify(ctx));
+      assert.deepEqual(laatste, { tekst: verwacht[taal], icoon: 'anders', typ: true }, taal + ' ' + JSON.stringify(ctx));
       assert.ok(!/✏️/.test(laatste.tekst), 'het potloodje zit niet in de tekst');
     }
   }
