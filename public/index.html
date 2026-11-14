@@ -691,6 +691,10 @@
       if (volg && !volg.klant && log.scrollTop < Math.min(volg.gezet, maxScroll()) - 4) volg.klant = true;
       toonLeesVerder();
     }, { passive: true });
+    // Draait of veegt de klant zelf in het gesprek, dan heeft hij het stuur: niet meer
+    // vanzelf meeschuiven. Vangt ook het geval dat een binnenkomend stukje tekst het
+    // scroll-event net voor is (fix uit repair-care-bot 30f330e).
+    ['wheel', 'touchmove'].forEach((ev) => log.addEventListener(ev, () => { if (volg) volg.klant = true; }, { passive: true }));
     leesVerderBtn.addEventListener('click', () => {
       if (volg) volg.klant = true;
       log.scrollTo({ top: log.scrollHeight, behavior: MINDER_BEWEGING ? 'auto' : 'smooth' });
