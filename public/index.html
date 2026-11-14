@@ -284,6 +284,9 @@
     .composer { padding: 10px max(12px, calc((100% - 760px) / 2)) 8px; border-top: 1px solid var(--line); background: #fff; position: relative; }
     form#f { display: flex; align-items: flex-end; gap: 6px; background: #fff; border: 1.5px solid var(--rand-veld); border-radius: 18px; padding: 4px; }
     form#f:focus-within { border-color: var(--navy); }
+    /* "Iets anders vragen": het invoerveld licht een seconde groen op. */
+    form#f.oplichten { animation: oplichten 1s ease-out; }
+    @keyframes oplichten { 0%, 35% { border-color: var(--groen-rand); box-shadow: 0 0 0 4px rgba(147,216,1,.45); } 100% { box-shadow: 0 0 0 0 rgba(147,216,1,0); } }
     .attach { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; cursor: pointer; color: #52525b; flex: 0 0 auto; background: none; border: 0; padding: 0; -webkit-appearance: none; appearance: none; transition: background .15s, color .15s; }
     .attach:hover { background: #f4f4f5; color: var(--navy); }
     .attach.has-file { color: var(--groen-tekst); }
@@ -376,6 +379,7 @@
       .smileys button:hover .gezicht, .smileys button.sel .gezicht, .keuze:active { transform: none; }
       .top .dot, .typing span { animation: none; }
       .peil { animation: none; }
+      form#f.oplichten { animation: none; }
       .typing span { opacity: .6; }
     }
 
@@ -489,7 +493,7 @@
         hoi: 'Hoi!', vraagAlgemeen: 'Ik help je met houtrot en schade aan hout of muur. Waar ben je mee bezig?',
         vraagProduct: 'Heb je een vraag over dit product of over je klus?',
         vraagKlus: (k) => 'Ben je bezig met ' + k + '? Waar loop je tegenaan?',
-        startGroep: 'Kies een onderwerp', startHout: 'Mijn hout is zacht of rot', startMuur: 'Gat of scheur in de muur', startProduct: 'Welk product heb ik nodig?', startFoto: 'Ik stuur een foto', startHoeveel: 'Hoeveel heb ik nodig?', startGebruik: 'Hoe gebruik ik dit?',
+        startGroep: 'Kies een onderwerp', startHout: 'Mijn hout is zacht of rot', startMuur: 'Gat of scheur in de muur', startProduct: 'Welk product heb ik nodig?', startFoto: 'Ik stuur een foto', startAnders: 'Iets anders vragen', startHoeveel: 'Hoeveel heb ik nodig?', startGebruik: 'Hoe gebruik ik dit?',
         // Korte regel onder de openingsbubbel (review 11-11-2026): eerlijk over AI en bewaren,
         // met een link naar de privacyverklaring, zonder de welkomsttekst te overstemmen.
         disclaimer: "Ik ben een AI en kan me vergissen. Gesprekken en foto's bewaren we 12 maanden.", privacyLink: 'Privacy',
@@ -516,7 +520,7 @@
         hoi: 'Hi!', vraagAlgemeen: 'I can help with wood rot and damage to wood or walls. What are you working on?',
         vraagProduct: 'Do you have a question about this product or your project?',
         vraagKlus: (k) => 'Working on ' + k + '? What are you running into?',
-        startGroep: 'Choose a topic', startHout: 'My wood is soft or rotten', startMuur: 'Hole or crack in the wall', startProduct: 'Which product do I need?', startFoto: "I'll send a photo", startHoeveel: 'How much do I need?', startGebruik: 'How do I use this?',
+        startGroep: 'Choose a topic', startHout: 'My wood is soft or rotten', startMuur: 'Hole or crack in the wall', startProduct: 'Which product do I need?', startFoto: "I'll send a photo", startAnders: 'Ask something else', startHoeveel: 'How much do I need?', startGebruik: 'How do I use this?',
         disclaimer: "I'm an AI and can make mistakes. We keep conversations and photos for 12 months.", privacyLink: 'Privacy',
         klussen: { kozijn: 'a window frame', deur: 'a door', trap: 'a staircase', vloer: 'a wooden floor', dorpel: 'a sill', muur: 'a wall', dak: 'a roof edge', boeiboord: 'a fascia board', schutting: 'a fence', meubel: 'a piece of furniture' },
         locale: 'en-GB',
@@ -541,7 +545,7 @@
         hoi: 'Hallo!', vraagAlgemeen: 'Ich helfe dir bei Holzfäule und Schäden an Holz oder Wand. Woran arbeitest du gerade?',
         vraagProduct: 'Hast du eine Frage zu diesem Produkt oder zu deinem Projekt?',
         vraagKlus: (k) => 'Arbeitest du an ' + k + '? Wobei kann ich helfen?',
-        startGroep: 'Wähle ein Thema', startHout: 'Mein Holz ist weich oder faul', startMuur: 'Loch oder Riss in der Wand', startProduct: 'Welches Produkt brauche ich?', startFoto: 'Ich schicke ein Foto', startHoeveel: 'Wie viel brauche ich?', startGebruik: 'Wie benutze ich das?',
+        startGroep: 'Wähle ein Thema', startHout: 'Mein Holz ist weich oder faul', startMuur: 'Loch oder Riss in der Wand', startProduct: 'Welches Produkt brauche ich?', startFoto: 'Ich schicke ein Foto', startAnders: 'Etwas anderes fragen', startHoeveel: 'Wie viel brauche ich?', startGebruik: 'Wie benutze ich das?',
         disclaimer: 'Ich bin eine KI und kann mich irren. Gespräche und Fotos speichern wir 12 Monate.', privacyLink: 'Datenschutz',
         klussen: { kozijn: 'einem Fensterrahmen', deur: 'einer Tür', trap: 'einer Treppe', vloer: 'einem Holzboden', dorpel: 'einer Schwelle', muur: 'einer Wand', dak: 'einem Dachrand', boeiboord: 'einem Stirnbrett', schutting: 'einem Zaun', meubel: 'einem Möbelstück' },
         locale: 'de-DE',
@@ -935,6 +939,18 @@
       if (!m) return [];
       return m[1].split('|').map((k) => k.trim()).filter((k) => k && k.length <= 40).slice(0, 4);
     }
+    // Startknopje "Iets anders vragen": cursor in het invoerveld (op een telefoon gaat het
+    // toetsenbord open) en het veld licht een seconde op. Verstuurt niets, laat de
+    // startknopjes staan en telt niet als activiteit voor de lichte smileyvraag.
+    function naarInvoer() {
+      inEl.focus();
+      const f = document.getElementById('f');
+      f.classList.remove('oplichten');
+      void f.offsetWidth; // animatie opnieuw laten beginnen bij een tweede klik
+      f.classList.add('oplichten');
+      clearTimeout(naarInvoer.t);
+      naarInvoer.t = setTimeout(() => f.classList.remove('oplichten'), 1100);
+    }
     function wegKeuzes() { document.querySelectorAll('.keuzes').forEach((el) => el.remove()); }
     // Een keuze is een tekst (die als vraag wordt verstuurd) of, bij de startknopjes in de
     // opening, { tekst, icoon, foto }: foto: true opent het fotomenu in plaats van te sturen.
@@ -956,6 +972,7 @@
         }
         b.appendChild(document.createTextNode(k.tekst));
         b.addEventListener('click', () => {
+          if (k.typ) { naarInvoer(); return; }
           if (sendBtn.disabled) return;
           if (k.foto) { kiesFoto(); return; }
           wegKeuzes();
@@ -2123,6 +2140,8 @@
         ? [{ tekst: T.startHoeveel, icoon: '📏' }, { tekst: T.startGebruik, icoon: '🛠️' }]
         : [{ tekst: T.startHout, icoon: '🪵' }, { tekst: T.startMuur, icoon: '🧱' }, { tekst: T.startProduct, icoon: '🛒' }];
       if (!document.documentElement.classList.contains('nofoto')) k.push({ tekst: T.startFoto, icoon: '📷', foto: true });
+      // "Iets anders vragen" (Ralf 14-11-2026): verstuurt niets, zet alleen de cursor in het invoerveld.
+      k.push({ tekst: T.startAnders, icoon: '✏️', typ: true });
       return k;
     }
     // Toont de opening: één welkomstzin met startknopjes en een korte AI-noot.

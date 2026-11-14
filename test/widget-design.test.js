@@ -38,15 +38,15 @@ test('foto (M1): na het laden van de foto en bij elke stap opnieuw schuiven; voo
   for (const t of Object.values(TEKSTEN)) assert.ok(t.fotoKop && /20/.test(t.fotoDuur));
 });
 
-test('startknopjes: vier onderwerpen, op een productpagina passende vragen, zonder foto geen fotoknop', () => {
+test('startknopjes: vier onderwerpen plus "Iets anders vragen", op een productpagina passende vragen, zonder foto geen fotoknop', () => {
   const maak = (ctx, nofoto, taal = 'nl') => new Function('T', 'CONTEXT', 'document', fn('startKnoppen') + '; return startKnoppen();')(
     TEKSTEN[taal], ctx, { documentElement: { classList: { contains: (c) => c === 'nofoto' && nofoto } } });
   const algemeen = maak({}, false);
-  assert.deepEqual(algemeen.map((k) => k.tekst), ['Mijn hout is zacht of rot', 'Gat of scheur in de muur', 'Welk product heb ik nodig?', 'Ik stuur een foto']);
+  assert.deepEqual(algemeen.map((k) => k.tekst), ['Mijn hout is zacht of rot', 'Gat of scheur in de muur', 'Welk product heb ik nodig?', 'Ik stuur een foto', 'Iets anders vragen']);
   assert.equal(algemeen[3].foto, true, '"Ik stuur een foto" opent het fotomenu');
-  assert.deepEqual(maak({ product: 'premium-houtrotvuller' }, false).map((k) => k.tekst), ['Hoeveel heb ik nodig?', 'Hoe gebruik ik dit?', 'Ik stuur een foto']);
-  assert.equal(maak({}, true).length, 3);
-  assert.deepEqual(maak({}, false, 'de').map((k) => k.tekst), ['Mein Holz ist weich oder faul', 'Loch oder Riss in der Wand', 'Welches Produkt brauche ich?', 'Ich schicke ein Foto']);
+  assert.deepEqual(maak({ product: 'premium-houtrotvuller' }, false).map((k) => k.tekst), ['Hoeveel heb ik nodig?', 'Hoe gebruik ik dit?', 'Ik stuur een foto', 'Iets anders vragen']);
+  assert.equal(maak({}, true).length, 4);
+  assert.deepEqual(maak({}, false, 'de').map((k) => k.tekst), ['Mein Holz ist weich oder faul', 'Loch oder Riss in der Wand', 'Welches Produkt brauche ich?', 'Ich schicke ein Foto', 'Etwas anderes fragen']);
   // De opening gebruikt de bestaande keuzeknopjes; een fotoknopje stuurt geen tekst.
   assert.match(fn('toonOpening'), /renderKeuzes\(out, startKnoppen\(\), \{ start: true, label: T\.startGroep \}\);/);
   assert.match(fn('renderKeuzes'), /if \(k\.foto\) \{ kiesFoto\(\); return; \}/);
@@ -310,4 +310,41 @@ test('lichte vraag: teksten in alle talen', () => {
     assert.ok(t.peilVoorlees.startsWith(t.peilVraag + ' '), taal);
     assert.ok(t.peilDank && t.goed && t.gingWel && t.nietGoed && t.opslaanFout, taal);
   }
+});
+
+test('startknopje "Iets anders vragen": altijd als laatste, verstuurt niets, cursor in het invoerveld, veld licht op', () => {
+  const maak = (ctx, nofoto, taal) => new Function('T', 'CONTEXT', 'document', fn('startKnoppen') + '; return startKnoppen();')(
+    TEKSTEN[taal], ctx, { documentElement: { classList: { contains: (c) => c === 'nofoto' && nofoto } } });
+  const verwacht = { nl: 'Iets anders vragen', en: 'Ask something else', de: 'Etwas anderes fragen' };
+  for (const taal of ['nl', 'en', 'de']) {
+    for (const [ctx, nofoto] of [[{}, false], [{ product: 'premium-houtrotvuller' }, false], [{}, true]]) {
+      const k = maak(ctx, nofoto, taal);
+      const laatste = k[k.length - 1];
+      assert.deepEqual(laatste, { tekst: verwacht[taal], icoon: '✏️', typ: true }, taal + ' ' + JSON.stringify(ctx));
+      assert.ok(!/✏️/.test(laatste.tekst), 'het potloodje zit niet in de tekst');
+    }
+  }
+  // Klik: eerst deze tak, dus vóór inEl.value = k.tekst en requestSubmit; geen wegKeuzes.
+  const rk = fn('renderKeuzes');
+  assert.match(rk, /if \(k\.typ\) \{ naarInvoer\(\); return; \}/);
+  assert.ok(rk.indexOf('if (k.typ)') < rk.indexOf('inEl.value = k.tekst'));
+  const ni = fn('naarInvoer');
+  assert.match(ni, /inEl\.focus\(\);/);
+  assert.match(ni, /f\.classList\.add\('oplichten'\);/);
+  assert.doesNotMatch(ni, /requestSubmit|wegKeuzes|peil|Peil|sendText/, 'verstuurt niets, startknopjes blijven, telt niet voor de smileyvraag');
+  // Gedrag: focus en oplichten, en na ruim een seconde weer gewoon.
+  const klassen = new Set(); let gefocust = false; const timers = [];
+  const naarInvoer = new Function('inEl', 'document', 'setTimeout', 'clearTimeout', ni + '; return naarInvoer;')(
+    { focus: () => { gefocust = true; } },
+    { getElementById: () => ({ classList: { add: (c) => klassen.add(c), remove: (c) => klassen.delete(c) }, offsetWidth: 1 }) },
+    (f, ms) => { timers.push({ f, ms }); return 1; }, () => {});
+  naarInvoer();
+  assert.ok(gefocust && klassen.has('oplichten'));
+  assert.ok(timers[0].ms >= 1000 && timers[0].ms <= 1500);
+  timers[0].f();
+  assert.equal(klassen.has('oplichten'), false);
+  // Huisstijl-gloed, rustig bij minder beweging; zelfde vorm en 44 px als de andere knopjes (.keuze).
+  assert.match(html, /form#f\.oplichten \{ animation: oplichten 1s ease-out; \}/);
+  assert.match(html, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?form#f\.oplichten \{ animation: none; \}/);
+  for (const t of Object.values(TEKSTEN)) assert.ok(t.startAnders);
 });
