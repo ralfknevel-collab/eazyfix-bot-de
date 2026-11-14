@@ -27,7 +27,7 @@ test('scrollen: de chat schuift nooit vanzelf omhoog, niet voorbij het begin van
   // Na het opmaken nog één keer dezelfde regel, in beide routes.
   assert.equal(html.split('stopVolgen();').length - 1, 2);
   assert.match(html, /<button type="button" class="lees-verder" id="leesVerder" hidden>/);
-  assert.match(html, /leesVerderBtn\.hidden = maxScroll\(\) - log\.scrollTop < 60;/);
+  assert.match(html, /leesVerderBtn\.hidden = !history\.length \|\| maxScroll\(\) - log\.scrollTop < 60;/);
 });
 
 test('foto (M1): na het laden van de foto en bij elke stap opnieuw schuiven; voortgangskaartje met verwachting', () => {

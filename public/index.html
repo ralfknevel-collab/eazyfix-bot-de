@@ -700,7 +700,9 @@
       return kandidaten.length ? Math.max(...kandidaten) : log.scrollHeight;
     }
     function toonLeesVerder() {
-      leesVerderBtn.hidden = maxScroll() - log.scrollTop < 60;
+      // Alleen bij een gesprek: in de opening (nog geen vraag gesteld) geen "Lees verder",
+      // ook als de startknopjes in een klein venster onder de rand lopen (Ralf 14-11-2026).
+      leesVerderBtn.hidden = !history.length || maxScroll() - log.scrollTop < 60;
     }
     function scrollLog() {
       if (volg) {
